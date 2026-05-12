@@ -35,18 +35,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div className="md:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <Image
-                src="/images/vlogo.png"
-                alt="VIBAGEN"
-                width={56}
-                height={56}
-                className="h-14 w-auto"
-              />
-              <span className="font-[--font-logo] text-2xl text-white tracking-wide">
-                VIBAGEN
-              </span>
-            </div>
+            <Image
+              src="/images/logosquare.png"
+              alt="VIBAGEN — Crafting Ideas into Real Products"
+              width={200}
+              height={200}
+              className="h-36 w-auto mb-4"
+              style={{ filter: 'brightness(1.15) contrast(1.05)' }}
+            />
             <p className="text-white/40 text-sm leading-relaxed max-w-xs">
               Product Engineering Studio — เปลี่ยนไอเดียและปัญหาธุรกิจให้กลายเป็น Software
               ที่ใช้งานได้จริง

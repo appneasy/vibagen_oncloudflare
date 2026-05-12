@@ -39,7 +39,8 @@ export default function Navbar() {
             alt="VIBAGEN — Crafting Ideas into Real Products"
             width={220}
             height={44}
-            className="h-10 w-auto rounded"
+            className="h-10 w-auto rounded brightness-110"
+            style={{ filter: 'brightness(1.15)' }}
             priority
           />
         </Link>
