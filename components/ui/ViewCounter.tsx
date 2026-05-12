@@ -12,7 +12,7 @@ export default function ViewCounter({ slug }: ViewCounterProps) {
   useEffect(() => {
     // POST increments, then returns new count
     fetch(`/api/views/${slug}`, { method: 'POST' })
-      .then((res) => res.json())
+      .then((res) => res.json() as Promise<{ views?: number }>)
       .then((data) => {
         if (typeof data.views === 'number') setViews(data.views)
       })
