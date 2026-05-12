@@ -4,7 +4,7 @@ import Badge from '@/components/ui/Badge'
 export default function Hero() {
   return (
     <section
-      className="relative min-h-[85vh] flex items-center overflow-hidden"
+      className="relative flex items-center overflow-hidden"
       style={{
         background:
           'radial-gradient(ellipse 80% 60% at 60% 20%, rgba(255,108,1,0.08) 0%, transparent 60%), linear-gradient(180deg, #011937 0%, #0d2749 100%)',
@@ -22,7 +22,7 @@ export default function Hero() {
         aria-hidden="true"
       />
 
-      <div className="container relative z-10 pt-28 pb-20">
+      <div className="container relative z-10 pt-40 pb-20">
         {/* 2-column layout */}
         <div className="flex flex-col md:flex-row md:items-center md:gap-12 lg:gap-16">
 
@@ -103,7 +103,7 @@ export default function Hero() {
       <div
         className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
         style={{
-          background: 'linear-gradient(to bottom, transparent, #011937)',
+          background: 'linear-gradient(to bottom, transparent, #0d2749)',
         }}
         aria-hidden="true"
       />

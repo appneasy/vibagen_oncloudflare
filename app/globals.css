@@ -61,8 +61,8 @@ html {
 }
 
 body {
-  background-color: var(--navy-dark);
-  color: var(--white);
+  background-color: #ffffff;
+  color: #1a1a2e;
   font-family: var(--font-body);
   font-size: var(--text-body);
   line-height: 1.75;
@@ -85,13 +85,15 @@ p { line-height: 1.75; }
 
 /* ─── Section Layout ───────────────────────────────────── */
 .section {
-  padding: var(--section-py) 0;
+  padding-top: var(--section-py);
+  padding-bottom: var(--section-py);
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 var(--container-px);
+  padding-left: var(--container-px);
+  padding-right: var(--container-px);
 }
 
 /* ─── Eyebrow Label ────────────────────────────────────── */
@@ -210,10 +212,10 @@ p { line-height: 1.75; }
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--navy-dark);
+  background: #f0f0f0;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--navy-light);
+  background: #c0c0c0;
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {

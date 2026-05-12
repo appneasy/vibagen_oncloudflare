@@ -35,11 +35,11 @@ export default function Navbar() {
         {/* Logo */}
         <Link href="/" aria-label="VIBAGEN Home" className="flex-shrink-0">
           <Image
-            src="/images/logosquare.png"
+            src="/images/banner-logo.png"
             alt="VIBAGEN — Crafting Ideas into Real Products"
-            width={140}
+            width={220}
             height={44}
-            className="h-11 w-auto"
+            className="h-10 w-auto rounded"
             priority
           />
         </Link>

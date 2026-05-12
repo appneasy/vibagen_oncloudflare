@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 
 const navLinks = [
   { label: 'บริการ', href: '/services' },
@@ -19,21 +20,36 @@ export default function Footer() {
   const year = new Date().getFullYear()
 
   return (
-    <footer
-      style={{ background: '#011937', borderTop: '1px solid rgba(255,255,255,0.06)' }}
-      aria-label="Footer"
-    >
-      <div className="container py-16">
+    <footer aria-label="Footer">
+      {/* Navy-orange fade transition */}
+      <div
+        className="h-24"
+        style={{
+          background: 'linear-gradient(180deg, #ffffff 0%, #f0f4f8 20%, #0d2749 60%, #011937 100%)',
+        }}
+      >
+        <div
+          className="h-full"
+          style={{
+            background: 'linear-gradient(180deg, transparent 30%, rgba(255,108,1,0.08) 50%, transparent 70%)',
+          }}
+        />
+      </div>
+      <div style={{ background: '#011937' }}>
+      <div className="container pt-12 pb-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div className="md:col-span-2">
-            <div className="font-[--font-logo] text-2xl text-white mb-3">VIBAGEN</div>
-            <p className="text-white/40 text-sm leading-relaxed max-w-xs mb-6">
+            <Image
+              src="/images/logosquare.png"
+              alt="VIBAGEN — Crafting Ideas into Real Products"
+              width={160}
+              height={160}
+              className="h-28 w-auto mb-4 rounded-lg"
+            />
+            <p className="text-white/40 text-sm leading-relaxed max-w-xs">
               Product Engineering Studio — เปลี่ยนไอเดียและปัญหาธุรกิจให้กลายเป็น Software
               ที่ใช้งานได้จริง
-            </p>
-            <p className="text-[#ff6c01] text-sm font-medium italic">
-              Crafting Ideas into Real Products.
             </p>
           </div>
 
@@ -85,6 +101,7 @@ export default function Footer() {
             Built with Next.js + Cloudflare Pages — deployed at edge
           </p>
         </div>
+      </div>
       </div>
     </footer>
   )
