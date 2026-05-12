@@ -22,7 +22,7 @@ export default function Hero() {
         aria-hidden="true"
       />
 
-      <div className="container relative z-10 pt-40 pb-20">
+      <div className="container relative z-10 pt-28 pb-20">
         {/* 2-column layout */}
         <div className="flex flex-col md:flex-row md:items-center md:gap-12 lg:gap-16">
 
@@ -35,7 +35,7 @@ export default function Hero() {
 
             {/* Headline */}
             <h1
-              className="font-[--font-heading] font-bold leading-[1.1] mb-6"
+              className="text-white font-[--font-heading] font-bold leading-[1.1] mb-6"
               style={{ fontSize: 'clamp(2.5rem, 6vw, 3.75rem)' }}
             >
               เปลี่ยนไอเดียและ
@@ -46,7 +46,7 @@ export default function Hero() {
             </h1>
 
             {/* Sub */}
-            <p className="text-white/70 text-xl leading-relaxed mb-4 max-w-2xl">
+            <p className="text-white/80 text-xl leading-relaxed mb-4 max-w-2xl">
               VIBAGEN สร้างระบบที่ลูกค้า{' '}
               <strong className="text-white font-semibold">เป็นเจ้าของได้จริง</strong>{' '}
               — ไม่ผูกค่าใช้จ่ายรายเดือน ไม่สร้างการพึ่งพาระยะยาว

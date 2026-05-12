@@ -21,32 +21,32 @@ export default function Footer() {
 
   return (
     <footer aria-label="Footer">
-      {/* Navy-orange fade transition */}
-      <div
-        className="h-24"
-        style={{
-          background: 'linear-gradient(180deg, #ffffff 0%, #f0f4f8 20%, #0d2749 60%, #011937 100%)',
-        }}
-      >
-        <div
-          className="h-full"
-          style={{
-            background: 'linear-gradient(180deg, transparent 30%, rgba(255,108,1,0.08) 50%, transparent 70%)',
-          }}
-        />
+      {/* Clean top border */}
+      <div style={{ background: '#011937' }}>
+        <div className="container">
+          <div
+            className="h-px"
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(255,108,1,0.3) 30%, rgba(255,108,1,0.3) 70%, transparent)' }}
+          />
+        </div>
       </div>
       <div style={{ background: '#011937' }}>
       <div className="container pt-12 pb-16">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div className="md:col-span-2">
-            <Image
-              src="/images/logosquare.png"
-              alt="VIBAGEN — Crafting Ideas into Real Products"
-              width={160}
-              height={160}
-              className="h-28 w-auto mb-4 rounded-lg"
-            />
+            <div className="flex items-center gap-3 mb-4">
+              <Image
+                src="/images/vlogo.png"
+                alt="VIBAGEN"
+                width={56}
+                height={56}
+                className="h-14 w-auto"
+              />
+              <span className="font-[--font-logo] text-2xl text-white tracking-wide">
+                VIBAGEN
+              </span>
+            </div>
             <p className="text-white/40 text-sm leading-relaxed max-w-xs">
               Product Engineering Studio — เปลี่ยนไอเดียและปัญหาธุรกิจให้กลายเป็น Software
               ที่ใช้งานได้จริง
