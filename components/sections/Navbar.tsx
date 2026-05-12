@@ -44,7 +44,7 @@ export default function Navbar() {
           />
           <div className="flex flex-col leading-none">
             <span className="font-[--font-logo] text-lg text-white tracking-wide">VIBAGEN</span>
-            <span className="text-[10px] text-white/60 tracking-wider">Crafting ideas into real products</span>
+            <span className="font-[--font-inter] text-[10px] text-white/60 tracking-wider">Crafting ideas into real products</span>
           </div>
         </Link>
 
