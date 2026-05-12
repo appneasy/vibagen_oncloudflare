@@ -4,13 +4,26 @@ import { articleViews } from '@/lib/db/schema'
 
 export const runtime = 'edge'
 
+function getCfEnv(): Env | undefined {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getRequestContext } = require('@cloudflare/next-on-pages')
+    return getRequestContext().env
+  } catch {
+    return undefined
+  }
+}
+
 // ─── GET /api/views/[slug] — return current count ─────────
 export async function GET(
   _req: Request,
-  { params, env }: { params: Promise<{ slug: string }>; env: Env },
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params
   if (!slug) return Response.json({ views: 0 })
+
+  const env = getCfEnv()
+  if (!env?.DB) return Response.json({ views: 0 })
 
   try {
     const db = getDB(env.DB)
@@ -28,10 +41,13 @@ export async function GET(
 // ─── POST /api/views/[slug] — increment + return new count ─
 export async function POST(
   _req: Request,
-  { params, env }: { params: Promise<{ slug: string }>; env: Env },
+  { params }: { params: Promise<{ slug: string }> },
 ) {
   const { slug } = await params
   if (!slug) return Response.json({ error: 'Missing slug' }, { status: 400 })
+
+  const env = getCfEnv()
+  if (!env?.DB) return Response.json({ error: 'DB unavailable' }, { status: 503 })
 
   try {
     const db = getDB(env.DB)

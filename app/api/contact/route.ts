@@ -4,6 +4,16 @@ import { contacts } from '@/lib/db/schema'
 
 export const runtime = 'edge'
 
+function getCfEnv(): Env | undefined {
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { getRequestContext } = require('@cloudflare/next-on-pages')
+    return getRequestContext().env
+  } catch {
+    return undefined
+  }
+}
+
 // ─── Validation Schema ────────────────────────────────────
 const contactSchema = z.object({
   name:     z.string().min(2, 'ชื่อต้องมีอย่างน้อย 2 ตัวอักษร').max(100),
@@ -15,8 +25,8 @@ const contactSchema = z.object({
 })
 
 // ─── POST /api/contact ────────────────────────────────────
-export async function POST(req: Request, ctx?: { env?: Env }) {
-  const env = ctx?.env
+export async function POST(req: Request) {
+  const env = getCfEnv()
 
   // 1. Parse + validate body
   let body: unknown
