@@ -85,10 +85,20 @@ export default function WhyVibagen() {
 
         {/* 6 points grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-16">
-          {points.map((p) => (
+          {points.map((p, i) => (
             <div
               key={p.number}
               className="group rounded-2xl p-6 bg-white/[0.04] border border-white/[0.06] hover:border-[#ff6c01]/30 transition-all duration-300"
+              style={{
+                borderLeft: [
+                  '3px solid #ff6c01',
+                  '3px solid #3b82f6',
+                  '3px solid #8b5cf6',
+                  '3px solid #ef4444',
+                  '3px solid #10b981',
+                  '3px solid #f59e0b',
+                ][i],
+              }}
             >
               <span className="font-[--font-heading] font-bold text-[#ff6c01] text-4xl block mb-3 opacity-40 group-hover:opacity-70 transition-opacity">
                 {p.number}

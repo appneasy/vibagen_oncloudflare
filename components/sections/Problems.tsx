@@ -62,10 +62,20 @@ export default function Problems() {
 
         {/* Problem cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-14">
-          {problems.map((p) => (
+          {problems.map((p, i) => (
             <div
               key={p.title}
               className="rounded-2xl p-6 bg-white/[0.04] border border-white/[0.06] hover:border-[#ff6c01]/30 transition-all duration-300"
+              style={{
+                borderLeft: [
+                  '3px solid #ff6c01',
+                  '3px solid #3b82f6',
+                  '3px solid #8b5cf6',
+                  '3px solid #ef4444',
+                  '3px solid #10b981',
+                  '3px solid #f59e0b',
+                ][i],
+              }}
             >
               <span className="text-3xl mb-4 block" role="img" aria-hidden="true">
                 {p.icon}

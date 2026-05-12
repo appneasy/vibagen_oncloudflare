@@ -139,8 +139,8 @@ p { line-height: 1.75; }
 }
 
 .tooltip-trigger {
-  border-bottom: 1px dashed var(--orange);
-  color: inherit;
+  border-bottom: 1px dotted rgba(255, 108, 1, 0.4);
+  color: #ff8c3a;
   text-decoration: none;
 }
 
@@ -150,12 +150,12 @@ p { line-height: 1.75; }
   bottom: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  min-width: 220px;
-  max-width: 280px;
+  min-width: 180px;
+  max-width: 240px;
   background: var(--navy);
   border: 1px solid rgba(255, 108, 1, 0.3);
   border-radius: 0.5rem;
-  padding: 0.625rem 0.875rem;
+  padding: 0.5rem 0.75rem;
   z-index: 50;
   pointer-events: none;
   box-shadow: 0 4px 20px rgba(0,0,0,0.4);
@@ -173,7 +173,7 @@ p { line-height: 1.75; }
 
 .tooltip-term {
   font-family: var(--font-heading);
-  font-size: 0.7rem;
+  font-size: 0.6rem;
   font-weight: 600;
   color: var(--orange);
   text-transform: uppercase;
@@ -184,7 +184,7 @@ p { line-height: 1.75; }
 
 .tooltip-desc {
   font-family: var(--font-body);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: rgba(255, 255, 255, 0.85);
   line-height: 1.5;
 }
@@ -246,11 +246,11 @@ p { line-height: 1.75; }
 
 /* ─── Section Alternation ─────────────────────────────── */
 .section-dark {
-  background: #081e3d;
+  background: #0f2847;
 }
 
 .section-navy {
-  background: #122f54;
+  background: #163560;
 }
 
 .section-gradient {

@@ -27,8 +27,8 @@ export default function Navbar() {
         'fixed top-0 left-0 right-0 z-50',
         'transition-all duration-300',
         scrolled
-          ? 'bg-[#1a3a5c]/95 backdrop-blur-md border-b border-white/[0.06] shadow-lg'
-          : 'bg-[#0d2749]/80 backdrop-blur-sm',
+          ? 'bg-[#2a4a6c]/95 backdrop-blur-md border-b border-white/[0.06] shadow-lg'
+          : 'bg-[#1a3a5c]/70 backdrop-blur-sm',
       ].join(' ')}
     >
       <nav className="container flex items-center justify-between h-16">
@@ -97,7 +97,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-[#011937]/98 border-b border-white/[0.06] px-4 pb-4">
+        <div className="md:hidden bg-[#1a3a5c]/98 border-b border-white/[0.06] px-4 pb-4">
           <ul className="flex flex-col gap-1 pt-2" role="list">
             {navLinks.map((link) => (
               <li key={link.href}>
