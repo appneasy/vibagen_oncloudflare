@@ -1,0 +1,44 @@
+[
+  {
+    "id": "autocar-care",
+    "title": "AutoCar Care",
+    "subtitle": "ระบบบริหารร้านคาร์แคร์ครบวงจร",
+    "desc": "จัดการลูกค้า รถ คิวบริการ สต็อก รายงาน และ LINE notification ในระบบเดียว รองรับตั้งแต่ร้านสาขาเดียวถึง multi-branch",
+    "industry": "Automotive Service",
+    "model": "Perpetual License",
+    "stack": ["Next.js", "PostgreSQL", "LINE LIFF", "Docker"],
+    "features": [
+      "Customer & Vehicle Management",
+      "Queue Booking via LINE",
+      "Stock & Parts Control",
+      "Revenue Dashboard",
+      "Multi-branch Support"
+    ],
+    "image": "/images/placeholder-autocar.webp",
+    "imageAlt": "AutoCar Care dashboard preview",
+    "highlight": "ลูกค้าจองคิวผ่าน LINE ได้เลย — ไม่ต้องโทรหาร้าน",
+    "status": "available",
+    "cta": "ดู Demo"
+  },
+  {
+    "id": "smart-factory",
+    "title": "Smart Factory Dashboard",
+    "subtitle": "Production Monitoring & KPI บน Realtime",
+    "desc": "ระบบ monitoring สายการผลิต ติดตาม OEE, Downtime, Defect Rate แบบ realtime พร้อม AI ตรวจจับความผิดปกติก่อนเกิดปัญหา",
+    "industry": "Manufacturing",
+    "model": "Custom Project",
+    "stack": ["Next.js", "PostgreSQL", "Python AI", "Docker", "WebSocket"],
+    "features": [
+      "Realtime Production Monitoring",
+      "OEE / Downtime Tracking",
+      "Maintenance Log & Alert",
+      "AI Anomaly Detection",
+      "Shift Report Auto-generation"
+    ],
+    "image": "/images/placeholder-smartfactory.webp",
+    "imageAlt": "Smart Factory production dashboard",
+    "highlight": "จาก AppSheet → Modern Stack ใน 6 สัปดาห์ รักษา workflow เดิมทุกอย่าง",
+    "status": "showcase",
+    "cta": "ดูรายละเอียด"
+  }
+]

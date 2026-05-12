@@ -1,0 +1,62 @@
+[
+  {
+    "id": "internal-systems",
+    "title": "Internal Business Systems",
+    "titleTh": "ระบบภายในองค์กร",
+    "desc": "ออกแบบตาม workflow จริง ไม่ใช่ template — ครอบคลุม Procurement, Warehouse, Maintenance, Approval, Stock Control",
+    "icon": "Layers",
+    "span": 2,
+    "variant": "navy",
+    "examples": ["Procurement System", "Warehouse Management", "Maintenance Log", "Stock Control", "Approval Workflow"]
+  },
+  {
+    "id": "operational-platforms",
+    "title": "Operational Platforms",
+    "titleTh": "Platform ลดงานซ้ำ",
+    "desc": "ระบบที่ช่วยลดงาน manual และเพิ่มประสิทธิภาพทีมงาน — ลูกค้าสามารถ self-serve ได้ 24 ชั่วโมง",
+    "icon": "Zap",
+    "span": 1,
+    "variant": "glass",
+    "examples": ["Customer Portal", "Service Scheduling", "Reporting Dashboard"]
+  },
+  {
+    "id": "ai-systems",
+    "title": "AI-Assisted Systems",
+    "titleTh": "ระบบที่มี AI ช่วยทำงาน",
+    "desc": "เพิ่ม AI layer เข้าไปในระบบ เพื่อวิเคราะห์ข้อมูล อ่านเอกสาร จัดหมวดหมู่ สรุปรายงาน และตรวจจับความผิดปกติ",
+    "icon": "Brain",
+    "span": 1,
+    "variant": "orange",
+    "examples": ["Document OCR + Classification", "Anomaly Detection", "Auto Summary Report", "Predictive Maintenance"]
+  },
+  {
+    "id": "mvp-development",
+    "title": "Rapid MVP Development",
+    "titleTh": "Fast-Track MVP 30 วัน",
+    "desc": "สร้างต้นแบบและระบบใช้งานจริงอย่างรวดเร็ว เพื่อให้ธุรกิจเริ่มใช้งานได้เร็วที่สุด พัฒนาต่อได้ตาม feedback จริง",
+    "icon": "Rocket",
+    "span": 1,
+    "variant": "navy",
+    "examples": ["30-day MVP Delivery", "Prototype → Production", "Iterative Development"]
+  },
+  {
+    "id": "sap-integration",
+    "title": "ERP Integration",
+    "titleTh": "เชื่อมต่อกับ SAP B1 / ERP",
+    "desc": "สร้าง custom operation tier บน SAP B1 — ลดต้นทุน license โดยไม่กระทบ financial integrity ของ ERP",
+    "icon": "Database",
+    "span": 1,
+    "variant": "glass",
+    "examples": ["Materialized View Layer", "Service Layer API", "Custom PR System", "License Reduction Strategy"]
+  },
+  {
+    "id": "migration",
+    "title": "No-Code → Modern Stack Migration",
+    "titleTh": "อัปเกรดจาก No-Code / Excel",
+    "desc": "เปลี่ยน AppSheet / Google Sheets ให้เป็นระบบ real database + API-first — ใช้ workflow เดิมที่พิสูจน์แล้วเป็น blueprint",
+    "icon": "ArrowUpRight",
+    "span": 1,
+    "variant": "navy",
+    "examples": ["AppSheet → Next.js + PostgreSQL", "Excel → Real Database", "Looker → Custom Dashboard"]
+  }
+]
