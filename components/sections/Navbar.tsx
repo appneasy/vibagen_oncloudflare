@@ -27,24 +27,29 @@ export default function Navbar() {
         'fixed top-0 left-0 right-0 z-50',
         'transition-all duration-300',
         scrolled
-          ? 'bg-[#011937]/95 backdrop-blur-md border-b border-white/[0.06] shadow-lg'
-          : 'bg-transparent',
+          ? 'bg-[#1a3a5c]/95 backdrop-blur-md border-b border-white/[0.06] shadow-lg'
+          : 'bg-[#0d2749]/80 backdrop-blur-sm',
       ].join(' ')}
     >
       <nav className="container flex items-center justify-between h-16">
         {/* Logo */}
-        <Link href="/" aria-label="VIBAGEN Home" className="flex items-center gap-2 flex-shrink-0">
+        <Link href="/" aria-label="VIBAGEN Home" className="flex items-center gap-2.5 flex-shrink-0">
           <Image
             src="/images/vlogo.png"
             alt="VIBAGEN"
-            width={32}
-            height={32}
-            className="h-8 w-8"
+            width={36}
+            height={36}
+            className="h-9 w-9"
             priority
           />
-          <span className="font-[--font-logo] text-xl tracking-tight text-white">
-            VIBAGEN
-          </span>
+          <div className="flex flex-col leading-none">
+            <span className="font-[--font-logo] text-xl tracking-tight text-white">
+              VIBAGEN
+            </span>
+            <span className="text-[0.55rem] text-white/40 tracking-[0.15em] uppercase hidden sm:block">
+              Crafting Ideas into Real Products
+            </span>
+          </div>
         </Link>
 
         {/* Desktop links */}
