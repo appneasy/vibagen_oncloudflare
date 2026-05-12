@@ -27,22 +27,25 @@ export default function Navbar() {
         'fixed top-0 left-0 right-0 z-50',
         'transition-all duration-300',
         scrolled
-          ? 'bg-[#2a4a6c]/95 backdrop-blur-md border-b border-white/[0.06] shadow-lg'
-          : 'bg-[#1a3a5c]/70 backdrop-blur-sm',
+          ? 'bg-[#0d2749]/95 backdrop-blur-md border-b border-white/[0.06] shadow-lg'
+          : 'bg-[#0d2749]/85 backdrop-blur-sm',
       ].join(' ')}
     >
       <nav className="container flex items-center justify-between h-16">
         {/* Logo */}
-        <Link href="/" aria-label="VIBAGEN Home" className="flex-shrink-0">
+        <Link href="/" aria-label="VIBAGEN Home" className="flex-shrink-0 flex items-center gap-2.5">
           <Image
-            src="/images/banner-logo.png"
-            alt="VIBAGEN — Crafting Ideas into Real Products"
-            width={220}
-            height={44}
-            className="h-10 w-auto rounded brightness-110"
-            style={{ filter: 'brightness(1.15)' }}
+            src="/images/vlogo.png"
+            alt="VIBAGEN"
+            width={40}
+            height={40}
+            className="h-9 w-auto"
             priority
           />
+          <div className="flex flex-col leading-none">
+            <span className="font-[--font-logo] text-lg text-white tracking-wide">VIBAGEN</span>
+            <span className="text-[10px] text-white/60 tracking-wider">Crafting ideas into real products</span>
+          </div>
         </Link>
 
         {/* Desktop links */}
@@ -90,7 +93,7 @@ export default function Navbar() {
 
       {/* Mobile menu */}
       {mobileOpen && (
-        <div className="md:hidden bg-[#1a3a5c]/98 border-b border-white/[0.06] px-4 pb-4">
+        <div className="md:hidden bg-[#0d2749]/98 border-b border-white/[0.06] px-4 pb-4">
           <ul className="flex flex-col gap-1 pt-2" role="list">
             {navLinks.map((link) => (
               <li key={link.href}>
