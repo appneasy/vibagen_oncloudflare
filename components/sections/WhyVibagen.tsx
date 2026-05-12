@@ -62,7 +62,7 @@ const comparison = [
 export default function WhyVibagen() {
   return (
     <section
-      className="section section-navy"
+      className="section bg-dots"
       aria-labelledby="why-heading"
     >
       <div className="container">
