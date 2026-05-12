@@ -6,8 +6,9 @@ import Navbar from '@/components/sections/Navbar'
 import Footer from '@/components/sections/Footer'
 import ViewCounter from '@/components/ui/ViewCounter'
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
+export function generateStaticParams() {
+  return getAllArticleSlugs().map((slug) => ({ slug }))
+}
 
 // ─── Dynamic Metadata ──────────────────────────────────────
 export async function generateMetadata({

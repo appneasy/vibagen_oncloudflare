@@ -4,11 +4,10 @@ import { contacts } from '@/lib/db/schema'
 
 export const runtime = 'edge'
 
-function getCfEnv(): Env | undefined {
+async function getCfEnv(): Promise<Env | undefined> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getRequestContext } = require('@cloudflare/next-on-pages')
-    return getRequestContext().env
+    const { getRequestContext } = await import('@cloudflare/next-on-pages')
+    return getRequestContext().env as unknown as Env
   } catch {
     return undefined
   }
@@ -26,7 +25,7 @@ const contactSchema = z.object({
 
 // ─── POST /api/contact ────────────────────────────────────
 export async function POST(req: Request) {
-  const env = getCfEnv()
+  const env = await getCfEnv()
 
   // 1. Parse + validate body
   let body: unknown

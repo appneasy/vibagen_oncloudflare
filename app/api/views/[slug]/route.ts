@@ -4,11 +4,10 @@ import { articleViews } from '@/lib/db/schema'
 
 export const runtime = 'edge'
 
-function getCfEnv(): Env | undefined {
+async function getCfEnv(): Promise<Env | undefined> {
   try {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { getRequestContext } = require('@cloudflare/next-on-pages')
-    return getRequestContext().env
+    const { getRequestContext } = await import('@cloudflare/next-on-pages')
+    return getRequestContext().env as unknown as Env
   } catch {
     return undefined
   }
@@ -22,7 +21,7 @@ export async function GET(
   const { slug } = await params
   if (!slug) return Response.json({ views: 0 })
 
-  const env = getCfEnv()
+  const env = await getCfEnv()
   if (!env?.DB) return Response.json({ views: 0 })
 
   try {
@@ -46,7 +45,7 @@ export async function POST(
   const { slug } = await params
   if (!slug) return Response.json({ error: 'Missing slug' }, { status: 400 })
 
-  const env = getCfEnv()
+  const env = await getCfEnv()
   if (!env?.DB) return Response.json({ error: 'DB unavailable' }, { status: 503 })
 
   try {
