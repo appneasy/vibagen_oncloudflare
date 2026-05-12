@@ -87,6 +87,9 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
+  icons: {
+    icon: '/favicon.png',
+  },
   alternates: {
     canonical: 'https://vibagen.com',
   },
