@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Prompt, Sarabun } from 'next/font/google'
+import { Prompt, Sarabun, Prosto_One } from 'next/font/google'
 import './globals.css'
 
 // ─── Fonts ────────────────────────────────────────────────
@@ -14,6 +14,13 @@ const sarabun = Sarabun({
   subsets: ['latin', 'thai'],
   weight: ['400', '500'],
   variable: '--font-sarabun',
+  display: 'swap',
+})
+
+const prostoOne = Prosto_One({
+  subsets: ['latin'],
+  weight: '400',
+  variable: '--font-prosto',
   display: 'swap',
 })
 
@@ -100,7 +107,7 @@ export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="th" className={`${prompt.variable} ${sarabun.variable}`}>
+    <html lang="th" className={`${prompt.variable} ${sarabun.variable} ${prostoOne.variable}`}>
       <head>
         {/* JSON-LD Organization */}
         <script

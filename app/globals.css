@@ -1,8 +1,5 @@
 @import "tailwindcss";
 
-/* ─── Google Fonts ─────────────────────────────────────── */
-@import url('https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;500&family=Prosto+One&display=swap');
-
 /* ─── VIBAGEN Brand Variables ──────────────────────────── */
 :root {
   /* Colors */
@@ -18,10 +15,10 @@
   --white-dim:   rgba(255, 255, 255, 0.08);
   --white-dim2:  rgba(255, 255, 255, 0.04);
 
-  /* Fonts */
-  --font-heading: 'Prompt', sans-serif;
-  --font-body:    'Sarabun', sans-serif;
-  --font-logo:    'Prosto One', sans-serif;
+  /* Fonts — use next/font CSS variables */
+  --font-heading: var(--font-prompt), 'Prompt', sans-serif;
+  --font-body:    var(--font-sarabun), 'Sarabun', sans-serif;
+  --font-logo:    var(--font-prosto), 'Prosto One', sans-serif;
 
   /* Type Scale */
   --text-display: 3.5rem;   /* 56px Hero */
@@ -32,7 +29,7 @@
   --text-caption: 0.8125rem; /* 13px */
 
   /* Spacing */
-  --section-py:   5rem;
+  --section-py:   3.5rem;
   --container-px: 1.5rem;
 
   /* Legacy compat */
@@ -49,9 +46,9 @@
   --color-orange-dark: #d54e01;
   --color-gray:        #737373;
 
-  --font-heading: 'Prompt', sans-serif;
-  --font-body:    'Sarabun', sans-serif;
-  --font-logo:    'Prosto One', sans-serif;
+  --font-heading: var(--font-prompt), 'Prompt', sans-serif;
+  --font-body:    var(--font-sarabun), 'Sarabun', sans-serif;
+  --font-logo:    var(--font-prosto), 'Prosto One', sans-serif;
 }
 
 /* ─── Base Styles ──────────────────────────────────────── */
@@ -224,4 +221,46 @@ p { line-height: 1.75; }
 ::selection {
   background: var(--orange);
   color: var(--white);
+}
+
+/* ─── Gradient Border Card ────────────────────────────── */
+.card-gradient-border {
+  position: relative;
+  background: #0d2749;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 108, 1, 0.15);
+}
+
+.card-gradient-border::before {
+  content: '';
+  position: absolute;
+  inset: -1px;
+  border-radius: 1rem;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,108,1,0.3), transparent 50%, rgba(255,108,1,0.1));
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+/* ─── Section Alternation ─────────────────────────────── */
+.section-dark {
+  background: #081e3d;
+}
+
+.section-navy {
+  background: #122f54;
+}
+
+.section-gradient {
+  background: linear-gradient(180deg, #011937 0%, #0d2749 50%, #011937 100%);
+}
+
+/* ─── Section Divider ─────────────────────────────────── */
+.section-divider {
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 108, 1, 0.2) 30%, rgba(255, 108, 1, 0.2) 70%, transparent);
+  margin: 0 auto;
+  max-width: 1200px;
 }

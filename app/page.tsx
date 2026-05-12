@@ -26,13 +26,21 @@ export default function HomePage() {
       <Navbar />
       <main>
         <Hero />
+        <div className="section-divider" />
         <Problems />
+        <div className="section-divider" />
         <AgenticAI />
+        <div className="section-divider" />
         <WhyVibagen />
+        <div className="section-divider" />
         <Services />
+        <div className="section-divider" />
         <Showcase />
+        <div className="section-divider" />
         <Process />
+        <div className="section-divider" />
         <KnowledgeHub />
+        <div className="section-divider" />
         <ContactForm />
       </main>
       <Footer />

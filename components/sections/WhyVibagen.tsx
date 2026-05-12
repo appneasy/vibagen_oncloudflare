@@ -62,8 +62,7 @@ const comparison = [
 export default function WhyVibagen() {
   return (
     <section
-      className="section"
-      style={{ background: 'linear-gradient(180deg, #0d2749 0%, #011937 100%)' }}
+      className="section section-navy"
       aria-labelledby="why-heading"
     >
       <div className="container">

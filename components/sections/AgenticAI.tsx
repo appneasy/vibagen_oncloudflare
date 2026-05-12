@@ -34,13 +34,12 @@ const comparison = [
 export default function AgenticAI() {
   return (
     <section
-      className="section"
-      style={{ background: '#0d2749' }}
+      className="section section-dark"
       aria-labelledby="ai-heading"
     >
       <div className="container">
         {/* Header */}
-        <div className="text-center mb-14">
+        <div className="text-center mb-8">
           <Badge dot className="mb-4">
             The AI Future — เริ่มต้นปี 2026
           </Badge>
@@ -63,7 +62,7 @@ export default function AgenticAI() {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-14">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <StatCard value="$80B" label="ตลาด AI Agents ในปี 2030" sublabel="จาก $12B ในปี 2025" />
           <StatCard value="40%" label="งาน routine ที่ AI ทำแทนได้" sublabel="McKinsey 2025" />
           <StatCard value="8,000 ฿" label="รายได้เพิ่ม/เดือน" sublabel="ลูกค้ากลับ 10 คน × 800 ฿" highlight />
@@ -71,7 +70,7 @@ export default function AgenticAI() {
         </div>
 
         {/* Timeline */}
-        <div className="mb-14">
+        <div className="mb-8">
           <h3 className="font-[--font-heading] font-semibold text-[#ff6c01] text-center text-sm uppercase tracking-widest mb-8">
             Timeline ของ AI ใน Business Operations
           </h3>

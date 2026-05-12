@@ -37,8 +37,7 @@ const problems = [
 export default function Problems() {
   return (
     <section
-      className="section"
-      style={{ background: 'linear-gradient(180deg, #011937 0%, #0d2749 100%)' }}
+      className="section section-navy"
       aria-labelledby="problems-heading"
     >
       <div className="container">

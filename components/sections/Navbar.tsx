@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 
 const navLinks = [
   { label: 'บริการ', href: '/services' },
@@ -32,12 +33,18 @@ export default function Navbar() {
     >
       <nav className="container flex items-center justify-between h-16">
         {/* Logo */}
-        <Link
-          href="/"
-          className="font-[--font-logo] text-xl tracking-tight text-white hover:text-[#ff6c01] transition-colors"
-          aria-label="VIBAGEN Home"
-        >
-          VIBAGEN
+        <Link href="/" aria-label="VIBAGEN Home" className="flex items-center gap-2 flex-shrink-0">
+          <Image
+            src="/images/vlogo.png"
+            alt="VIBAGEN"
+            width={32}
+            height={32}
+            className="h-8 w-8"
+            priority
+          />
+          <span className="font-[--font-logo] text-xl tracking-tight text-white">
+            VIBAGEN
+          </span>
         </Link>
 
         {/* Desktop links */}
