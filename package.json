@@ -33,6 +33,7 @@
     "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "@cloudflare/workers-types": "^4.20250508.0",
     "wrangler": "^4.90.0"
   }
 }

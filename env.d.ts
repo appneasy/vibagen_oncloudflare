@@ -1,3 +1,5 @@
+/// <reference types="@cloudflare/workers-types" />
+
 // Cloudflare Workers / Pages bindings type declarations
 // These match the bindings configured in wrangler.toml
 
