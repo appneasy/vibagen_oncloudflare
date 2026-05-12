@@ -12,7 +12,7 @@ interface ButtonBaseProps {
   fullWidth?: boolean
 }
 
-interface ButtonAsButton extends ButtonBaseProps, ButtonHTMLAttributes<HTMLButtonElement> {
+interface ButtonAsButton extends ButtonBaseProps, Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof ButtonBaseProps> {
   href?: undefined
 }
 
