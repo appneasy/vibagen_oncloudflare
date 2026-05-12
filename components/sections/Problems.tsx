@@ -48,13 +48,13 @@ export default function Problems() {
           </Badge>
           <h2
             id="problems-heading"
-            className="font-[--font-heading] font-bold text-white mb-4"
+            className="font-[--font-heading] font-bold text-[#0d2749] mb-4"
             style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)' }}
           >
             <Tooltip term="digital-debt">Digital Debt</Tooltip>{' '}
             กำลังกัดกินธุรกิจของคุณ
           </h2>
-          <p className="text-white/60 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="text-gray-500 max-w-2xl mx-auto text-lg leading-relaxed">
             ค่าใช้จ่ายที่ซ่อนอยู่จากระบบที่ไม่เหมาะสม สะสมทุกวัน
             โดยที่ส่วนใหญ่ยังไม่รู้ตัว
           </p>
@@ -65,7 +65,7 @@ export default function Problems() {
           {problems.map((p, i) => (
             <div
               key={p.title}
-              className="rounded-2xl p-6 bg-white/[0.04] border border-white/[0.06] hover:border-[#ff6c01]/30 transition-all duration-300"
+              className="rounded-2xl p-6 bg-white border border-[#0d2749]/8 shadow-sm hover:border-[#ff6c01]/40 hover:shadow-md transition-all duration-300"
               style={{
                 borderLeft: [
                   '3px solid #ff6c01',
@@ -80,10 +80,10 @@ export default function Problems() {
               <span className="text-3xl mb-4 block" role="img" aria-hidden="true">
                 {p.icon}
               </span>
-              <h3 className="font-[--font-heading] font-semibold text-white text-lg mb-2">
+              <h3 className="font-[--font-heading] font-semibold text-[#0d2749] text-lg mb-2">
                 {p.title}
               </h3>
-              <p className="text-white/55 text-sm leading-relaxed">{p.desc}</p>
+              <p className="text-gray-500 text-sm leading-relaxed">{p.desc}</p>
             </div>
           ))}
         </div>
@@ -93,14 +93,14 @@ export default function Problems() {
           className="rounded-2xl p-8 text-center"
           style={{
             background:
-              'linear-gradient(135deg, rgba(255,108,1,0.1) 0%, rgba(255,108,1,0.05) 100%)',
+              'linear-gradient(135deg, rgba(255,108,1,0.06) 0%, rgba(255,108,1,0.03) 100%)',
             border: '1px solid rgba(255,108,1,0.2)',
           }}
         >
-          <p className="text-white text-xl font-[--font-heading] font-semibold mb-2">
+          <p className="text-[#0d2749] text-xl font-[--font-heading] font-semibold mb-2">
             ถ้าใช้ Excel + SaaS 5 ตัว + WhatsApp ประสานงาน
           </p>
-          <p className="text-white/60 text-base">
+          <p className="text-gray-500 text-base">
             คุณกำลังสะสม <Tooltip term="digital-debt">Digital Debt</Tooltip> ทุกวัน —
             และยิ่งนานยิ่งแก้ยาก
           </p>

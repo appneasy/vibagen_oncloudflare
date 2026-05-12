@@ -18,15 +18,38 @@ Build a marketing/portfolio website with:
 
 ```
 Colors:
-  --navy:        #0d2749   (primary background/headings)
-  --navy-dark:   #011937   (deep background)
+  --navy:        #0d2749   (headings, card text on light bg)
+  --navy-dark:   #011937   (navbar, footer, hero bg)
+  --navy-light:  #1a3a5c   (navbar bg)
   --orange:      #ff6c01   (accent/CTA)
   --orange-dark: #d54e01   (hover states)
   --gray:        #737373   (body text secondary)
   --white:       #ffffff
 
-Fonts (Google Fonts):
-  Heading (H1–H3): Prompt 700/600/500
+Theme Layout:
+  Navbar       : navy (#1a3a5c → #2a4a6c on scroll) + navy fade at bottom
+  Hero         : dark gradient (navy-dark → navy) — text-white
+  Sections     : alternating white (#ffffff) and off-white (#f8f9fc)
+  Cards        : white bg + subtle border on off-white sections
+                 light gray (#f0f4f8) bg on white sections
+  Tables       : navy header + light body rows
+  Footer       : navy-dark (#011937) — text-white
+
+  CSS classes:
+    .section-dark    → background: #ffffff, color: #1a1a2e
+    .section-navy    → background: #f8f9fc, color: #1a1a2e
+    .section-divider → subtle navy gradient between sections
+
+Card text on light bg:
+  Heading: text-[#0d2749]
+  Body:    text-gray-500 / text-gray-600
+  Accent:  text-[#ff6c01]
+
+Cards/elements with own dark bg (Showcase, Services navy/orange, Hero):
+  Keep text-white — do NOT change
+
+Fonts (Google Fonts, loaded via next/font/google):
+  Heading (H1-H3): Prompt 700/600/500
   Body/Caption:    Sarabun 400
   Logo only:       Prosto One (never in UI)
 
@@ -38,6 +61,10 @@ Type Scale:
   Body         : Sarabun 400, 16px, lh 1.75
   Caption      : Sarabun 400, 13px, lh 1.6, color #737373
 ```
+
+### Logo
+- Navbar: `public/images/logosquare.png` (V icon + VIBAGEN text + motto)
+- Favicon: `app/icon.png` (V icon only, converted from Vlogo.png)
 
 ---
 

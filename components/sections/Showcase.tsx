@@ -16,12 +16,12 @@ export default function Showcase() {
           </Badge>
           <h2
             id="showcase-heading"
-            className="font-[--font-heading] font-bold text-white mb-4"
+            className="font-[--font-heading] font-bold text-[#0d2749] mb-4"
             style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)' }}
           >
             ระบบที่สร้างและส่งมอบแล้ว
           </h2>
-          <p className="text-white/60 max-w-xl mx-auto text-lg">
+          <p className="text-gray-500 max-w-xl mx-auto text-lg">
             แต่ละโปรเจกต์คือการแก้ปัญหาจริง ไม่ใช่ demo
           </p>
         </div>
@@ -109,7 +109,7 @@ export default function Showcase() {
         <div className="text-center mt-10">
           <Link
             href="/showcase"
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-white/20 text-white/70 hover:border-white/50 hover:text-white text-sm font-medium transition-all"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-[#0d2749]/20 text-[#0d2749]/70 hover:border-[#0d2749]/50 hover:text-[#0d2749] text-sm font-medium transition-all"
           >
             ดูผลงานทั้งหมด →
           </Link>

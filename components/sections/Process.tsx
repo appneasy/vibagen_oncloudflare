@@ -59,12 +59,12 @@ export default function Process() {
           </Badge>
           <h2
             id="process-heading"
-            className="font-[--font-heading] font-bold text-white mb-4"
+            className="font-[--font-heading] font-bold text-[#0d2749] mb-4"
             style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)' }}
           >
             วิธีที่เราสร้างระบบ
           </h2>
-          <p className="text-white/60 max-w-xl mx-auto text-lg">
+          <p className="text-gray-500 max-w-xl mx-auto text-lg">
             6 ขั้นตอนที่ออกแบบมาเพื่อให้ได้ระบบที่ใช้งานได้จริงเร็วที่สุด
           </p>
         </div>
@@ -79,7 +79,7 @@ export default function Process() {
                 'transition-all duration-300 hover:scale-[1.02]',
                 i === 3
                   ? 'bg-[#ff6c01]' // Craft = orange highlight
-                  : 'bg-white/[0.04] border border-white/[0.06]',
+                  : 'bg-[#f0f4f8] border border-[#0d2749]/8',
               ].join(' ')}
             >
               {/* Number + Icon */}
@@ -109,7 +109,7 @@ export default function Process() {
               <h3
                 className={[
                   'font-[--font-heading] font-semibold text-xl mb-3',
-                  i === 3 ? 'text-white' : 'text-white',
+                  i === 3 ? 'text-white' : 'text-[#0d2749]',
                 ].join(' ')}
               >
                 {step.labelTh}
@@ -117,7 +117,7 @@ export default function Process() {
               <p
                 className={[
                   'text-sm leading-relaxed',
-                  i === 3 ? 'text-white/80' : 'text-white/55',
+                  i === 3 ? 'text-white/80' : 'text-gray-500',
                 ].join(' ')}
               >
                 {step.desc}
@@ -132,10 +132,10 @@ export default function Process() {
             <div key={i} className="flex items-center">
               <div
                 className="w-3 h-3 rounded-full"
-                style={{ background: i === 3 ? '#ff6c01' : 'rgba(255,255,255,0.2)' }}
+                style={{ background: i === 3 ? '#ff6c01' : 'rgba(13,39,73,0.15)' }}
               />
               {i < steps.length - 1 && (
-                <div className="w-28 h-px" style={{ background: 'rgba(255,255,255,0.08)' }} />
+                <div className="w-28 h-px" style={{ background: 'rgba(13,39,73,0.1)' }} />
               )}
             </div>
           ))}

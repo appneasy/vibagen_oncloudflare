@@ -42,8 +42,7 @@ const categoryColors: Record<string, string> = {
 export default function KnowledgeHub() {
   return (
     <section
-      className="section"
-      style={{ background: 'linear-gradient(180deg, #0d2749 0%, #011937 100%)' }}
+      className="section section-navy"
       aria-labelledby="knowledge-heading"
     >
       <div className="container">
@@ -55,7 +54,7 @@ export default function KnowledgeHub() {
             </Badge>
             <h2
               id="knowledge-heading"
-              className="font-[--font-heading] font-bold text-white"
+              className="font-[--font-heading] font-bold text-[#0d2749]"
               style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)' }}
             >
               บทความจากประสบการณ์จริง
@@ -72,32 +71,32 @@ export default function KnowledgeHub() {
         {/* Article cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {previewArticles.map((article) => {
-            const catStyle = categoryColors[article.category] ?? 'text-white/50 bg-white/5'
+            const catStyle = categoryColors[article.category] ?? 'text-gray-500 bg-gray-100'
             return (
               <Link
                 key={article.slug}
                 href={`/knowledge/${article.slug}`}
-                className="group rounded-2xl p-6 bg-white/[0.04] border border-white/[0.06] hover:border-[#ff6c01]/30 transition-all duration-300 flex flex-col gap-4"
+                className="group rounded-2xl p-6 bg-white border border-[#0d2749]/8 shadow-sm hover:border-[#ff6c01]/40 hover:shadow-md transition-all duration-300 flex flex-col gap-4"
               >
                 {/* Category + read time */}
                 <div className="flex items-center justify-between">
                   <span className={`text-xs font-semibold px-2.5 py-1 rounded-full ${catStyle}`}>
                     {article.category}
                   </span>
-                  <span className="text-white/30 text-xs">{article.readTime} นาที</span>
+                  <span className="text-gray-400 text-xs">{article.readTime} นาที</span>
                 </div>
 
                 {/* Title */}
-                <h3 className="font-[--font-heading] font-semibold text-white text-lg leading-snug group-hover:text-[#ff6c01] transition-colors">
+                <h3 className="font-[--font-heading] font-semibold text-[#0d2749] text-lg leading-snug group-hover:text-[#ff6c01] transition-colors">
                   {article.title}
                 </h3>
 
                 {/* Excerpt */}
-                <p className="text-white/55 text-sm leading-relaxed flex-1">{article.excerpt}</p>
+                <p className="text-gray-500 text-sm leading-relaxed flex-1">{article.excerpt}</p>
 
                 {/* Date + arrow */}
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-white/30">
+                  <span className="text-gray-400">
                     {new Date(article.date).toLocaleDateString('th-TH', {
                       year: 'numeric',
                       month: 'long',

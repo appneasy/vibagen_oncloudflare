@@ -38,7 +38,7 @@ const icons: Record<string, React.ReactNode> = {
 const variantMap: Record<string, { bg: string; iconColor: string; textColor: string }> = {
   navy:  { bg: 'bg-[#0d2749] border border-white/[0.06]',           iconColor: 'text-[#ff6c01]', textColor: 'text-white' },
   orange:{ bg: 'bg-[#ff6c01]',                                       iconColor: 'text-white',     textColor: 'text-white' },
-  glass: { bg: 'bg-white/[0.05] border border-white/[0.08] backdrop-blur-sm', iconColor: 'text-[#ff6c01]', textColor: 'text-white' },
+  glass: { bg: 'bg-[#f0f4f8] border border-[#0d2749]/8', iconColor: 'text-[#ff6c01]', textColor: 'text-[#0d2749]' },
 }
 
 export default function Services() {
@@ -55,12 +55,12 @@ export default function Services() {
           </Badge>
           <h2
             id="services-heading"
-            className="font-[--font-heading] font-bold text-white mb-4"
+            className="font-[--font-heading] font-bold text-[#0d2749] mb-4"
             style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)' }}
           >
             สิ่งที่ VIBAGEN สร้าง
           </h2>
-          <p className="text-white/60 max-w-2xl mx-auto text-lg">
+          <p className="text-gray-500 max-w-2xl mx-auto text-lg">
             ทุก solution ออกแบบตาม workflow จริงของลูกค้า ไม่ใช่ template สำเร็จรูป
           </p>
         </div>
@@ -70,6 +70,8 @@ export default function Services() {
           {servicesData.map((service) => {
             const v = variantMap[service.variant] ?? variantMap.navy
             const isOrange = service.variant === 'orange'
+            const isNavy = service.variant === 'navy'
+            const isDark = isOrange || isNavy
             return (
               <div
                 key={service.id}
@@ -96,7 +98,7 @@ export default function Services() {
                 </div>
 
                 {/* Description */}
-                <p className={['text-sm leading-relaxed', isOrange ? 'text-white/80' : 'text-white/55'].join(' ')}>
+                <p className={['text-sm leading-relaxed', isDark ? (isOrange ? 'text-white/80' : 'text-white/55') : 'text-gray-500'].join(' ')}>
                   {service.desc}
                 </p>
 
@@ -107,9 +109,9 @@ export default function Services() {
                       key={ex}
                       className={[
                         'text-xs px-2.5 py-1 rounded-full',
-                        isOrange
-                          ? 'bg-white/20 text-white'
-                          : 'bg-white/[0.06] text-white/50',
+                        isDark
+                          ? (isOrange ? 'bg-white/20 text-white' : 'bg-white/[0.06] text-white/50')
+                          : 'bg-[#0d2749]/8 text-gray-500',
                       ].join(' ')}
                     >
                       {ex}

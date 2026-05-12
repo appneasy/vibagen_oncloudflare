@@ -45,7 +45,7 @@ export default function AgenticAI() {
           </Badge>
           <h2
             id="ai-heading"
-            className="font-[--font-heading] font-bold text-white mb-4"
+            className="font-[--font-heading] font-bold text-[#0d2749] mb-4"
             style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)' }}
           >
             ระบบที่รู้จัก{' '}
@@ -54,9 +54,9 @@ export default function AgenticAI() {
             </Tooltip>{' '}
             จะทำงานแทนคุณ
           </h2>
-          <p className="text-white/60 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="text-gray-500 max-w-2xl mx-auto text-lg leading-relaxed">
             ไม่ใช่ระบบที่แค่บันทึกข้อมูล — แต่ระบบที่{' '}
-            <strong className="text-white">สังเกต ตัดสินใจ และลงมือทำ</strong>{' '}
+            <strong className="text-[#0d2749]">สังเกต ตัดสินใจ และลงมือทำ</strong>{' '}
             เพื่อธุรกิจของคุณ
           </p>
         </div>
@@ -82,7 +82,7 @@ export default function AgenticAI() {
                   'rounded-2xl p-6 relative',
                   t.active
                     ? 'bg-[#ff6c01] text-white'
-                    : 'bg-white/[0.04] border border-white/[0.08] text-white',
+                    : 'bg-[#f0f4f8] border border-[#0d2749]/8 text-[#0d2749]',
                 ].join(' ')}
               >
                 {t.active && (
@@ -101,7 +101,7 @@ export default function AgenticAI() {
                 <span className="font-[--font-heading] font-semibold text-lg block mb-2">
                   {t.label}
                 </span>
-                <p className={t.active ? 'text-white/80 text-sm' : 'text-white/50 text-sm'}>
+                <p className={t.active ? 'text-white/80 text-sm' : 'text-gray-500 text-sm'}>
                   {t.desc}
                 </p>
               </div>
@@ -110,7 +110,7 @@ export default function AgenticAI() {
         </div>
 
         {/* Comparison table */}
-        <div className="rounded-2xl overflow-hidden border border-white/[0.08]">
+        <div className="rounded-2xl overflow-hidden border border-[#0d2749]/10">
           {/* Table header */}
           <div className="grid grid-cols-3 bg-[#011937] px-6 py-4">
             <span className="text-white/40 text-sm font-medium">ความสามารถ</span>
@@ -126,12 +126,12 @@ export default function AgenticAI() {
               key={row.label}
               className={[
                 'grid grid-cols-3 px-6 py-4 items-center',
-                i % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent',
-                'border-t border-white/[0.04]',
+                i % 2 === 0 ? 'bg-[#f8f9fc]' : 'bg-white',
+                'border-t border-[#0d2749]/6',
               ].join(' ')}
             >
-              <span className="text-white/70 text-sm">{row.label}</span>
-              <span className="text-white/40 text-sm text-center">{row.traditional}</span>
+              <span className="text-[#0d2749] text-sm">{row.label}</span>
+              <span className="text-gray-400 text-sm text-center">{row.traditional}</span>
               <span className="text-[#ff6c01] text-sm font-medium text-center">
                 {row.agentic}
               </span>
@@ -141,7 +141,7 @@ export default function AgenticAI() {
 
         {/* Quote */}
         <div className="mt-12 text-center">
-          <blockquote className="text-white/80 text-xl italic max-w-2xl mx-auto leading-relaxed">
+          <blockquote className="text-gray-600 text-xl italic max-w-2xl mx-auto leading-relaxed">
             &ldquo;ระบบที่ VIBAGEN สร้างวันนี้ ถูกออกแบบให้รองรับ{' '}
             <Tooltip term="ai-agent">AI Agent</Tooltip>{' '}
             ตั้งแต่วันแรก — เมื่อคุณพร้อม ระบบพร้อมแล้ว&rdquo;

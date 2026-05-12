@@ -73,12 +73,12 @@ export default function WhyVibagen() {
           </Badge>
           <h2
             id="why-heading"
-            className="font-[--font-heading] font-bold text-white mb-4"
+            className="font-[--font-heading] font-bold text-[#0d2749] mb-4"
             style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)' }}
           >
             ต่างจาก Software House ทั่วไปอย่างไร
           </h2>
-          <p className="text-white/60 max-w-2xl mx-auto text-lg leading-relaxed">
+          <p className="text-gray-500 max-w-2xl mx-auto text-lg leading-relaxed">
             เราเข้าใจ operation จริง พัฒนาเร็ว และออกแบบให้ดูแลได้ง่าย
           </p>
         </div>
@@ -88,7 +88,7 @@ export default function WhyVibagen() {
           {points.map((p, i) => (
             <div
               key={p.number}
-              className="group rounded-2xl p-6 bg-white/[0.04] border border-white/[0.06] hover:border-[#ff6c01]/30 transition-all duration-300"
+              className="group rounded-2xl p-6 bg-white border border-[#0d2749]/8 shadow-sm hover:border-[#ff6c01]/40 hover:shadow-md transition-all duration-300"
               style={{
                 borderLeft: [
                   '3px solid #ff6c01',
@@ -103,16 +103,16 @@ export default function WhyVibagen() {
               <span className="font-[--font-heading] font-bold text-[#ff6c01] text-4xl block mb-3 opacity-40 group-hover:opacity-70 transition-opacity">
                 {p.number}
               </span>
-              <h3 className="font-[--font-heading] font-semibold text-white text-lg mb-2">
+              <h3 className="font-[--font-heading] font-semibold text-[#0d2749] text-lg mb-2">
                 {p.title}
               </h3>
-              <p className="text-white/55 text-sm leading-relaxed">{p.desc}</p>
+              <p className="text-gray-500 text-sm leading-relaxed">{p.desc}</p>
             </div>
           ))}
         </div>
 
         {/* Comparison table */}
-        <div className="rounded-2xl overflow-hidden border border-white/[0.08]">
+        <div className="rounded-2xl overflow-hidden border border-[#0d2749]/10">
           <div className="grid grid-cols-3 bg-[#011937] px-6 py-4">
             <span className="text-white/40 text-sm font-medium">เปรียบเทียบ</span>
             <span className="text-white/60 text-sm font-medium text-center">
@@ -124,12 +124,12 @@ export default function WhyVibagen() {
             <div
               key={row.feature}
               className={[
-                'grid grid-cols-3 px-6 py-4 items-center border-t border-white/[0.04]',
-                i % 2 === 0 ? 'bg-white/[0.02]' : 'bg-transparent',
+                'grid grid-cols-3 px-6 py-4 items-center border-t border-[#0d2749]/6',
+                i % 2 === 0 ? 'bg-[#f8f9fc]' : 'bg-white',
               ].join(' ')}
             >
-              <span className="text-white/70 text-sm">{row.feature}</span>
-              <span className="text-white/40 text-sm text-center">{row.traditional}</span>
+              <span className="text-[#0d2749] text-sm">{row.feature}</span>
+              <span className="text-gray-400 text-sm text-center">{row.traditional}</span>
               <span className="text-[#ff6c01] text-sm font-medium text-center">
                 {row.vibagen}
               </span>

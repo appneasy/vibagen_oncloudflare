@@ -58,17 +58,16 @@ export default function ContactForm() {
   }
 
   const inputClass = [
-    'w-full px-4 py-3 rounded-xl text-white text-sm',
-    'bg-white/[0.06] border border-white/[0.10]',
-    'focus:outline-none focus:border-[#ff6c01] focus:bg-white/[0.08]',
-    'placeholder:text-white/30',
+    'w-full px-4 py-3 rounded-xl text-[#0d2749] text-sm',
+    'bg-[#f8f9fc] border border-[#0d2749]/12',
+    'focus:outline-none focus:border-[#ff6c01] focus:bg-white',
+    'placeholder:text-gray-400',
     'transition-all duration-200',
   ].join(' ')
 
   return (
     <section
-      className="section"
-      style={{ background: '#011937' }}
+      className="section section-dark"
       id="contact"
       aria-labelledby="contact-heading"
     >
@@ -81,14 +80,14 @@ export default function ContactForm() {
             </Badge>
             <h2
               id="contact-heading"
-              className="font-[--font-heading] font-bold text-white mb-6"
+              className="font-[--font-heading] font-bold text-[#0d2749] mb-6"
               style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)' }}
             >
               เล่าปัญหาให้ฟัง
               <br />
               <span className="text-[#ff6c01]">เราช่วยหาทางออก</span>
             </h2>
-            <p className="text-white/60 text-lg leading-relaxed mb-8">
+            <p className="text-gray-500 text-lg leading-relaxed mb-8">
               ไม่ต้องรู้ว่าต้องการอะไรแน่ๆ แค่เล่าสิ่งที่เป็นปัญหาในธุรกิจตอนนี้
               เราจะวิเคราะห์และเสนอแนวทางให้
             </p>
@@ -105,7 +104,7 @@ export default function ContactForm() {
                   <span className="text-xl" role="img" aria-hidden="true">
                     {item.icon}
                   </span>
-                  <span className="text-white/70 text-base">{item.text}</span>
+                  <span className="text-gray-600 text-base">{item.text}</span>
                 </div>
               ))}
             </div>
@@ -114,12 +113,12 @@ export default function ContactForm() {
           {/* Right — form */}
           <div>
             {status === 'success' ? (
-              <div className="rounded-2xl p-8 text-center bg-white/[0.04] border border-[#ff6c01]/20">
+              <div className="rounded-2xl p-8 text-center bg-[#f8f9fc] border border-[#ff6c01]/20">
                 <span className="text-5xl block mb-4" role="img" aria-label="สำเร็จ">🎉</span>
-                <h3 className="font-[--font-heading] font-bold text-white text-2xl mb-2">
+                <h3 className="font-[--font-heading] font-bold text-[#0d2749] text-2xl mb-2">
                   ส่งเรียบร้อยแล้ว!
                 </h3>
-                <p className="text-white/60">
+                <p className="text-gray-500">
                   เราจะติดต่อกลับภายใน 24 ชั่วโมง ขอบคุณที่ไว้วางใจ VIBAGEN
                 </p>
               </div>
@@ -128,7 +127,7 @@ export default function ContactForm() {
                 {/* Name + Email */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="name" className="block text-white/60 text-xs mb-1.5">
+                    <label htmlFor="name" className="block text-gray-500 text-xs mb-1.5">
                       ชื่อ–นามสกุล <span className="text-[#ff6c01]">*</span>
                     </label>
                     <input
@@ -143,7 +142,7 @@ export default function ContactForm() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="email" className="block text-white/60 text-xs mb-1.5">
+                    <label htmlFor="email" className="block text-gray-500 text-xs mb-1.5">
                       อีเมล <span className="text-[#ff6c01]">*</span>
                     </label>
                     <input
@@ -162,7 +161,7 @@ export default function ContactForm() {
                 {/* Company + Industry */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
-                    <label htmlFor="company" className="block text-white/60 text-xs mb-1.5">
+                    <label htmlFor="company" className="block text-gray-500 text-xs mb-1.5">
                       บริษัท / ร้าน
                     </label>
                     <input
@@ -176,7 +175,7 @@ export default function ContactForm() {
                     />
                   </div>
                   <div>
-                    <label htmlFor="industry" className="block text-white/60 text-xs mb-1.5">
+                    <label htmlFor="industry" className="block text-gray-500 text-xs mb-1.5">
                       ประเภทธุรกิจ
                     </label>
                     <select
@@ -186,9 +185,9 @@ export default function ContactForm() {
                       onChange={handleChange}
                       className={inputClass + ' cursor-pointer'}
                     >
-                      <option value="" className="bg-[#0d2749]">-- เลือก --</option>
+                      <option value="" className="bg-white">-- เลือก --</option>
                       {industryOptions.map((opt) => (
-                        <option key={opt} value={opt} className="bg-[#0d2749]">
+                        <option key={opt} value={opt} className="bg-white">
                           {opt}
                         </option>
                       ))}
@@ -198,7 +197,7 @@ export default function ContactForm() {
 
                 {/* Problem */}
                 <div>
-                  <label htmlFor="problem" className="block text-white/60 text-xs mb-1.5">
+                  <label htmlFor="problem" className="block text-gray-500 text-xs mb-1.5">
                     ปัญหาหรือสิ่งที่ต้องการ <span className="text-[#ff6c01]">*</span>
                   </label>
                   <textarea
@@ -215,7 +214,7 @@ export default function ContactForm() {
 
                 {/* Budget */}
                 <div>
-                  <label htmlFor="budget" className="block text-white/60 text-xs mb-1.5">
+                  <label htmlFor="budget" className="block text-gray-500 text-xs mb-1.5">
                     งบประมาณที่คาดว่ามี
                   </label>
                   <select
@@ -225,9 +224,9 @@ export default function ContactForm() {
                     onChange={handleChange}
                     className={inputClass + ' cursor-pointer'}
                   >
-                    <option value="" className="bg-[#0d2749]">-- เลือก (ไม่บังคับ) --</option>
+                    <option value="" className="bg-white">-- เลือก (ไม่บังคับ) --</option>
                     {budgetOptions.map((opt) => (
-                      <option key={opt} value={opt} className="bg-[#0d2749]">
+                      <option key={opt} value={opt} className="bg-white">
                         {opt}
                       </option>
                     ))}

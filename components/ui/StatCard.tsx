@@ -19,7 +19,7 @@ export default function StatCard({
         'rounded-2xl p-6 flex flex-col gap-1',
         highlight
           ? 'bg-[#ff6c01] text-white'
-          : 'bg-white/[0.06] border border-white/[0.08] text-white',
+          : 'bg-[#f0f4f8] border border-[#0d2749]/8 text-[#0d2749]',
         className,
       ]
         .filter(Boolean)
@@ -36,7 +36,7 @@ export default function StatCard({
       </span>
       <span className="font-[--font-heading] font-semibold text-base mt-1">{label}</span>
       {sublabel && (
-        <span className={['text-sm', highlight ? 'text-white/80' : 'text-white/50'].join(' ')}>
+        <span className={['text-sm', highlight ? 'text-white/80' : 'text-gray-500'].join(' ')}>
           {sublabel}
         </span>
       )}

@@ -22,7 +22,7 @@ export default function Hero() {
         aria-hidden="true"
       />
 
-      <div className="container relative z-10 pt-24 pb-20">
+      <div className="container relative z-10 pt-28 pb-20">
         {/* 2-column layout */}
         <div className="flex flex-col md:flex-row md:items-center md:gap-12 lg:gap-16">
 
@@ -92,7 +92,7 @@ export default function Hero() {
           </div>
 
           {/* Right column — 45% — hidden on mobile */}
-          <div className="hidden md:flex flex-none md:w-[45%] items-center justify-center" aria-hidden="true">
+          <div className="hidden md:flex flex-none md:w-[45%] items-center justify-center overflow-hidden" aria-hidden="true">
             <DashboardPreview />
           </div>
 
@@ -304,7 +304,10 @@ function DashboardPreview() {
       {/* Ambient glow behind card */}
       <div
         className="absolute inset-0 -z-10 rounded-2xl blur-3xl"
-        style={{ background: 'radial-gradient(ellipse at center, rgba(255,108,1,0.12) 0%, transparent 70%)' }}
+        style={{
+          background: 'radial-gradient(ellipse at center, rgba(255,108,1,0.15) 0%, transparent 70%)',
+          animation: 'pulse-glow 3s ease-in-out infinite'
+        }}
       />
     </div>
   )

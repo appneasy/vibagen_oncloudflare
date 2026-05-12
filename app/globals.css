@@ -111,17 +111,20 @@ p { line-height: 1.75; }
 
 /* ─── Glass Card ───────────────────────────────────────── */
 .card-glass {
-  background: var(--white-dim);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #ffffff;
+  backdrop-filter: none;
+  border: 1px solid rgba(13, 39, 73, 0.08);
   border-radius: 1rem;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  color: #1a1a2e;
 }
 
 /* ─── Navy Card ────────────────────────────────────────── */
 .card-navy {
-  background: var(--navy);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #f0f4f8;
+  border: 1px solid rgba(13, 39, 73, 0.08);
   border-radius: 1rem;
+  color: #1a1a2e;
 }
 
 /* ─── Orange Card ──────────────────────────────────────── */
@@ -226,9 +229,10 @@ p { line-height: 1.75; }
 /* ─── Gradient Border Card ────────────────────────────── */
 .card-gradient-border {
   position: relative;
-  background: #0d2749;
+  background: #ffffff;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 108, 1, 0.15);
+  border: 1px solid rgba(13, 39, 73, 0.1);
+  color: #1a1a2e;
 }
 
 .card-gradient-border::before {
@@ -246,11 +250,13 @@ p { line-height: 1.75; }
 
 /* ─── Section Alternation ─────────────────────────────── */
 .section-dark {
-  background: #0f2847;
+  background: #ffffff;
+  color: #1a1a2e;
 }
 
 .section-navy {
-  background: #163560;
+  background: #f8f9fc;
+  color: #1a1a2e;
 }
 
 .section-gradient {
@@ -260,7 +266,12 @@ p { line-height: 1.75; }
 /* ─── Section Divider ─────────────────────────────────── */
 .section-divider {
   height: 1px;
-  background: linear-gradient(90deg, transparent, rgba(255, 108, 1, 0.2) 30%, rgba(255, 108, 1, 0.2) 70%, transparent);
+  background: linear-gradient(90deg, transparent, rgba(13, 39, 73, 0.08) 30%, rgba(13, 39, 73, 0.08) 70%, transparent);
   margin: 0 auto;
   max-width: 1200px;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.1); }
 }

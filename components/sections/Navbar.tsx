@@ -33,23 +33,15 @@ export default function Navbar() {
     >
       <nav className="container flex items-center justify-between h-16">
         {/* Logo */}
-        <Link href="/" aria-label="VIBAGEN Home" className="flex items-center gap-2.5 flex-shrink-0">
+        <Link href="/" aria-label="VIBAGEN Home" className="flex-shrink-0">
           <Image
-            src="/images/vlogo.png"
-            alt="VIBAGEN"
-            width={36}
-            height={36}
-            className="h-9 w-9"
+            src="/images/logosquare.png"
+            alt="VIBAGEN — Crafting Ideas into Real Products"
+            width={140}
+            height={44}
+            className="h-11 w-auto"
             priority
           />
-          <div className="flex flex-col leading-none">
-            <span className="font-[--font-logo] text-xl tracking-tight text-white">
-              VIBAGEN
-            </span>
-            <span className="text-[0.55rem] text-white/40 tracking-[0.15em] uppercase hidden sm:block">
-              Crafting Ideas into Real Products
-            </span>
-          </div>
         </Link>
 
         {/* Desktop links */}
@@ -122,6 +114,13 @@ export default function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Navy gradient fade */}
+      <div
+        className="absolute bottom-0 left-0 right-0 h-8 pointer-events-none translate-y-full"
+        style={{ background: 'linear-gradient(180deg, rgba(13,39,73,0.6) 0%, rgba(13,39,73,0.2) 40%, transparent 100%)' }}
+        aria-hidden="true"
+      />
     </header>
   )
 }
