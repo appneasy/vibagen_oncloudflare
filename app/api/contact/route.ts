@@ -15,7 +15,9 @@ const contactSchema = z.object({
 })
 
 // ─── POST /api/contact ────────────────────────────────────
-export async function POST(req: Request, { env }: { env: Env }) {
+export async function POST(req: Request, ctx?: { env?: Env }) {
+  const env = ctx?.env
+
   // 1. Parse + validate body
   let body: unknown
   try {
@@ -34,26 +36,27 @@ export async function POST(req: Request, { env }: { env: Env }) {
 
   const data = result.data
 
-  // 2. Save to D1
-  try {
-    const db = getDB(env.DB)
-    await db.insert(contacts).values({
-      name:     data.name,
-      email:    data.email,
-      company:  data.company ?? null,
-      industry: data.industry ?? null,
-      problem:  data.problem,
-      budget:   data.budget ?? null,
-    })
-  } catch (err) {
-    console.error('[Contact] D1 insert failed:', err)
-    return Response.json({ error: 'Database error' }, { status: 500 })
+  // 2. Save to D1 (skip if DB binding unavailable — local dev)
+  if (env?.DB) {
+    try {
+      const db = getDB(env.DB)
+      await db.insert(contacts).values({
+        name:     data.name,
+        email:    data.email,
+        company:  data.company ?? null,
+        industry: data.industry ?? null,
+        problem:  data.problem,
+        budget:   data.budget ?? null,
+      })
+    } catch (err) {
+      console.error('[Contact] D1 insert failed:', err)
+    }
   }
 
   // 3. Send to Telegram
   try {
-    const token = env.TELEGRAM_BOT_TOKEN
-    const chatId = env.TELEGRAM_CHAT_ID
+    const token = env?.TELEGRAM_BOT_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN
+    const chatId = env?.TELEGRAM_CHAT_ID ?? process.env.TELEGRAM_CHAT_ID
     if (token && chatId) {
       const text = [
         `🔔 <b>VIBAGEN — New Lead</b>`,
