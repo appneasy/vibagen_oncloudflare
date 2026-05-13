@@ -87,9 +87,6 @@ export const metadata: Metadata = {
       'max-snippet': -1,
     },
   },
-  icons: {
-    icon: '/favicon.png',
-  },
   alternates: {
     canonical: 'https://vibagen.com',
   },
@@ -119,6 +116,7 @@ export default function RootLayout({
   return (
     <html lang="th" className={`${prompt.variable} ${sarabun.variable} ${prostoOne.variable} ${inter.variable}`}>
       <head>
+        <link rel="icon" href="/favicon.png" type="image/png" />
         {/* JSON-LD Organization */}
         <script
           type="application/ld+json"
