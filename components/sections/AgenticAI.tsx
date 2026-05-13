@@ -34,7 +34,7 @@ const comparison = [
 export default function AgenticAI() {
   return (
     <section
-      className="section section-dark"
+      className="section bg-dots"
       aria-labelledby="ai-heading"
     >
       <div className="container">

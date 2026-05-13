@@ -44,7 +44,7 @@ const variantMap: Record<string, { bg: string; iconColor: string; textColor: str
 export default function Services() {
   return (
     <section
-      className="section section-dark"
+      className="section bg-dots"
       aria-labelledby="services-heading"
     >
       <div className="container">

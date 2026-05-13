@@ -48,7 +48,7 @@ const steps = [
 export default function Process() {
   return (
     <section
-      className="section section-dark"
+      className="section bg-dots"
       aria-labelledby="process-heading"
     >
       <div className="container">
