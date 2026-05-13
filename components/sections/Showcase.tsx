@@ -47,24 +47,25 @@ export default function Showcase() {
                 ) : (
                   <SmartFactoryMockup />
                 )}
-                {/* Industry tag */}
-                <span className="absolute top-4 left-4 text-xs bg-white/10 text-white/60 px-3 py-1 rounded-full z-10">
-                  {project.industry}
-                </span>
-                {/* Model tag */}
-                <span
-                  className="absolute top-4 right-4 text-xs px-3 py-1 rounded-full font-medium z-10"
-                  style={{
-                    background:
-                      project.model === 'Perpetual License'
-                        ? 'rgba(255,108,1,0.2)'
-                        : 'rgba(255,255,255,0.08)',
-                    color:
-                      project.model === 'Perpetual License' ? '#ff6c01' : 'rgba(255,255,255,0.5)',
-                  }}
-                >
-                  {project.model}
-                </span>
+                {/* Tags */}
+                <div className="absolute top-4 left-4 flex flex-wrap gap-2 z-10">
+                  <span className="text-xs bg-white/10 text-white/60 px-3 py-1 rounded-full">
+                    {project.industry}
+                  </span>
+                  <span
+                    className="text-xs px-3 py-1 rounded-full font-medium"
+                    style={{
+                      background:
+                        project.model === 'Perpetual License'
+                          ? 'rgba(255,108,1,0.2)'
+                          : 'rgba(255,255,255,0.08)',
+                      color:
+                        project.model === 'Perpetual License' ? '#ff6c01' : 'rgba(255,255,255,0.5)',
+                    }}
+                  >
+                    {project.model}
+                  </span>
+                </div>
               </div>
 
               {/* Content */}
