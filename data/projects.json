@@ -22,22 +22,48 @@
   },
   {
     "id": "smart-factory",
-    "title": "Smart Factory Dashboard",
-    "subtitle": "Production Monitoring & KPI บน Realtime",
-    "desc": "ระบบ monitoring สายการผลิต ติดตาม OEE, Downtime, Defect Rate แบบ realtime พร้อม AI ตรวจจับความผิดปกติก่อนเกิดปัญหา",
+    "title": "Smart Factory Transformation",
+    "subtitle": "จากกระดาษ → Excel → Google Sheets → Dashboard",
+    "desc": "โรงงานอุตสาหกรรมแปรรูปผลผลิตเกษตรแห่งหนึ่ง เริ่มจากบันทึกข้อมูลด้วยกระดาษและ Excel ที่กระจายหลายไฟล์ ถูก migrate สู่ระบบ Google Sheets + AppSheet ให้ทีมหน้างานบันทึกผ่านมือถือ ข้อมูลผ่าน Validate → Approve → สรุปรายงานอัตโนมัติ พร้อม Looker Dashboard สำหรับผู้บริหาร",
     "industry": "Manufacturing",
     "model": "Custom Project",
-    "stack": ["Next.js", "PostgreSQL", "Python AI", "Docker", "WebSocket"],
+    "stack": ["AppSheet", "Google Sheets", "Looker", "LINE API", "SAP B1"],
     "features": [
-      "Realtime Production Monitoring",
-      "OEE / Downtime Tracking",
-      "Maintenance Log & Alert",
-      "AI Anomaly Detection",
-      "Shift Report Auto-generation"
+      "Production Data Collection & Validation",
+      "LAB Quality Control (Yield, CPO, Loss)",
+      "LINE LIFF Dashboard สำหรับทีมงาน",
+      "Management KPI Dashboard (Looker)",
+      "SAP B1 ERP Data Integration"
+    ],
+    "mobileScreenshots": [
+      "/images/sf-production.png",
+      "/images/sf-lab-yield.png",
+      "/images/sf-line-liff.png"
     ],
     "image": "/images/placeholder-smartfactory.webp",
-    "imageAlt": "Smart Factory production dashboard",
-    "highlight": "จาก AppSheet → Modern Stack ใน 6 สัปดาห์ รักษา workflow เดิมทุกอย่าง",
+    "imageAlt": "Smart Factory mobile dashboard screenshots",
+    "highlight": "เริ่มจากกระดาษ + Excel → migrate สู่ระบบดิจิทัลที่ทุกคนใช้ได้จริง ลดงานซ้ำซ้อนกว่า 30%",
+    "status": "showcase",
+    "cta": "ดูรายละเอียด"
+  },
+  {
+    "id": "tmk-next-migration",
+    "title": "AppSheet → Full-Stack ใน 4 สัปดาห์",
+    "subtitle": "Phase 2 — ต่อยอดจาก Smart Factory สู่ Next.js + PostgreSQL",
+    "desc": "เมื่อ AppSheet ถึงขีดจำกัด ระบบเดิมที่สร้างไว้ดีจาก Phase 1 + AI-assisted development ทำให้ migrate Production module สู่ Next.js full-stack ได้ใน 4 สัปดาห์ พร้อม RBAC, Approval Workflow และ Dynamic Report Builder",
+    "industry": "Manufacturing",
+    "model": "Custom Project",
+    "stack": ["Next.js 15", "PostgreSQL", "Prisma", "tRPC", "PM2", "Caddy"],
+    "features": [
+      "RBAC 3 ระดับ (Admin/Assistant/User)",
+      "Approval Workflow + Audit Log",
+      "Dynamic Report Builder",
+      "On-premise Server Deployment",
+      "AI-Assisted Development (Vibecoding)"
+    ],
+    "image": "/images/placeholder-tmk.webp",
+    "imageAlt": "TMK Next.js migration dashboard",
+    "highlight": "Foundation ดี + AI ช่วย = งาน 3 เดือนเหลือ 4 สัปดาห์",
     "status": "showcase",
     "cta": "ดูรายละเอียด"
   }

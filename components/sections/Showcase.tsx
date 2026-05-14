@@ -44,8 +44,10 @@ export default function Showcase() {
               >
                 {project.id === 'autocar-care' ? (
                   <AutoCarMockup />
-                ) : (
+                ) : project.id === 'smart-factory' ? (
                   <SmartFactoryMockup />
+                ) : (
+                  <TMKMigrationMockup />
                 )}
                 {/* Industry tag */}
                 <span className="absolute top-4 left-4 text-xs bg-[#0d2749] text-white/60 px-3 py-1 rounded-full z-10">
@@ -93,7 +95,7 @@ export default function Showcase() {
 
                 {/* CTA */}
                 <Link
-                  href={`/showcase#${project.id}`}
+                  href={`/showcase/${project.id}`}
                   className="inline-flex items-center gap-2 text-[#ff6c01] text-sm font-semibold hover:gap-3 transition-all"
                 >
                   {project.cta}
@@ -216,10 +218,39 @@ function AutoCarMockup() {
   )
 }
 
-/** Smart Factory — dashboard SVG with gear/factory icon and line chart */
+/** Smart Factory — 3 mobile screenshots side by side */
 function SmartFactoryMockup() {
-  const linePoints = '30,155 75,138 120,145 165,118 210,124 255,100 300,108 345,88 390,92 435,72 480,68'
-  const areaPoints = '30,155 75,138 120,145 165,118 210,124 255,100 300,108 345,88 390,92 435,72 480,68 480,190 30,190'
+  const screens = [
+    { src: '/images/sf-production.png', label: 'Production' },
+    { src: '/images/sf-lab-yield.png', label: 'LAB / Yield' },
+    { src: '/images/sf-line-liff.png', label: 'LINE LIFF' },
+  ]
+  return (
+    <div
+      className="absolute inset-0 flex items-center justify-center gap-3 px-6"
+      style={{
+        background: 'linear-gradient(135deg, #011937 0%, #0d2749 100%)',
+      }}
+    >
+      {screens.map((s) => (
+        <div key={s.label} className="flex flex-col items-center gap-1">
+          <div className="w-[90px] h-[160px] rounded-xl border border-white/15 overflow-hidden bg-black/30 shadow-lg">
+            <img
+              src={s.src}
+              alt={s.label}
+              className="w-full h-full object-cover object-top"
+              loading="lazy"
+            />
+          </div>
+          <span className="text-white/40 text-[10px]">{s.label}</span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+/** TMK Migration — SVG dashboard with approval flow + chart */
+function TMKMigrationMockup() {
   return (
     <svg
       viewBox="0 0 480 200"
@@ -229,115 +260,77 @@ function SmartFactoryMockup() {
       preserveAspectRatio="xMidYMid slice"
     >
       <defs>
-        <linearGradient id="sfAreaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ff6c01" stopOpacity="0.28" />
-          <stop offset="100%" stopColor="#ff6c01" stopOpacity="0" />
-        </linearGradient>
-        <linearGradient id="sfBg" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient id="tmkBg" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#011937" />
           <stop offset="100%" stopColor="#0d2749" />
         </linearGradient>
       </defs>
-
-      {/* Background */}
-      <rect width="480" height="200" fill="url(#sfBg)" />
-
-      {/* Subtle grid */}
+      <rect width="480" height="200" fill="url(#tmkBg)" />
       {[50, 100, 150].map((y) => (
         <line key={y} x1="0" y1={y} x2="480" y2={y} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
       ))}
 
-      {/* ─── Gear icon (left side, decorative) ─── */}
-      <g transform="translate(75,115) scale(1.1)" opacity="0.55">
-        {/* Outer gear teeth (8 teeth via rects rotated) */}
-        {[0, 45, 90, 135, 180, 225, 270, 315].map((deg, i) => (
-          <rect
-            key={i}
-            x="-5"
-            y="-38"
-            width="10"
-            height="14"
-            rx="2"
-            fill="rgba(255,108,1,0.5)"
-            transform={`rotate(${deg})`}
-          />
-        ))}
-        {/* Outer circle */}
-        <circle cx="0" cy="0" r="26" fill="none" stroke="rgba(255,108,1,0.45)" strokeWidth="2.5" />
-        {/* Inner circle */}
-        <circle cx="0" cy="0" r="12" fill="none" stroke="rgba(255,108,1,0.35)" strokeWidth="2" />
-        {/* Center bolt */}
-        <circle cx="0" cy="0" r="5" fill="rgba(255,108,1,0.3)" />
-      </g>
+      {/* Approval flow cards (left) */}
+      <rect x="24" y="20" width="130" height="34" rx="6" fill="rgba(250,204,21,0.08)" stroke="rgba(250,204,21,0.25)" strokeWidth="1" />
+      <circle cx="40" cy="37" r="5" fill="#facc15" />
+      <text x="52" y="41" fontSize="9" fill="rgba(255,255,255,0.7)" fontFamily="sans-serif">Pending Review</text>
 
-      {/* Factory chimney outline */}
-      <g opacity="0.3">
-        <rect x="28" y="148" width="35" height="30" rx="2" fill="none" stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
-        <rect x="36" y="135" width="10" height="15" rx="1" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
-        <rect x="50" y="130" width="10" height="20" rx="1" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
-        {/* Smoke puffs */}
-        <circle cx="41" cy="130" r="4" fill="rgba(255,255,255,0.12)" />
-        <circle cx="55" cy="124" r="5" fill="rgba(255,255,255,0.1)" />
-        <circle cx="44" cy="122" r="3" fill="rgba(255,255,255,0.08)" />
-      </g>
+      <text x="89" y="68" textAnchor="middle" fontSize="12" fill="rgba(255,108,1,0.5)" fontFamily="sans-serif">↓</text>
 
-      {/* ─── Stat cards ─── */}
-      {/* OEE card */}
-      <rect x="158" y="14" width="90" height="46" rx="7" fill="rgba(255,108,1,0.09)" stroke="rgba(255,108,1,0.22)" strokeWidth="1" />
-      <text x="203" y="32" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.45)" fontFamily="sans-serif">OEE</text>
-      <text x="203" y="50" textAnchor="middle" fontSize="15" fontWeight="bold" fill="#ff6c01" fontFamily="sans-serif">87.4%</text>
+      <rect x="24" y="74" width="130" height="34" rx="6" fill="rgba(74,222,128,0.08)" stroke="rgba(74,222,128,0.25)" strokeWidth="1" />
+      <circle cx="40" cy="91" r="5" fill="#4ade80" />
+      <text x="52" y="95" fontSize="9" fill="rgba(255,255,255,0.7)" fontFamily="sans-serif">Approved</text>
 
-      {/* Downtime card */}
-      <rect x="262" y="14" width="100" height="46" rx="7" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
-      <text x="312" y="32" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.45)" fontFamily="sans-serif">Downtime Today</text>
-      <text x="312" y="50" textAnchor="middle" fontSize="15" fontWeight="bold" fill="rgba(255,255,255,0.88)" fontFamily="sans-serif">12 min</text>
+      <text x="89" y="122" textAnchor="middle" fontSize="12" fill="rgba(255,108,1,0.5)" fontFamily="sans-serif">↓</text>
 
-      {/* Defect Rate card */}
-      <rect x="376" y="14" width="95" height="46" rx="7" fill="rgba(74,222,128,0.06)" stroke="rgba(74,222,128,0.15)" strokeWidth="1" />
-      <text x="423" y="32" textAnchor="middle" fontSize="9" fill="rgba(255,255,255,0.45)" fontFamily="sans-serif">Defect Rate</text>
-      <text x="423" y="50" textAnchor="middle" fontSize="15" fontWeight="bold" fill="#4ade80" fontFamily="sans-serif">0.8%</text>
+      <rect x="24" y="128" width="130" height="34" rx="6" fill="rgba(255,108,1,0.08)" stroke="rgba(255,108,1,0.25)" strokeWidth="1" />
+      <circle cx="40" cy="145" r="5" fill="#ff6c01" />
+      <text x="52" y="149" fontSize="9" fill="rgba(255,255,255,0.7)" fontFamily="sans-serif">Published</text>
 
-      {/* ─── Line / area chart (Production Output) ─── */}
-      <rect x="158" y="72" width="313" height="116" rx="7" fill="rgba(255,255,255,0.022)" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
-      {/* Chart title */}
-      <text x="170" y="90" fontSize="9" fill="rgba(255,255,255,0.4)" fontFamily="sans-serif">Production Output · Last 24h</text>
+      <text x="89" y="180" fontSize="8" fill="rgba(255,255,255,0.3)" fontFamily="sans-serif">Approval Flow</text>
 
-      {/* Grid lines inside chart */}
-      {[108, 128, 148, 168].map((y) => (
-        <line key={y} x1="168" y1={y} x2="462" y2={y} stroke="rgba(255,255,255,0.05)" strokeWidth="1" />
-      ))}
+      {/* Stats (center-top) */}
+      <rect x="175" y="14" width="85" height="42" rx="6" fill="rgba(255,108,1,0.08)" stroke="rgba(255,108,1,0.2)" strokeWidth="1" />
+      <text x="217" y="32" textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.45)" fontFamily="sans-serif">RBAC Users</text>
+      <text x="217" y="48" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#ff6c01" fontFamily="sans-serif">50</text>
 
-      {/* Area fill — clipped to chart bounds */}
-      <clipPath id="sfChartClip">
-        <rect x="158" y="72" width="313" height="116" rx="7" />
-      </clipPath>
-      <g clipPath="url(#sfChartClip)">
-        {/* Offset the polyline into chart coordinate space */}
-        <g transform="translate(138,0) scale(0.6229,0.52)">
-          <polygon points={areaPoints} fill="url(#sfAreaGrad)" />
-          <polyline
-            points={linePoints}
-            fill="none"
-            stroke="#ff6c01"
-            strokeWidth="3"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-          {/* Last data point highlight */}
-          <circle cx="480" cy="68" r="5" fill="#ff6c01" />
-          <circle cx="480" cy="68" r="10" fill="rgba(255,108,1,0.2)" />
-        </g>
-      </g>
+      <rect x="272" y="14" width="85" height="42" rx="6" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.06)" strokeWidth="1" />
+      <text x="314" y="32" textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.45)" fontFamily="sans-serif">Modules</text>
+      <text x="314" y="48" textAnchor="middle" fontSize="14" fontWeight="bold" fill="rgba(255,255,255,0.9)" fontFamily="sans-serif">9</text>
 
-      {/* Y-axis labels */}
-      <text x="170" y="108" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="sans-serif">100%</text>
-      <text x="170" y="148" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="sans-serif">50%</text>
-      <text x="170" y="182" fontSize="8" fill="rgba(255,255,255,0.25)" fontFamily="sans-serif">0%</text>
+      <rect x="369" y="14" width="95" height="42" rx="6" fill="rgba(74,222,128,0.06)" stroke="rgba(74,222,128,0.15)" strokeWidth="1" />
+      <text x="416" y="32" textAnchor="middle" fontSize="8" fill="rgba(255,255,255,0.45)" fontFamily="sans-serif">Deploy Time</text>
+      <text x="416" y="48" textAnchor="middle" fontSize="14" fontWeight="bold" fill="#4ade80" fontFamily="sans-serif">4 wks</text>
 
-      {/* Live badge */}
-      <rect x="422" y="76" width="42" height="16" rx="8" fill="rgba(74,222,128,0.15)" />
-      <circle cx="432" cy="84" r="3" fill="#4ade80" />
-      <text x="438" y="88" fontSize="8" fill="#4ade80" fontFamily="sans-serif">LIVE</text>
+      {/* Table mockup (right) */}
+      <rect x="175" y="68" width="289" height="118" rx="6" fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+      {/* Table header */}
+      <rect x="175" y="68" width="289" height="22" rx="6" fill="rgba(255,108,1,0.15)" />
+      <text x="195" y="83" fontSize="8" fill="rgba(255,255,255,0.7)" fontFamily="sans-serif">Date</text>
+      <text x="265" y="83" fontSize="8" fill="rgba(255,255,255,0.7)" fontFamily="sans-serif">Production</text>
+      <text x="345" y="83" fontSize="8" fill="rgba(255,255,255,0.7)" fontFamily="sans-serif">Yield</text>
+      <text x="415" y="83" fontSize="8" fill="rgba(255,255,255,0.7)" fontFamily="sans-serif">Status</text>
+
+      {/* Table rows */}
+      {[0, 1, 2, 3].map((r) => {
+        const y = 98 + r * 22
+        const data = [
+          ['12 May', '1,250 ton', '17.72%', 'Approved'],
+          ['11 May', '1,180 ton', '17.85%', 'Approved'],
+          ['10 May', '1,320 ton', '17.63%', 'Pending'],
+          ['09 May', '1,200 ton', '17.91%', 'Approved'],
+        ][r]!
+        return (
+          <g key={r}>
+            <line x1="175" y1={y - 4} x2="464" y2={y - 4} stroke="rgba(255,255,255,0.04)" strokeWidth="1" />
+            <text x="195" y={y + 8} fontSize="8" fill="rgba(255,255,255,0.5)" fontFamily="sans-serif">{data[0]}</text>
+            <text x="265" y={y + 8} fontSize="8" fill="rgba(255,255,255,0.5)" fontFamily="sans-serif">{data[1]}</text>
+            <text x="345" y={y + 8} fontSize="8" fill="rgba(255,255,255,0.5)" fontFamily="sans-serif">{data[2]}</text>
+            <circle cx="418" cy={y + 5} r="3" fill={data[3] === 'Approved' ? '#4ade80' : '#facc15'} />
+            <text x="426" y={y + 8} fontSize="7" fill={data[3] === 'Approved' ? '#4ade80' : '#facc15'} fontFamily="sans-serif">{data[3]}</text>
+          </g>
+        )
+      })}
     </svg>
   )
 }
