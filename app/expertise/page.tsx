@@ -268,6 +268,39 @@ export default function ExpertisePage() {
             </div>
           </section>
 
+          {/* Personal Statement — Founder */}
+          <section className="mb-20">
+            <div
+              className="rounded-2xl overflow-hidden"
+              style={{ border: '1px solid rgba(255,108,1,0.15)' }}
+            >
+              {/* Header strip */}
+              <div className="px-8 py-4" style={{ background: 'rgba(255,108,1,0.08)' }}>
+                <p className="text-[#ff6c01] text-xs uppercase tracking-wider font-semibold">
+                  จากผู้พัฒนา
+                </p>
+              </div>
+
+              <div className="px-8 py-8" style={{ background: 'rgba(255,255,255,0.02)' }}>
+                <p className="text-white/80 leading-[1.9] mb-5">
+                  ผมไม่ใช่โปรแกรมเมอร์ที่เก่งที่สุด — แต่ผมอยู่กับปัญหาในองค์กรมามากกว่า 20 ปี สัมผัสแทบทุกระบบ ตั้งแต่จัดซื้อ ผลิต ซ่อมบำรุง ไปจนถึงบริการหลังการขาย
+                </p>
+
+                <p className="text-white/80 leading-[1.9] mb-5">
+                  ผมเห็นการเปลี่ยนผ่านมาทุกรอบ — จาก Excel สู่ Google Sheets สู่ AppSheet สู่ Looker Dashboard ทุกเครื่องมือช่วยแก้ปัญหาได้จริง ถ้าเลือกให้ถูกจังหวะ และทุกครั้งที่เทคโนโลยีเปลี่ยน ผมพาองค์กรให้เห็นก่อนที่จะตัดสินใจ — ไม่ใช่ขาย แต่คือให้ลอง ให้เข้าใจ แล้วเลือกเอง
+                </p>
+
+                <p className="text-white/80 leading-[1.9] mb-5">
+                  ผมไม่ได้ทำโปรเจกต์ใหญ่ — ผมทำในสิ่งที่เป็นปัญหาจริงทุกวัน ปัญหาเล็กๆ ที่เกิดขึ้นซ้ำ สะสม และกลายเป็นต้นทุนที่มองไม่เห็น สิ่งที่ผมถนัดคือเข้าใจว่าปัญหาเหล่านั้นเชื่อมกันยังไง และจะแก้ที่จุดไหนให้ได้ผลจริง
+                </p>
+
+                <p className="text-white leading-[1.9] font-medium">
+                  หากคุณสามารถเล่าปัญหาของคุณได้ และตั้งใจจะเดินหน้าไปพร้อมกับ AI — ผมพร้อมทำให้คุณเห็นว่า สิ่งที่คิดถูกเปลี่ยนเป็นระบบจริงได้
+                </p>
+              </div>
+            </div>
+          </section>
+
           {/* Philosophy */}
           <div
             className="rounded-2xl p-10 text-center mb-10"

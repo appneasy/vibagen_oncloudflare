@@ -90,7 +90,7 @@ export default function SmartFactoryPage() {
                 {/* A) ปัญหาเดิม ───────────────────────────────── */}
                 <section className="mb-12">
                   <h2 className="font-[--font-heading] font-bold text-[#0d2749] text-2xl mb-4">
-                    ปัญหาเดิม — ข้อมูลกระจาย ไม่มี Single Source of Truth
+                    ปัญหาเดิม — ข้อมูลกระจาย ไม่มีที่เดียวที่เชื่อถือได้
                   </h2>
                   <p className="text-gray-600 leading-relaxed mb-6">
                     โรงงานอุตสาหกรรมแปรรูปผลผลิตเกษตรแห่งหนึ่งในภาคใต้ เคยใช้เวลาหลายชั่วโมงต่อวันในการรวบรวมข้อมูลจาก Excel หลายไฟล์ และทำรายงานสรุปด้วยมือ

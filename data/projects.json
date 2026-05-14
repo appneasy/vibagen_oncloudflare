@@ -1,26 +1,5 @@
 [
   {
-    "id": "autocar-care",
-    "title": "AutoCar Care",
-    "subtitle": "ระบบบริหารร้านคาร์แคร์ครบวงจร",
-    "desc": "จัดการลูกค้า รถ คิวบริการ สต็อก รายงาน และ LINE notification ในระบบเดียว รองรับตั้งแต่ร้านสาขาเดียวถึง multi-branch",
-    "industry": "Automotive Service",
-    "model": "Perpetual License",
-    "stack": ["Next.js", "PostgreSQL", "LINE LIFF", "Docker"],
-    "features": [
-      "Customer & Vehicle Management",
-      "Queue Booking via LINE",
-      "Stock & Parts Control",
-      "Revenue Dashboard",
-      "Multi-branch Support"
-    ],
-    "image": "/images/placeholder-autocar.webp",
-    "imageAlt": "AutoCar Care dashboard preview",
-    "highlight": "ลูกค้าจองคิวผ่าน LINE ได้เลย — ไม่ต้องโทรหาร้าน",
-    "status": "available",
-    "cta": "ดู Demo"
-  },
-  {
     "id": "smart-factory",
     "title": "Smart Factory Transformation",
     "subtitle": "จากกระดาษ → Excel → Google Sheets → Dashboard",
@@ -65,6 +44,27 @@
     "imageAlt": "TMK Next.js migration dashboard",
     "highlight": "Foundation ดี + AI ช่วย = งาน 3 เดือนเหลือ 4 สัปดาห์",
     "status": "showcase",
+    "cta": "ดูรายละเอียด"
+  },
+  {
+    "id": "autocar-care",
+    "title": "AutoCar Care",
+    "subtitle": "ระบบบริหารร้านคาร์แคร์ครบวงจร — Perpetual License",
+    "desc": "จัดการลูกค้า รถ คิวบริการ สต็อก แคมเปญ และรายงานในระบบเดียว ลูกค้าจองคิวและติดตามสถานะผ่าน LINE LIFF ร้านบริหารงานผ่าน Web Admin — เป็นเจ้าของข้อมูล 100% ไม่ผูกกับ subscription",
+    "industry": "Automotive Service",
+    "model": "Perpetual License",
+    "stack": ["Next.js 15", "PostgreSQL", "Prisma", "tRPC", "LINE LIFF", "Docker"],
+    "features": [
+      "LINE LIFF — จองคิว ติดตามสถานะ ประวัติบริการ",
+      "DVI Inspection + Estimate + Approval via LINE",
+      "Parts Inventory + PO + Requisition",
+      "Campaign & Loyalty (50 templates, stamp cards)",
+      "Revenue Dashboard + Audit Log"
+    ],
+    "image": "/images/placeholder-autocar.webp",
+    "imageAlt": "AutoCar Care dashboard preview",
+    "highlight": "ลูกค้าจองคิวผ่าน LINE, ช่างตรวจสภาพรถบนมือถือ, เจ้าของดูรายได้ real-time — ทุกอย่างในระบบเดียว",
+    "status": "available",
     "cta": "ดูรายละเอียด"
   }
 ]
