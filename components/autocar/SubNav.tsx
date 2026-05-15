@@ -7,6 +7,7 @@ const navItems = [
   { label: 'นำเสนอ', href: '/autocar' },
   { label: 'ฟีเจอร์', href: '/autocar/features' },
   { label: 'Q&A', href: '/autocar/faq' },
+  { label: 'คู่มือ', href: '/autocar/tutorial' },
 ]
 
 export default function AutoCarSubNav() {
