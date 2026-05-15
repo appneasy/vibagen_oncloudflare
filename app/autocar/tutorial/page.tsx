@@ -10,9 +10,12 @@ export const metadata: Metadata = {
   keywords: [
     'autocar care คู่มือ',
     'วิธีใช้ autocar care',
+    'วิธีใช้โปรแกรมอู่ซ่อมรถ',
+    'สอนใช้ระบบคาร์แคร์',
     'tutorial อู่ซ่อมรถ',
     'ระบบจัดการอู่ คู่มือ',
     'อู่ซ่อมรถ training',
+    'โปรแกรมอู่ซ่อมรถ สอนใช้',
   ],
   openGraph: {
     title: 'คู่มือใช้งาน — AutoCar Care',

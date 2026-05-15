@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description:
     'จากกระดาษ → Excel → Google Sheets → Dashboard: บทเรียนจากการสร้าง 9 ระบบ Digitize ในโรงงานอุตสาหกรรมแปรรูปผลผลิตเกษตร ภายใน 3 เดือน',
   alternates: { canonical: 'https://vibagen.com/showcase/smart-factory' },
-  keywords: ['smart factory', 'digital transformation', 'โรงงานอัจฉริยะ', 'appsheet', 'google sheets', 'looker dashboard', 'manufacturing'],
+  keywords: ['smart factory', 'digital transformation', 'โรงงานอัจฉริยะ', 'ระบบโรงงาน', 'ระบบจัดการโรงงาน', 'appsheet', 'google sheets', 'looker dashboard', 'manufacturing', 'ระบบหลังบ้านโรงงาน'],
   openGraph: {
     title: 'Smart Factory Transformation — Case Study',
     description: 'จากกระดาษ → Excel → Google Sheets → Dashboard ภายใน 3 เดือน',

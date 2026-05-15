@@ -351,6 +351,39 @@ All copy is ready in:
 - Email destination: akkraphol@gmail.com
 - Resend API key: set as RESEND_API_KEY env var in Cloudflare Pages
 
+## SEO Keyword Strategy (Updated 2026-05-16)
+
+Keywords expanded to cover actual Thai search terms found via competitor research.
+
+### AutoCar Care pages — target keywords
+- Primary: `โปรแกรมอู่ซ่อมรถ`, `โปรแกรมคาร์แคร์`, `โปรแกรมร้านล้างรถ`, `โปรแกรมบริหารอู่ซ่อมรถ`
+- Secondary: `แอพอู่ซ่อมรถ`, `โปรแกรมศูนย์บริการรถยนต์`, `โปรแกรมร้านยาง`, `garage management system`
+- Feature terms: `ระบบจองคิวซ่อมรถ`, `ระบบติดตามงานซ่อม`, `ระบบสต็อกอะไหล่`, `ระบบ CRM อู่ซ่อมรถ`, `ระบบสะสมแต้มร้านล้างรถ`, `ระบบนัดหมายอู่ซ่อมรถ`
+- Price/compare: `โปรแกรมอู่ซ่อมรถ ราคา`, `โปรแกรมอู่ ราคาเท่าไหร่`, `ระบบอู่ซ่อมรถ เปรียบเทียบ`
+- Tutorial: `วิธีใช้โปรแกรมอู่ซ่อมรถ`, `สอนใช้ระบบคาร์แคร์`
+
+### VIBAGEN Services pages — target keywords
+- Primary: `รับเขียนโปรแกรม`, `รับทำระบบ`, `รับพัฒนาซอฟต์แวร์`, `จ้างเขียนโปรแกรม`
+- Secondary: `รับทำแอพ`, `รับทำ LINE LIFF`, `ระบบหลังบ้าน`, `custom software ไทย`
+- Hire-us: `ปรึกษาทำระบบ`, `รับทำเว็บแอพ`, `จ้างทำระบบ SME`, `ระบบภายในองค์กร`
+- Expertise: `รับทำระบบ ERP`, `back office system`, `ระบบจัดการภายใน`
+- Showcase: `ระบบโรงงาน`, `ระบบจัดการโรงงาน`, `ย้ายระบบ nocode`
+
+### Competitors (AutoCar Care segment)
+- Ursa (ursashop.com) — โปรแกรมร้านยาง คาร์แคร์ cloud
+- CKBOSS (ckboss.app) — ระบบอู่ซ่อมรถ ครบวงจร
+- Accusoft (accusoft.co.th) — โปรแกรมอู่รถยนต์ SME
+- GarageBox (garagebox.io) — garage management Thailand
+- Aristo (aristosoft.org) — โปรแกรมร้านคาร์แคร์ ล้างรถ
+- PKT Soft (pktsoft.com) — โปรแกรมอู่ซ่อมสีตัวถัง 20+ ปี
+
+### Google Search Console
+- Verification file: `public/googlee678bec7b81dd546.html`
+- Sitemap URL: `https://vibagen.com/sitemap.xml`
+- Total indexed URLs: 16 static + dynamic articles
+
+---
+
 ## Environment Variables
 ```
 RESEND_API_KEY=re_xxxxx

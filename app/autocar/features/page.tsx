@@ -2,9 +2,9 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'ฟีเจอร์ทั้งหมด — AutoCar Care',
-  description: 'รายการฟีเจอร์ครบครัน 120+ รายการ แยกตาม 4 บทบาท',
+  description: 'ฟีเจอร์ 120+ รายการ — จองคิว ติดตามงานซ่อม สต็อกอะไหล่ CRM ลูกค้า สะสมแต้ม โปรโมชั่น แยกตาม 4 บทบาท Admin ช่าง ลูกค้า เจ้าของ',
   alternates: { canonical: 'https://vibagen.com/autocar/features' },
-  keywords: ['autocar care features', 'ฟีเจอร์ระบบอู่ซ่อมรถ', 'car care features', 'line liff features', 'role-based access'],
+  keywords: ['autocar care features', 'ฟีเจอร์ระบบอู่ซ่อมรถ', 'ระบบจองคิวซ่อมรถ', 'ระบบติดตามงานซ่อม', 'ระบบสต็อกอะไหล่', 'ระบบ CRM อู่ซ่อมรถ', 'ระบบสะสมแต้มร้านล้างรถ', 'ระบบนัดหมายอู่ซ่อมรถ', 'โปรแกรมร้านยาง', 'car care features', 'line liff features', 'role-based access'],
   openGraph: {
     title: 'ฟีเจอร์ทั้งหมด — AutoCar Care',
     description: '120+ ฟีเจอร์ แยกตาม 4 บทบาท',

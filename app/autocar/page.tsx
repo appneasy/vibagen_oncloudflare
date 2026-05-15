@@ -4,11 +4,18 @@ import PresentViewer from '@/components/autocar/PresentViewer'
 export const metadata: Metadata = {
   title: 'AutoCar Care — ข้อมูลนำเสนอ',
   description:
-    'ระบบจัดการอู่ซ่อมรถ + ล้างรถ ครบวงจร — ดูข้อมูลนำเสนอ ปัญหา ฟีเจอร์ ราคา และวิธีเริ่มต้นใช้งาน',
+    'โปรแกรมอู่ซ่อมรถ + โปรแกรมคาร์แคร์ ครบวงจร — ระบบจัดการอู่ซ่อมรถ ล้างรถ จองคิว ติดตามงาน สต็อกอะไหล่ LINE LIFF Perpetual License เป็นเจ้าของ 100%',
   alternates: { canonical: 'https://vibagen.com/autocar' },
   keywords: [
     'autocar care',
     'ระบบอู่ซ่อมรถ',
+    'โปรแกรมอู่ซ่อมรถ',
+    'โปรแกรมคาร์แคร์',
+    'โปรแกรมร้านล้างรถ',
+    'โปรแกรมบริหารอู่ซ่อมรถ',
+    'แอพอู่ซ่อมรถ',
+    'โปรแกรมศูนย์บริการรถยนต์',
+    'garage management system',
     'car care management',
     'perpetual license',
     'line liff',

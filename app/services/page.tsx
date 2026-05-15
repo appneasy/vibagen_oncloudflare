@@ -9,9 +9,9 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: 'บริการ — สร้างระบบที่แก้ปัญหาจริง จบใน 30–60 วัน | VIBAGEN',
   description:
-    'VIBAGEN สร้างระบบ Operation ภายในองค์กร, Platform สำหรับลูกค้า และ LINE Mini App — ส่งมอบใน 30–60 วัน คุณเป็นเจ้าของระบบ 100% ไม่มีค่า subscription รายเดือน',
+    'รับเขียนโปรแกรม รับทำระบบ สร้างระบบหลังบ้าน ระบบภายในองค์กร LINE LIFF — ส่งมอบใน 30–60 วัน เป็นเจ้าของระบบ 100% ไม่มีค่า subscription รายเดือน',
   alternates: { canonical: 'https://vibagen.com/services' },
-  keywords: ['บริการสร้างระบบ', 'perpetual license', 'mvp 30 วัน', 'line liff', 'erp integration', 'vibecoding', 'ระบบภายในองค์กร', 'software house ไทย'],
+  keywords: ['บริการสร้างระบบ', 'รับเขียนโปรแกรม', 'รับทำระบบ', 'รับพัฒนาซอฟต์แวร์', 'จ้างเขียนโปรแกรม', 'รับทำแอพ', 'รับทำ LINE LIFF', 'ระบบหลังบ้าน', 'custom software ไทย', 'perpetual license', 'mvp 30 วัน', 'erp integration', 'vibecoding', 'ระบบภายในองค์กร', 'software house ไทย'],
 }
 
 export default function ServicesPage() {
