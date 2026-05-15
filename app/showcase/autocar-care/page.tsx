@@ -84,6 +84,24 @@ export default function AutoCarCarePage() {
                 <p className="text-white font-medium">Vibecoding (AI-Assisted)</p>
               </div>
             </div>
+
+            {/* CTA to full presentation */}
+            <div className="flex flex-wrap gap-3 mt-8">
+              <Link
+                href="/autocar"
+                className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-[#0d2749] font-semibold rounded-lg transition-colors text-sm"
+              >
+                ดูข้อมูลนำเสนอ →
+              </Link>
+              <a
+                href="https://demo.vibagen.com"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-5 py-2.5 border border-white/20 hover:bg-white/[0.08] text-white rounded-lg transition-colors text-sm"
+              >
+                ทดลอง Demo
+              </a>
+            </div>
           </div>
         </div>
 
