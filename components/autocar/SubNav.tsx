@@ -4,10 +4,10 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 
 const navItems = [
-  { label: 'นำเสนอ', href: '/autocar' },
-  { label: 'ฟีเจอร์', href: '/autocar/features' },
-  { label: 'Q&A', href: '/autocar/faq' },
-  { label: 'คู่มือ', href: '/autocar/tutorial' },
+  { label: 'นำเสนอ', href: '/autocar', disabled: false },
+  { label: 'ฟีเจอร์', href: '/autocar/features', disabled: false },
+  { label: 'Q&A', href: '/autocar/faq', disabled: false },
+  { label: 'คู่มือ', href: '/autocar/tutorial', disabled: true },
 ]
 
 export default function AutoCarSubNav() {
@@ -26,6 +26,18 @@ export default function AutoCarSubNav() {
                 item.href === '/autocar'
                   ? pathname === '/autocar'
                   : pathname.startsWith(item.href)
+
+              if (item.disabled) {
+                return (
+                  <span
+                    key={item.href}
+                    className="px-3 py-1.5 text-sm rounded-md text-white/30 cursor-not-allowed"
+                  >
+                    {item.label}
+                  </span>
+                )
+              }
+
               return (
                 <Link
                   key={item.href}
