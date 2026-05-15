@@ -233,10 +233,9 @@ export default function AutoCarPage() {
           </p>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {modules.map((m) => (
-              <div key={m.title} className="p-5 rounded-xl bg-white/5 border border-white/10 hover:border-amber-400/40 transition-colors">
+              <div key={m.label} className="p-5 rounded-xl bg-white/5 border border-white/10 hover:border-amber-400/40 transition-colors">
                 <div className="text-2xl mb-3">{m.icon}</div>
-                <h3 className="font-[--font-heading] font-semibold text-white text-sm mb-1">{m.title}</h3>
-                <p className="font-[--font-body] text-white/55 text-xs leading-relaxed">{m.desc}</p>
+                <h3 className="font-[--font-heading] font-semibold text-white text-sm">{m.label}</h3>
               </div>
             ))}
           </div>
