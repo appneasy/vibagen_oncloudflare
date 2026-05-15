@@ -240,7 +240,7 @@ export default function FeaturesPage() {
             <div className="bg-[#f0f4f8] rounded-2xl p-6 text-center">
               <div className="text-4xl mb-4">🔔</div>
               <h3 className="font-[--font-heading] font-semibold text-lg mb-2" style={{ color: '#0d2749' }}>LINE Notify</h3>
-              <p className="font-[--font-body] text-sm text-gray-500">แจ้งเตือน push ตามจุด — เมื่อใบเสนอราคาส่ง / สถานะรถเปลี่ยน / งานเสร็จ</p>
+              <p className="font-[--font-body] text-sm text-gray-500">แจ้งเตือน push ตามจุด — เมื่อใบเสนอราคาส่ง / สถานะรถเปลี่ยน / งานเสร็จ (เฉพาะลูกค้าเสียค่าบริการตรง LINE)</p>
             </div>
             <div className="bg-[#f0f4f8] rounded-2xl p-6 text-center">
               <div className="text-4xl mb-4">📋</div>
