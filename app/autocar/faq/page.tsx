@@ -1,13 +1,13 @@
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: "คำถามที่พบบ่อย — Sales Playbook — AutoCar Care",
-  description: "Sales playbook และคำถามที่พบบ่อยสำหรับ AutoCar Care",
+  title: "คำถามที่พบบ่อย — AutoCar Care",
+  description: "คำตอบสำหรับทุกคำถามเกี่ยวกับ AutoCar Care — ค่าระบบ Hosting Maintenance Customization",
   alternates: { canonical: "https://vibagen.com/autocar/faq" },
-  keywords: ["autocar care faq", "คำถามระบบอู่ซ่อมรถ", "sales playbook", "autocar pricing"],
+  keywords: ["autocar care faq", "คำถามระบบอู่ซ่อมรถ", "autocar pricing", "perpetual license", "hosting"],
   openGraph: {
-    title: "คำถามที่พบบ่อย — Sales Playbook — AutoCar Care",
-    description: "คำถามและคำตอบมาตรฐานสำหรับทีมขาย AutoCar Care",
+    title: "คำถามที่พบบ่อย — AutoCar Care",
+    description: "คำตอบสำหรับทุกคำถามเกี่ยวกับ AutoCar Care — ค่าระบบ Hosting Maintenance Customization",
     url: "https://vibagen.com/autocar/faq",
     type: "website",
   },
@@ -21,12 +21,12 @@ export default function FaqPage() {
       <section style={{ background: "#011937" }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
           <div className="text-center mb-12">
-            <span className="inline-block text-xs font-[--font-body] font-semibold tracking-widest uppercase text-amber-400 mb-3">Sales Playbook</span>
+            <span className="inline-block text-xs font-[--font-body] font-semibold tracking-widest uppercase text-amber-400 mb-3">FAQ</span>
             <h1 className="font-[--font-heading] font-bold text-4xl sm:text-5xl text-white mb-4">
-              คำถามที่พบบ่อย — Sales Playbook
+              คำถามที่พบบ่อย
             </h1>
             <p className="font-[--font-body] text-gray-300 text-lg max-w-2xl mx-auto">
-              คำตอบมาตรฐานสำหรับทีมขาย
+              คำตอบสำหรับทุกคำถามเกี่ยวกับ AutoCar Care
             </p>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
@@ -361,119 +361,7 @@ export default function FaqPage() {
         </div>
       </section>
 
-      {/* S3: Talking Points */}
-      <section style={{ background: "#f8f9fc" }}>
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-          <div className="text-center mb-10">
-            <span className="font-[--font-heading] font-semibold text-base" style={{ color: "#ff6c01" }}>ยุทธศาสตร์ทีมขาย</span>
-            <h2 className="font-[--font-heading] font-bold text-3xl mt-2" style={{ color: "#0d2749" }}>Talking Points ที่ควรเน้น</h2>
-          </div>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center font-[--font-heading] font-bold text-lg mb-4 bg-amber-100 text-amber-700">T</div>
-              <h3 className="font-[--font-heading] font-semibold text-lg mb-3" style={{ color: "#0d2749" }}>Transparency</h3>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2 text-sm text-gray-600 font-[--font-body]">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                  บอกราคาชัดเจน ไม่มีค่าซ่อน
-                </li>
-                <li className="flex items-start gap-2 text-sm text-gray-600 font-[--font-body]">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                  แยกรายการแต่ละอย่างให้ลูกค้าตัดสินใจเอง
-                </li>
-                <li className="flex items-start gap-2 text-sm text-gray-600 font-[--font-body]">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                  ค่า Hosting ที่ต่างกันไม่ใช่กำไรของ Vibagen
-                </li>
-              </ul>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center font-[--font-heading] font-bold text-lg mb-4 bg-blue-100 text-blue-700">O</div>
-              <h3 className="font-[--font-heading] font-semibold text-lg mb-3" style={{ color: "#0d2749" }}>Ownership</h3>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2 text-sm text-gray-600 font-[--font-body]">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                  โอน Source Code ทั้งหมดให้ลูกค้า
-                </li>
-                <li className="flex items-start gap-2 text-sm text-gray-600 font-[--font-body]">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                  ไม่มี Lock-in ย้าย Server หรือ Dev คนอื่นได้
-                </li>
-                <li className="flex items-start gap-2 text-sm text-gray-600 font-[--font-body]">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                  คุณคือเจ้าของระบบอย่างแท้จริง
-                </li>
-              </ul>
-            </div>
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-              <div className="w-10 h-10 rounded-xl flex items-center justify-center font-[--font-heading] font-bold text-lg mb-4 bg-emerald-100 text-emerald-700">F</div>
-              <h3 className="font-[--font-heading] font-semibold text-lg mb-3" style={{ color: "#0d2749" }}>Flexibility</h3>
-              <ul className="space-y-2">
-                <li className="flex items-start gap-2 text-sm text-gray-600 font-[--font-body]">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                  เลือก Maintenance Plan หรือดูแลเอง
-                </li>
-                <li className="flex items-start gap-2 text-sm text-gray-600 font-[--font-body]">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                  เพิ่มฟีเจอร์ใหม่ตามความต้องการ
-                </li>
-                <li className="flex items-start gap-2 text-sm text-gray-600 font-[--font-body]">
-                  <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 flex-shrink-0" />
-                  เชื่อม API ภายนอกได้
-                </li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* S4: Donts */}
-      <section style={{ background: "#ffffff" }}>
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
-          <div className="text-center mb-8">
-            <span className="font-[--font-heading] font-semibold text-base" style={{ color: "#ff6c01" }}>สิ่งที่ควรหลีกเลี่ยง</span>
-            <h2 className="font-[--font-heading] font-bold text-3xl mt-2" style={{ color: "#0d2749" }}>สิ่งที่ไม่ควรทำ (Don’ts)</h2>
-          </div>
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-8">
-            <ul className="space-y-3">
-              <li className="flex items-start gap-3 font-[--font-body] text-sm text-red-800">
-                <span className="mt-1 w-5 h-5 rounded-full bg-red-200 text-red-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">!</span>
-                อย่าเสนอว่าราคาถูกที่สุด เพราะเป็น Value (ช่างสั่ง Custom ฟรีเป็นตัวอย่างเสีย)
-              </li>
-              <li className="flex items-start gap-3 font-[--font-body] text-sm text-red-800">
-                <span className="mt-1 w-5 h-5 rounded-full bg-red-200 text-red-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">!</span>
-                อย่ารับปากอ่อนว่าพัฒนาฟีเจอร์ใหม่โดยไม่ระบุค่าใช้จ่าย
-              </li>
-              <li className="flex items-start gap-3 font-[--font-body] text-sm text-red-800">
-                <span className="mt-1 w-5 h-5 rounded-full bg-red-200 text-red-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">!</span>
-                อย่าเปรียบราคาแข่งกับ SaaS ทั่วไป AutoCar คือ Source Code เป็นของคุณ
-              </li>
-              <li className="flex items-start gap-3 font-[--font-body] text-sm text-red-800">
-                <span className="mt-1 w-5 h-5 rounded-full bg-red-200 text-red-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">!</span>
-                อย่าใช้ราคาเป็นเหตุผลเดียว โชว์ Feature ประกอบด้วย
-              </li>
-              <li className="flex items-start gap-3 font-[--font-body] text-sm text-red-800">
-                <span className="mt-1 w-5 h-5 rounded-full bg-red-200 text-red-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">!</span>
-                อย่าบอก Cloud โดยไม่อธิบาย VPS ส่วนตัว
-              </li>
-              <li className="flex items-start gap-3 font-[--font-body] text-sm text-red-800">
-                <span className="mt-1 w-5 h-5 rounded-full bg-red-200 text-red-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">!</span>
-                อย่าตอบ Hosting โดยไม่เข้าใจความต้องการก่อน
-              </li>
-              <li className="flex items-start gap-3 font-[--font-body] text-sm text-red-800">
-                <span className="mt-1 w-5 h-5 rounded-full bg-red-200 text-red-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">!</span>
-                อย่าสัญญาว่าระบบเสร็จ 100% ทุกฟีเจอร์ Custom ต้องใช้เวลา
-              </li>
-              <li className="flex items-start gap-3 font-[--font-body] text-sm text-red-800">
-                <span className="mt-1 w-5 h-5 rounded-full bg-red-200 text-red-600 flex items-center justify-center flex-shrink-0 text-xs font-bold">!</span>
-                อย่าเทียบราคากับ SaaS ทั่วไป AutoCar เป็น Source Code ของคุณ
-              </li>
-            </ul>
-          </div>
-        </div>
-      </section>
-
-      {/* S5: CTA */}
+      {/* CTA */}
       <section style={{ background: "#011937" }}>
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
           <h2 className="font-[--font-heading] font-bold text-3xl sm:text-4xl text-white mb-4">พร้อมเริ่มต้นแล้วหรือยัง?</h2>
