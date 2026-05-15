@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 const navItems = [
   { label: 'นำเสนอ', href: '/autocar' },
   { label: 'ฟีเจอร์', href: '/autocar/features' },
-  { label: 'Q&A', href: '/autocar/faq' },
 ]
 
 export default function AutoCarSubNav() {
