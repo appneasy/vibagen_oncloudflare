@@ -264,6 +264,81 @@ Color variables must match brand system exactly.
 
 ---
 
+## Page Creation Standard — Checklist
+
+ทุกครั้งที่สร้างหน้าใหม่ ต้องทำตามมาตรฐานนี้ครบทุกข้อ:
+
+### 1. Metadata (บังคับทุกหน้า)
+```typescript
+export const metadata: Metadata = {
+  title: 'ชื่อหน้า — คำอธิบายสั้น | VIBAGEN',     // ≤ 60 ตัวอักษร
+  description: 'คำอธิบายภาษาไทย + อังกฤษ...',     // ≤ 160 ตัวอักษร
+  alternates: { canonical: 'https://vibagen.com/path' },
+  keywords: ['keyword1', 'keyword2', ...],          // 5–10 คำ
+}
+```
+
+### 2. OpenGraph (บังคับสำหรับ showcase/article pages)
+```typescript
+openGraph: {
+  title: '...',
+  description: '...',
+  url: 'https://vibagen.com/path',
+  type: 'article',  // หรือ 'website' สำหรับหน้าปกติ
+}
+```
+
+### 3. Sitemap — เพิ่มทุกหน้าใหม่ใน `app/sitemap.ts`
+```typescript
+{ url: `${BASE}/new-page`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.8 },
+```
+
+### 4. JSON-LD Structured Data (ถ้าเหมาะสม)
+- Article pages → `@type: Article`
+- FAQ pages → `@type: FAQPage`
+- Case Study pages → `@type: Article` + `articleSection: "Case Study"`
+- Service pages → พิจารณา `@type: Service`
+
+### 5. Tooltip — ศัพท์เทคนิคต้องมี tooltip
+- ใช้ `<Tooltip term="key">visible text</Tooltip>` สำหรับคำเทคนิคเช่น MVP, Stack, ERP, Perpetual License
+- ตรวจสอบ key ใน `data/glossary.json` ก่อน ถ้าไม่มีให้เพิ่ม
+- คำอธิบายใน glossary ต้องเป็นภาษาไทยง่ายๆ + มีตัวอย่าง
+
+### 6. View Counter (บังคับสำหรับ article pages)
+- ใช้ `<ViewCounter slug={slug} />` ใน article pages
+- Component อยู่ที่ `components/ui/ViewCounter.tsx`
+- POST ไป `/api/views/[slug]` ตอน mount เพื่อนับ
+- แสดงยอดวิวบนหน้า
+
+### 7. Layout Pattern
+- **Dark pages** (expertise, showcase hero): `style={{ background: '#011937' }}`
+- **White pages** (article content, services detail): `className="bg-dots"`
+- **2-column blog**: `grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-10`
+- Sidebar: `lg:sticky lg:top-28 lg:self-start`
+
+### 8. Typography
+- Heading: `font-[--font-heading]` (Prompt font)
+- Body text: default (Sarabun font)
+- Hero title: `style={{ fontSize: 'clamp(2rem, 5vw, 3rem)' }}`
+- Section title: `style={{ fontSize: 'clamp(1.75rem, 4vw, 2.5rem)' }}`
+
+### 9. Brand Colors (ห้ามเดา ต้องใช้ค่าจริง)
+- Navy text on light bg: `text-[#0d2749]`
+- Orange accent/CTA: `bg-[#ff6c01]` hover: `hover:bg-[#d54e01]`
+- Card on white section: `bg-[#f0f4f8]`
+- Card border: `border border-[#0d2749]/[0.08]`
+- Dark card: `bg-white/[0.04] border border-white/[0.06]`
+
+### 10. Pre-Push Checklist
+- [ ] Metadata ครบ (title, description, canonical, keywords)
+- [ ] เพิ่มใน sitemap.ts แล้ว
+- [ ] Tooltip ครอบคำเทคนิคแล้ว
+- [ ] OpenGraph ใส่แล้ว (ถ้าเป็น showcase/article)
+- [ ] Docker build ผ่าน
+- [ ] ตรวจ mobile responsive (container ไม่ล้น)
+
+---
+
 ## Content References
 
 All copy is ready in:
