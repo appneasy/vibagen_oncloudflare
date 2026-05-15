@@ -9,6 +9,14 @@ export const metadata: Metadata = {
   title: 'Smart Factory Transformation — Case Study | VIBAGEN',
   description:
     'จากกระดาษ → Excel → Google Sheets → Dashboard: บทเรียนจากการสร้าง 9 ระบบ Digitize ในโรงงานอุตสาหกรรมแปรรูปผลผลิตเกษตร ภายใน 3 เดือน',
+  alternates: { canonical: 'https://vibagen.com/showcase/smart-factory' },
+  keywords: ['smart factory', 'digital transformation', 'โรงงานอัจฉริยะ', 'appsheet', 'google sheets', 'looker dashboard', 'manufacturing'],
+  openGraph: {
+    title: 'Smart Factory Transformation — Case Study',
+    description: 'จากกระดาษ → Excel → Google Sheets → Dashboard ภายใน 3 เดือน',
+    url: 'https://vibagen.com/showcase/smart-factory',
+    type: 'article',
+  },
 }
 
 const categoryColors: Record<string, string> = {

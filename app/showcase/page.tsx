@@ -8,7 +8,9 @@ import Link from 'next/link'
 export const metadata: Metadata = {
   title: 'ผลงาน — ระบบที่สร้างและส่งมอบแล้ว',
   description:
-    'AutoCar Care และ Smart Factory Dashboard — ระบบที่ VIBAGEN สร้างและส่งมอบจริง พร้อม stack, feature และบทเรียนจากการใช้งานจริง',
+    'AutoCar Care, Smart Factory Dashboard และ AppSheet → Full-Stack Migration — ระบบที่ VIBAGEN สร้างและส่งมอบจริง พร้อม stack, feature และบทเรียนจากการใช้งานจริง',
+  alternates: { canonical: 'https://vibagen.com/showcase' },
+  keywords: ['ผลงาน vibagen', 'case study', 'smart factory', 'autocar care', 'appsheet migration', 'ระบบโรงงาน', 'ระบบคาร์แคร์'],
 }
 
 export default function ShowcasePage() {

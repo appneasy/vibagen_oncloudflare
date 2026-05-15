@@ -9,6 +9,14 @@ export const metadata: Metadata = {
   title: 'จาก AppSheet สู่ Full-Stack ใน 4 สัปดาห์ — Case Study | VIBAGEN',
   description:
     'เมื่อระบบ AppSheet ถึงขีดจำกัด การมี foundation ที่ดีจาก Phase แรก + AI-assisted development ทำให้ migrate สู่ Next.js + PostgreSQL ได้ใน 4 สัปดาห์',
+  alternates: { canonical: 'https://vibagen.com/showcase/tmk-next-migration' },
+  keywords: ['appsheet migration', 'next.js', 'postgresql', 'vibecoding', 'ai-assisted development', 'nocode to fullstack', 'rapid development'],
+  openGraph: {
+    title: 'จาก AppSheet สู่ Full-Stack ใน 4 สัปดาห์',
+    description: 'Foundation ดี + AI ช่วย = งาน 3 เดือนเหลือ 4 สัปดาห์',
+    url: 'https://vibagen.com/showcase/tmk-next-migration',
+    type: 'article',
+  },
 }
 
 const categoryColors: Record<string, string> = {

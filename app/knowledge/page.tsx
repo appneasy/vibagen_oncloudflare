@@ -8,6 +8,8 @@ export const metadata: Metadata = {
   title: 'Knowledge Hub — บทความจากประสบการณ์จริง',
   description:
     'บทความจาก VIBAGEN เกี่ยวกับ Agentic AI, Vibecoding, Digital Transformation และ Business Systems — เขียนจากประสบการณ์การใช้งานจริง',
+  alternates: { canonical: 'https://vibagen.com/knowledge' },
+  keywords: ['agentic ai', 'vibecoding', 'digital transformation', 'business systems', 'บทความเทคโนโลยี', 'nocode to fullstack'],
 }
 
 export default function KnowledgePage() {

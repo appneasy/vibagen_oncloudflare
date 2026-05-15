@@ -9,6 +9,14 @@ export const metadata: Metadata = {
   title: 'AutoCar Care — ระบบจัดการร้านคาร์แคร์ครบวงจร | VIBAGEN',
   description:
     'ระบบบริหารร้านคาร์แคร์ครบวงจร — LINE LIFF สำหรับลูกค้า, Web Admin สำหรับร้าน, Perpetual License เป็นเจ้าของข้อมูล 100%',
+  alternates: { canonical: 'https://vibagen.com/showcase/autocar-care' },
+  keywords: ['autocar care', 'ระบบคาร์แคร์', 'ระบบอู่ซ่อมรถ', 'line liff', 'perpetual license', 'จองคิวออนไลน์', 'dvi inspection', 'car care management'],
+  openGraph: {
+    title: 'AutoCar Care — ระบบจัดการร้านคาร์แคร์ครบวงจร',
+    description: 'LINE LIFF + Web Admin + Perpetual License — เป็นเจ้าของข้อมูล 100%',
+    url: 'https://vibagen.com/showcase/autocar-care',
+    type: 'article',
+  },
 }
 
 const categoryColors: Record<string, string> = {

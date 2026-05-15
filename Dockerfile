@@ -6,7 +6,7 @@ WORKDIR /app
 
 COPY package.json pnpm-lock.yaml ./
 
-RUN pnpm install
+RUN pnpm install --ignore-scripts && pnpm approve-builds esbuild sharp workerd 2>/dev/null; pnpm install
 
 COPY . .
 

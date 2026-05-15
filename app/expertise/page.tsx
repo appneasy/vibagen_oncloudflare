@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   title: 'ความเชี่ยวชาญ — Domain + Technical Expertise | VIBAGEN',
   description:
     'เราเข้าใจทั้ง operation จริง (จัดซื้อ, การผลิต, PM, บริการ) และเทคนิคจริง (Vibecoding, Next.js, PostgreSQL, Claude AI, Docker) — สร้างระบบที่ใช้งานได้จริงเร็วที่สุด',
+  alternates: { canonical: 'https://vibagen.com/expertise' },
+  keywords: ['domain expertise', 'vibecoding', 'next.js', 'postgresql', 'claude ai', 'docker', 'erp integration', 'ระบบจัดซื้อ', 'ระบบผลิต', 'ซ่อมบำรุง'],
 }
 
 const domainCards = [
