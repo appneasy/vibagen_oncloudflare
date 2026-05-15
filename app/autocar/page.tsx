@@ -329,11 +329,11 @@ export default function AutoCarPage() {
           </h2>
           <div className="grid sm:grid-cols-2 gap-4">
             {licenseItems.map((item) => (
-              <div key={item.key} className="flex gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
+              <div key={item.title} className="flex gap-3 p-4 rounded-xl bg-white/5 border border-white/10">
                 <span className="text-2xl flex-shrink-0">{item.icon}</span>
                 <div>
-                  <p className="font-[--font-heading] font-semibold text-amber-300 text-sm">{item.key}</p>
-                  <p className="font-[--font-body] text-white/65 text-sm leading-relaxed">{item.val}</p>
+                  <p className="font-[--font-heading] font-semibold text-amber-300 text-sm">{item.title}</p>
+                  <p className="font-[--font-body] text-white/65 text-sm leading-relaxed">{item.desc}</p>
                 </div>
               </div>
             ))}
@@ -350,11 +350,11 @@ export default function AutoCarPage() {
           </h2>
           <div className="grid sm:grid-cols-2 gap-6">
             {careItems.map((c) => (
-              <div key={c.key} className="flex gap-4 p-5 rounded-xl border border-gray-100 bg-[#f8f9fc]">
+              <div key={c.title} className="flex gap-4 p-5 rounded-xl border border-gray-100 bg-[#f8f9fc]">
                 <span className="text-3xl flex-shrink-0">{c.icon}</span>
                 <div>
-                  <p className="font-[--font-heading] font-semibold text-[#0d2749] mb-1">{c.key}</p>
-                  <p className="font-[--font-body] text-gray-500 text-sm leading-relaxed">{c.val}</p>
+                  <p className="font-[--font-heading] font-semibold text-[#0d2749] mb-1">{c.title}</p>
+                  <p className="font-[--font-body] text-gray-500 text-sm leading-relaxed">{c.desc}</p>
                 </div>
               </div>
             ))}
