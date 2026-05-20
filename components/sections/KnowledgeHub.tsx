@@ -1,34 +1,34 @@
 import Link from 'next/link'
 import Badge from '@/components/ui/Badge'
 
-// Preview articles — will be replaced by real MDX data when Knowledge Hub is built
+// Preview articles — matched to actual MDX files in content/articles/
 const previewArticles = [
   {
-    slug: 'real-barrier-agentic-ai',
+    slug: 'real-barrier-agentic-ai-is-not-technology',
     category: 'Agentic AI',
-    title: 'อุปสรรคจริงของ Agentic AI ไม่ใช่เรื่อง Technology',
+    title: 'สิ่งที่ยากที่สุดของการนำ Agentic AI มาใช้ ไม่ใช่ตัว AI — แต่คือองค์กรของคุณเอง',
     excerpt:
-      'ทุกคนถามว่า Agentic AI ทำได้ไหม? คำตอบคือทำได้เสมอ สิ่งที่ทำไม่ได้คือบังคับให้ทีมงานกรอกข้อมูลให้ครบ',
+      'ทุกคนถามว่า Agentic AI ทำได้ไหม? คำตอบคือทำได้เสมอ สิ่งที่ทำไม่ได้คือบังคับให้ทีมงานกรอกข้อมูลให้ครบ และนั่นคือกำแพงที่แท้จริง',
     readTime: 8,
     date: '2026-05-12',
   },
   {
-    slug: 'vibecoding-what-it-means',
+    slug: 'nocode-to-ai-assisted-development',
     category: 'Vibecoding',
-    title: 'Vibecoding คืออะไร และทำไมถึงเปลี่ยนวิธีสร้าง Software',
+    title: 'NoCode ดีพอแล้ว — แล้วทำไมถึงเปลี่ยนใจ เมื่อ AI โค้ดแทนได้จริง',
     excerpt:
-      'ไม่ใช่แค่ให้ AI เขียนโค้ดแทน แต่คือการออกแบบความร่วมมือระหว่างวิศวกรและ AI เพื่อสร้างระบบที่ดีกว่า เร็วกว่า',
-    readTime: 6,
-    date: '2026-05-08',
+      'กันยายน 2025 ผมกำลังสร้าง Prototype ด้วย AppSheet อยู่ดีๆ AI ก็มาเปลี่ยนทุกอย่าง ไม่ใช่เพราะ NoCode ไม่ดี แต่เพราะกำแพงระหว่าง \'ทำได้\' กับ \'ต้องเขียนโค้ด\' ถูกทลายลงแล้ว',
+    readTime: 10,
+    date: '2026-05-14',
   },
   {
-    slug: 'sme-digital-debt-hidden-cost',
-    category: 'Business Digital',
-    title: 'Digital Debt — ต้นทุนที่ซ่อนอยู่ที่ธุรกิจส่วนใหญ่ไม่รู้ว่ามี',
+    slug: 'from-appsheet-to-real-app',
+    category: 'Case Study',
+    title: 'จาก Logsheet กระดาษสู่ Dashboard Real-time: บทเรียน 9 ระบบในโรงงานปาล์มน้ำมัน',
     excerpt:
-      'Excel 10 ไฟล์ + SaaS 5 ตัว + WhatsApp ประสานงาน คุณกำลังจ่ายแพงกว่าที่คิด',
-    readTime: 5,
-    date: '2026-05-05',
+      'ทุกโรงงานเริ่มจากกระดาษ แล้วก็ไปถึง Excel แล้วก็ถึง AppSheet จนวันหนึ่งมันไม่พออีกต่อไป',
+    readTime: 12,
+    date: '2026-05-13',
   },
 ]
 
@@ -36,6 +36,7 @@ const categoryColors: Record<string, string> = {
   'Agentic AI':      'text-[#ff6c01] bg-[#ff6c01]/10',
   'Vibecoding':      'text-blue-400 bg-blue-400/10',
   'Business Digital':'text-emerald-400 bg-emerald-400/10',
+  'Case Study':      'text-amber-400 bg-amber-400/10',
   'Maintenance':     'text-purple-400 bg-purple-400/10',
 }
 
