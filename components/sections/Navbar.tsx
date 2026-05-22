@@ -40,7 +40,7 @@ export default function Navbar() {
             width={40}
             height={40}
             className="h-9 w-auto"
-            priority
+            loading="eager"
           />
           <div className="flex flex-col leading-none">
             <span className="font-[--font-logo] text-lg text-white tracking-wide">VIBAGEN</span>

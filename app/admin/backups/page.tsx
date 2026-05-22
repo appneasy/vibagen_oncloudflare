@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import Link from 'next/link'
 import { getDB } from '@/lib/db'
 import { managedCustomers } from '@/lib/db/schema'

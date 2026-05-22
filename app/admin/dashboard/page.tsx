@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import { getDB } from '@/lib/db'
 import { managedCustomers } from '@/lib/db/schema'
 import { getMultiBucketStatus } from '@/lib/r2'
