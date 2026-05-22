@@ -81,7 +81,7 @@ async function checkMonitor(monitor: Monitor, region: string): Promise<CheckResu
     // Keyword check (if configured)
     if (monitor.expected_keyword) {
       const body = await response.text()
-      if (!body.includes(monitor.expected_keyword)) {
+      if (!body.toLowerCase().includes(monitor.expected_keyword.toLowerCase())) {
         base.status = 'down'
         base.errorMessage = `Keyword "${monitor.expected_keyword}" not found in response`
         return base
