@@ -402,8 +402,8 @@ Keywords expanded to cover actual Thai search terms found via competitor researc
 | Page | Path | Description |
 |------|------|-------------|
 | Dashboard | `/admin/dashboard` | Stat cards (customers, uptime, backup alerts) + CustomerCardGrid with monitor modals |
-| Customers | `/admin/customers` | List (table/cards) + add/edit/delete |
-| Customer Detail | `/admin/customers/[slug]` | Info card + subscriptions section + action buttons |
+| Customers | `/admin/customers` | List (table desktop / card mobile) + add/edit/delete |
+| Customer Detail | `/admin/customers/[slug]` | Info card + Subscriptions + Contracts + Apps + action buttons |
 | Backups | `/admin/backups` | Card grid with folder breakdown (config/db/upload) |
 | Backup Detail | `/admin/backups/[slug]` | BackupFolderView (expandable folders, file table/cards) |
 | Uptime | `/admin/uptime` | Monitor list + summary cards (online/offline/paused) |
@@ -418,6 +418,8 @@ Keywords expanded to cover actual Thai search terms found via competitor researc
 | `uptime_incidents` | Downtime incidents with duration | 0003 |
 | `uptime_maintenance` | Planned maintenance windows | 0003 |
 | `customer_subscriptions` | Provider subscriptions (Cloudflare/Hetzner), plan, price, due dates | 0004 |
+| `customer_contracts` | เอกสาร (สัญญา/ใบเสนอราคา/invoice/requirement), R2 file refs, status | 0005 |
+| `customer_apps` | App ที่ลูกค้าซื้อ (POS/CRM/LIFF/website), version, deploy URL, tech stack | 0006 |
 
 ### API Routes
 | Route | Methods | Description |
@@ -429,25 +431,48 @@ Keywords expanded to cover actual Thai search terms found via competitor researc
 | `/api/admin/monitors/[id]` | GET, PUT, DELETE | Single monitor CRUD |
 | `/api/admin/subscriptions` | GET, POST | List (filter by `?customerSlug=`), create |
 | `/api/admin/subscriptions/[id]` | GET, PUT, DELETE | Single subscription CRUD |
+| `/api/admin/contracts` | GET, POST | List (filter by `?customerSlug=`), create |
+| `/api/admin/contracts/[id]` | GET, PUT, DELETE | Single contract CRUD |
+| `/api/admin/apps` | GET, POST | List (filter by `?customerSlug=`), create |
+| `/api/admin/apps/[id]` | GET, PUT, DELETE | Single app CRUD |
 
 ### Key Components
-| Component | Type | Location |
-|-----------|------|----------|
-| `AdminSidebar` | client | Sidebar with nav, logo, logout, mobile hamburger |
+| Component | Type | Description |
+|-----------|------|-------------|
+| `AdminSidebar` | client | Sidebar nav, logo-banner, logout, mobile hamburger |
 | `AdminLoginForm` | client | Password login form with logo-banner |
 | `CustomerForm` | client | Add/edit customer form |
 | `MonitorForm` | client | Add/edit uptime monitor form |
-| `CustomerCardGrid` | client | Dashboard customer cards with monitor detail modals |
+| `CustomerCardGrid` | client | Dashboard customer cards with monitor detail modals + response time chart |
 | `ResponseTimeChart` | client | SVG sparkline chart for response times |
-| `BackupFolderView` | client | Expandable folder sections with file list |
-| `SubscriptionSection` | client | Subscription CRUD with card list + add/edit modal |
-| `DeleteCustomerButton` | client | Confirm-delete button |
+| `BackupFolderView` | client | Expandable folder sections (config/db/upload) with file list (table desktop, cards mobile) |
+| `SubscriptionSection` | client | Subscription CRUD — card list + add/edit modal, due date color alerts |
+| `ContractSection` | client | Contract CRUD — card list + add/edit modal, type badges, R2 file refs |
+| `AppSection` | client | App CRUD — card list + add/edit modal, deploy URL links, version/tech stack |
+| `DeleteCustomerButton` | client | Confirm-delete button for customer |
 
-### Upcoming Tables (Planned)
-| Table | Purpose | Status |
-|-------|---------|--------|
-| `customer_contracts` | เอกสารสัญญา, ใบเสนอราคา (R2 file refs) | Next |
-| `customer_apps` | ประเภท App ที่ลูกค้าซื้อ (POS, LIFF, Website) | Next |
+### Backup System
+- R2 storage via `aws4fetch` (S3-compatible API) — `lib/r2.ts`
+- Files grouped by folder prefix: `config/`, `db/`, `upload/`, `other`
+- `getGroupedBucketStatus()` / `getMultiBucketGroupedStatus()` for parallel folder-grouped status
+- Backup list page: card grid with folder breakdown dots + last backup + status badge
+- Backup detail page: `BackupFolderView` client component — expandable sections, db folder default expanded
+- Backup alerts on dashboard: counts customers with no backup in 24h
+
+### Uptime Monitor System
+- Cloudflare Worker (`workers/uptime-checker/`) pings URLs at intervals
+- Results stored in `uptime_checks` table, incidents auto-created on status change
+- Dashboard: `CustomerCardGrid` with per-customer monitor cards, click to open detail modal with uptime %, streak, response time chart
+- Uptime page: summary cards (total/online/offline/paused) + monitor table/cards
+- Monitor detail: stats grid (uptime 24h/7d/30d), recent checks table, incidents table
+- Telegram alerts via bot token on down/up status changes
+
+### Planned Features
+| Feature | Description | Priority |
+|---------|-------------|----------|
+| Dashboard due-soon alert | Subscription ใกล้ครบกำหนด 7 วัน แสดงบน dashboard | High |
+| Contract file upload | Upload PDF/doc ไป R2 bucket `contracts/` folder จาก ContractSection | Medium |
+| Customer summary view | แสดงจำนวน subscriptions/contracts/apps บน customer list page | Low |
 
 ---
 
