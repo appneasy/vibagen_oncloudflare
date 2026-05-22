@@ -16,4 +16,9 @@ interface Env {
 
   /** Site URL */
   NEXT_PUBLIC_SITE_URL?: string
+
+  /** R2 S3 API — multi-bucket backup access */
+  R2_ACCOUNT_ID: string
+  R2_ACCESS_KEY_ID: string
+  R2_SECRET_ACCESS_KEY: string
 }
