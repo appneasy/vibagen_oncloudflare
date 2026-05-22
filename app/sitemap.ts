@@ -20,6 +20,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE}/expertise`,       lastModified: new Date(), changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE}/knowledge`,       lastModified: new Date(), changeFrequency: 'weekly',  priority: 0.9 },
     { url: `${BASE}/hire-us`,         lastModified: new Date(), changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${BASE}/status`,          lastModified: new Date(), changeFrequency: 'always',  priority: 0.6 },
   ]
 
   const articlePages: MetadataRoute.Sitemap = articles.map((article) => ({

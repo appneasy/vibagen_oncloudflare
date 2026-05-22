@@ -1,5 +1,8 @@
 interface Env {
   DB: D1Database
+  RESEND_API_KEY?: string
+  TELEGRAM_BOT_TOKEN?: string
+  ADMIN_ALERT_EMAIL?: string
 }
 
 interface Monitor {
@@ -11,6 +14,8 @@ interface Monitor {
   expected_status: number
   expected_keyword: string | null
   is_active: number
+  alert_emails: string | null
+  telegram_chat_id: string | null
 }
 
 interface CheckResult {
@@ -30,6 +35,13 @@ interface OpenIncident {
 
 interface MaintenanceWindow {
   monitor_id: number
+}
+
+interface AlertAction {
+  monitor: Monitor
+  type: 'down' | 'resolved'
+  errorMessage: string | null
+  durationSeconds: number | null
 }
 
 async function checkMonitor(monitor: Monitor, region: string): Promise<CheckResult> {
@@ -89,7 +101,123 @@ async function checkMonitor(monitor: Monitor, region: string): Promise<CheckResu
   }
 }
 
-async function handleIncidents(env: Env, results: CheckResult[], now: string) {
+async function sendEmailAlert(
+  env: Env,
+  monitor: Monitor,
+  type: 'down' | 'resolved',
+  errorMessage: string | null,
+  durationSeconds: number | null,
+  now: string,
+): Promise<void> {
+  if (!env.RESEND_API_KEY) return
+
+  const recipients: string[] = []
+  if (env.ADMIN_ALERT_EMAIL) recipients.push(env.ADMIN_ALERT_EMAIL)
+  if (monitor.alert_emails) {
+    for (const e of monitor.alert_emails.split(',')) {
+      const trimmed = e.trim()
+      if (trimmed && !recipients.includes(trimmed)) recipients.push(trimmed)
+    }
+  }
+  if (recipients.length === 0) return
+
+  const isDown = type === 'down'
+  const subject = isDown
+    ? `🔴 DOWN: ${monitor.label}`
+    : `✅ RESOLVED: ${monitor.label}`
+
+  let body = `Monitor: ${monitor.label}\nURL: ${monitor.url}\n`
+  if (isDown) {
+    body += `Status: DOWN\n`
+    if (errorMessage) body += `Error: ${errorMessage}\n`
+  } else {
+    body += `Status: UP (Resolved)\n`
+    if (durationSeconds != null) body += `Downtime: ${formatAlertDuration(durationSeconds)}\n`
+  }
+  body += `Time: ${now}\n\n— VIBAGEN Uptime Monitor`
+
+  try {
+    await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.RESEND_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'VIBAGEN Monitor <monitor@vibagen.com>',
+        to: recipients,
+        subject,
+        text: body,
+      }),
+    })
+  } catch (err) {
+    console.error('[Alert/Email] Failed:', err)
+  }
+}
+
+async function sendTelegramAlert(
+  env: Env,
+  monitor: Monitor,
+  type: 'down' | 'resolved',
+  errorMessage: string | null,
+  durationSeconds: number | null,
+  now: string,
+): Promise<void> {
+  if (!env.TELEGRAM_BOT_TOKEN) return
+
+  const chatIds: string[] = []
+  if (monitor.telegram_chat_id) chatIds.push(monitor.telegram_chat_id)
+  if (chatIds.length === 0) return
+
+  const isDown = type === 'down'
+  let text = isDown
+    ? `🔴 *DOWN*: ${escapeMarkdown(monitor.label)}\n`
+    : `✅ *RESOLVED*: ${escapeMarkdown(monitor.label)}\n`
+
+  text += `URL: ${monitor.url}\n`
+  if (isDown && errorMessage) {
+    text += `Error: ${escapeMarkdown(errorMessage)}\n`
+  }
+  if (!isDown && durationSeconds != null) {
+    text += `Downtime: ${formatAlertDuration(durationSeconds)}\n`
+  }
+  text += `Time: ${now}`
+
+  for (const chatId of chatIds) {
+    try {
+      await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: chatId,
+          text,
+          parse_mode: 'Markdown',
+        }),
+      })
+    } catch (err) {
+      console.error('[Alert/Telegram] Failed:', err)
+    }
+  }
+}
+
+function escapeMarkdown(s: string): string {
+  return s.replace(/[_*[\]()~`>#+=|{}.!-]/g, '\\$&')
+}
+
+function formatAlertDuration(seconds: number): string {
+  if (seconds < 60) return `${seconds}s`
+  if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  return `${h}h ${m}m`
+}
+
+async function handleIncidents(
+  env: Env,
+  results: CheckResult[],
+  monitors: Map<number, Monitor>,
+  now: string,
+): Promise<AlertAction[]> {
   // Get all currently open incidents (resolved_at IS NULL)
   const openIncidents = await env.DB.prepare(
     'SELECT id, monitor_id, started_at FROM uptime_incidents WHERE resolved_at IS NULL'
@@ -101,6 +229,7 @@ async function handleIncidents(env: Env, results: CheckResult[], now: string) {
   }
 
   const batch: D1PreparedStatement[] = []
+  const alertActions: AlertAction[] = []
 
   for (const result of results) {
     const existing = openMap.get(result.monitorId)
@@ -113,6 +242,10 @@ async function handleIncidents(env: Env, results: CheckResult[], now: string) {
            VALUES (?1, 'major', ?2)`
         ).bind(result.monitorId, now)
       )
+      const monitor = monitors.get(result.monitorId)
+      if (monitor) {
+        alertActions.push({ monitor, type: 'down', errorMessage: result.errorMessage, durationSeconds: null })
+      }
     } else if (result.status === 'up' && existing) {
       // Resolve existing incident
       const startedAt = new Date(existing.started_at + 'Z').getTime()
@@ -125,6 +258,10 @@ async function handleIncidents(env: Env, results: CheckResult[], now: string) {
            WHERE id = ?3`
         ).bind(now, durationSeconds, existing.id)
       )
+      const monitor = monitors.get(result.monitorId)
+      if (monitor) {
+        alertActions.push({ monitor, type: 'resolved', errorMessage: null, durationSeconds })
+      }
     } else if (result.status === 'down' && existing) {
       // Still down — check if we need to escalate severity
       const startedAt = new Date(existing.started_at + 'Z').getTime()
@@ -145,6 +282,8 @@ async function handleIncidents(env: Env, results: CheckResult[], now: string) {
   if (batch.length > 0) {
     await env.DB.batch(batch)
   }
+
+  return alertActions
 }
 
 export default {
@@ -195,7 +334,19 @@ export default {
 
     await env.DB.batch(batch)
 
-    // 5. Handle incidents (detect new, resolve existing)
-    await handleIncidents(env, results, now)
+    // 5. Build monitors map for alert lookups
+    const monitorsMap = new Map<number, Monitor>()
+    for (const m of monitors.results) {
+      monitorsMap.set(m.id, m)
+    }
+
+    // 6. Handle incidents (detect new, resolve existing) and collect alerts
+    const alerts = await handleIncidents(env, results, monitorsMap, now)
+
+    // 7. Fire alerts without blocking the response
+    for (const alert of alerts) {
+      ctx.waitUntil(sendEmailAlert(env, alert.monitor, alert.type, alert.errorMessage, alert.durationSeconds, now))
+      ctx.waitUntil(sendTelegramAlert(env, alert.monitor, alert.type, alert.errorMessage, alert.durationSeconds, now))
+    }
   },
 } satisfies ExportedHandler<Env>
