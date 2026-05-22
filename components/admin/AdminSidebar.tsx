@@ -7,7 +7,7 @@ import { useState } from 'react'
 const navItems = [
   { label: 'Dashboard',  icon: '📊', href: '/admin/dashboard' },
   { label: 'Backups',    icon: '💾', href: '/admin/backups' },
-  { label: 'Customers',  icon: '👥', href: '/admin/customers',  comingSoon: true },
+  { label: 'Customers',  icon: '👥', href: '/admin/customers' },
   { label: 'Uptime',     icon: '🔔', href: '/admin/uptime',     comingSoon: true },
 ]
 
