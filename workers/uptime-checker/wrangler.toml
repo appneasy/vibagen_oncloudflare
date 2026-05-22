@@ -1,0 +1,12 @@
+name = "vibagen-uptime-checker"
+main = "src/index.ts"
+compatibility_date = "2024-09-23"
+compatibility_flags = ["nodejs_compat"]
+
+[triggers]
+crons = ["*/5 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vibagen-db"
+database_id = "8e46686e-0c24-456f-baca-024b6218897a"

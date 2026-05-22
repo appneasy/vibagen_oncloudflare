@@ -46,3 +46,62 @@ export const managedCustomers = sqliteTable('managed_customers', {
 
 export type ManagedCustomer    = typeof managedCustomers.$inferSelect
 export type NewManagedCustomer = typeof managedCustomers.$inferInsert
+
+// ─── Uptime Monitors ─────────────────────────────────────
+export const uptimeMonitors = sqliteTable('uptime_monitors', {
+  id:              int('id').primaryKey({ autoIncrement: true }),
+  customerSlug:    text('customer_slug'),          // optional link to managed_customers.slug
+  url:             text('url').notNull(),
+  label:           text('label').notNull(),
+  checkInterval:   int('check_interval').notNull().default(300),  // seconds
+  expectedStatus:  int('expected_status').notNull().default(200),
+  expectedKeyword: text('expected_keyword'),        // optional keyword check
+  isActive:        int('is_active').notNull().default(1),         // 1=active, 0=paused
+  alertEmails:     text('alert_emails'),             // comma-separated
+  telegramChatId:  text('telegram_chat_id'),
+  createdAt:       text('created_at').default(sql`(datetime('now'))`),
+  updatedAt:       text('updated_at').default(sql`(datetime('now'))`),
+})
+
+export type UptimeMonitor    = typeof uptimeMonitors.$inferSelect
+export type NewUptimeMonitor = typeof uptimeMonitors.$inferInsert
+
+// ─── Uptime Checks (raw results) ────────────────────────
+export const uptimeChecks = sqliteTable('uptime_checks', {
+  id:             int('id').primaryKey({ autoIncrement: true }),
+  monitorId:      int('monitor_id').notNull(),
+  status:         text('status').notNull(),          // 'up' | 'down'
+  statusCode:     int('status_code'),
+  responseTimeMs: int('response_time_ms'),
+  errorMessage:   text('error_message'),
+  region:         text('region'),                     // CF colo code
+  checkedAt:      text('checked_at').notNull().default(sql`(datetime('now'))`),
+})
+
+export type UptimeCheck = typeof uptimeChecks.$inferSelect
+
+// ─── Uptime Incidents ────────────────────────────────────
+export const uptimeIncidents = sqliteTable('uptime_incidents', {
+  id:              int('id').primaryKey({ autoIncrement: true }),
+  monitorId:       int('monitor_id').notNull(),
+  severity:        text('severity').notNull().default('major'), // 'minor' | 'major' | 'critical'
+  startedAt:       text('started_at').notNull().default(sql`(datetime('now'))`),
+  resolvedAt:      text('resolved_at'),
+  durationSeconds: int('duration_seconds'),
+  cause:           text('cause'),                    // manual note by admin
+  createdAt:       text('created_at').default(sql`(datetime('now'))`),
+})
+
+export type UptimeIncident = typeof uptimeIncidents.$inferSelect
+
+// ─── Uptime Maintenance Windows ──────────────────────────
+export const uptimeMaintenance = sqliteTable('uptime_maintenance', {
+  id:         int('id').primaryKey({ autoIncrement: true }),
+  monitorId:  int('monitor_id').notNull(),
+  startTime:  text('start_time').notNull(),
+  endTime:    text('end_time').notNull(),
+  reason:     text('reason'),
+  createdAt:  text('created_at').default(sql`(datetime('now'))`),
+})
+
+export type UptimeMaintenance = typeof uptimeMaintenance.$inferSelect
