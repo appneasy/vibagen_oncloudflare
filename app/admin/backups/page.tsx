@@ -3,9 +3,9 @@ export const runtime = 'edge'
 import Link from 'next/link'
 import { getDB } from '@/lib/db'
 import { managedCustomers } from '@/lib/db/schema'
-import { getMultiBucketStatus } from '@/lib/r2'
+import { getMultiBucketGroupedStatus } from '@/lib/r2'
 import type { ManagedCustomer } from '@/lib/db/schema'
-import type { BucketBackupStatus } from '@/lib/r2'
+import type { BucketGroupedStatus } from '@/lib/r2'
 
 async function getCfEnv(): Promise<Env | undefined> {
   try {
@@ -46,13 +46,20 @@ const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }>
   fail:    { bg: '#fee2e2', color: '#991b1b', label: 'Fail' },
 }
 
+const FOLDER_DOT: Record<string, string> = {
+  config: '#3b82f6',
+  db:     '#8b5cf6',
+  upload: '#f59e0b',
+  other:  '#9ca3af',
+}
+
 // ─── Page ─────────────────────────────────────────────────
 
 export default async function BackupsPage() {
   const env = await getCfEnv()
 
   let customers: ManagedCustomer[] = []
-  let statusMap = new Map<string, BucketBackupStatus>()
+  let statusMap = new Map<string, BucketGroupedStatus>()
   let dbError = false
 
   if (env?.DB) {
@@ -65,7 +72,7 @@ export default async function BackupsPage() {
         .map((c) => ({ slug: c.slug, bucket: c.r2Bucket! }))
 
       if (withBuckets.length > 0 && env.R2_ACCOUNT_ID) {
-        statusMap = await getMultiBucketStatus(env, withBuckets)
+        statusMap = await getMultiBucketGroupedStatus(env, withBuckets)
       }
     } catch {
       dbError = true
@@ -126,7 +133,7 @@ export default async function BackupsPage() {
 
       {/* ── Summary badges ── */}
       {statusMap.size > 0 && (
-        <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 10, marginBottom: 24, flexWrap: 'wrap' }}>
           <span
             style={{
               padding: '4px 14px',
@@ -166,107 +173,176 @@ export default async function BackupsPage() {
         </div>
       )}
 
-      {/* ── Table ── */}
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 12,
-          overflow: 'hidden',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          border: '1px solid #e5e9f0',
-        }}
-      >
-        {customersWithBuckets.length === 0 ? (
-          <div
-            style={{
-              padding: '60px 20px',
-              textAlign: 'center',
-              color: '#737373',
-              fontSize: 14,
-            }}
-          >
-            {dbError
-              ? 'ไม่สามารถโหลดข้อมูลได้'
-              : 'ยังไม่มี customer ที่ตั้งค่า R2 bucket'}
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-              <thead>
-                <tr style={{ background: '#0d2749' }}>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 500, fontSize: 13 }}>Customer</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 500, fontSize: 13 }}>Subdomain</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 500, fontSize: 13 }}>R2 Bucket</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 500, fontSize: 13 }}>Last Backup</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', color: '#fff', fontWeight: 500, fontSize: 13 }}>Files</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', color: '#fff', fontWeight: 500, fontSize: 13 }}>Size</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center', color: '#fff', fontWeight: 500, fontSize: 13 }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {customersWithBuckets.map((c, i) => {
-                  const s = statusMap.get(c.slug)
-                  const badge = STATUS_BADGE[s?.status ?? 'fail']
-                  const isLast = i === customersWithBuckets.length - 1
+      {/* ── Card grid ── */}
+      {customersWithBuckets.length === 0 ? (
+        <div
+          style={{
+            background: '#fff',
+            borderRadius: 12,
+            padding: '60px 20px',
+            textAlign: 'center',
+            color: '#737373',
+            fontSize: 14,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            border: '1px solid #e5e9f0',
+          }}
+        >
+          {dbError ? 'ไม่สามารถโหลดข้อมูลได้' : 'ยังไม่มี customer ที่ตั้งค่า R2 bucket'}
+        </div>
+      ) : (
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))',
+            gap: 16,
+          }}
+        >
+          {customersWithBuckets.map((c) => {
+            const s = statusMap.get(c.slug)
+            const badge = STATUS_BADGE[s?.status ?? 'fail']
 
-                  return (
-                    <tr
-                      key={c.id}
+            return (
+              <Link
+                key={c.id}
+                href={`/admin/backups/${c.slug}`}
+                style={{
+                  textDecoration: 'none',
+                  color: 'inherit',
+                  display: 'block',
+                }}
+              >
+                <div
+                  style={{
+                    background: '#fff',
+                    borderRadius: 12,
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+                    border: '1px solid #e5e9f0',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Card header */}
+                  <div
+                    style={{
+                      padding: '16px 20px',
+                      borderBottom: '1px solid #f0f4f8',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 8,
+                    }}
+                  >
+                    <span
                       style={{
-                        borderBottom: isLast ? 'none' : '1px solid #f0f4f8',
-                        cursor: 'pointer',
+                        fontFamily: 'var(--font-prompt)',
+                        fontWeight: 600,
+                        fontSize: 16,
+                        color: '#0d2749',
                       }}
                     >
-                      <td style={{ padding: '13px 16px' }}>
-                        <Link
-                          href={`/admin/backups/${c.slug}`}
-                          style={{
-                            color: '#0d2749',
-                            fontWeight: 500,
-                            textDecoration: 'none',
-                          }}
-                        >
-                          {c.name}
-                        </Link>
-                      </td>
-                      <td style={{ padding: '13px 16px', color: '#737373', fontFamily: 'monospace', fontSize: 13 }}>
-                        {c.subdomain}
-                      </td>
-                      <td style={{ padding: '13px 16px', color: '#737373', fontFamily: 'monospace', fontSize: 12 }}>
-                        {c.r2Bucket}
-                      </td>
-                      <td style={{ padding: '13px 16px', color: '#737373' }}>
+                      {c.name}
+                    </span>
+                    <span
+                      style={{
+                        padding: '3px 10px',
+                        borderRadius: 20,
+                        fontSize: 12,
+                        fontWeight: 600,
+                        background: badge.bg,
+                        color: badge.color,
+                        whiteSpace: 'nowrap',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {badge.label}
+                    </span>
+                  </div>
+
+                  {/* Card body */}
+                  <div style={{ padding: '14px 20px' }}>
+                    {/* Subdomain */}
+                    <div
+                      style={{
+                        fontSize: 12,
+                        color: '#737373',
+                        fontFamily: 'monospace',
+                        marginBottom: 10,
+                      }}
+                    >
+                      {c.subdomain}
+                    </div>
+
+                    {/* Last backup */}
+                    <div style={{ fontSize: 13, color: '#737373', marginBottom: 14 }}>
+                      Last backup:{' '}
+                      <span style={{ color: '#0d2749', fontWeight: 500 }}>
                         {s?.lastBackup ? formatRelativeTime(s.lastBackup) : '—'}
-                      </td>
-                      <td style={{ padding: '13px 16px', color: '#737373', textAlign: 'right' }}>
-                        {s ? s.totalFiles.toLocaleString() : '—'}
-                      </td>
-                      <td style={{ padding: '13px 16px', color: '#737373', textAlign: 'right' }}>
-                        {s ? formatBytes(s.totalSize) : '—'}
-                      </td>
-                      <td style={{ padding: '13px 16px', textAlign: 'center' }}>
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            padding: '3px 10px',
-                            borderRadius: 20,
-                            fontSize: 12,
-                            fontWeight: 600,
-                            background: badge.bg,
-                            color: badge.color,
-                          }}
-                        >
-                          {badge.label}
-                        </span>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                      </span>
+                    </div>
+
+                    {/* Folder breakdown */}
+                    {s && s.folders.length > 0 ? (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                        {s.folders.map((f) => (
+                          <div
+                            key={f.folder}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8,
+                              fontSize: 13,
+                            }}
+                          >
+                            {/* Colored dot */}
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                width: 8,
+                                height: 8,
+                                borderRadius: '50%',
+                                background: FOLDER_DOT[f.folder] ?? FOLDER_DOT.other,
+                                flexShrink: 0,
+                              }}
+                            />
+                            <span style={{ color: '#0d2749', fontWeight: 500, minWidth: 56 }}>
+                              {f.folder}/
+                            </span>
+                            <span style={{ color: '#737373' }}>
+                              {f.fileCount} {f.fileCount === 1 ? 'file' : 'files'}
+                            </span>
+                            <span style={{ color: '#9ca3af', marginLeft: 'auto' }}>
+                              {formatBytes(f.totalSize)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: 13, color: '#9ca3af' }}>No backup files</div>
+                    )}
+
+                    {/* Total summary */}
+                    {s && s.totalFiles > 0 && (
+                      <div
+                        style={{
+                          marginTop: 12,
+                          paddingTop: 10,
+                          borderTop: '1px solid #f0f4f8',
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontSize: 12,
+                          color: '#737373',
+                        }}
+                      >
+                        <span>Total: {s.totalFiles} files</span>
+                        <span>{formatBytes(s.totalSize)}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </Link>
+            )
+          })}
+        </div>
+      )}
     </div>
   )
 }

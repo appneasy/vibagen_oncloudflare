@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm'
 import { getDB } from '@/lib/db'
 import { managedCustomers } from '@/lib/db/schema'
 import { listObjects } from '@/lib/r2'
+import BackupFolderView from '@/components/admin/BackupFolderView'
 import type { ManagedCustomer } from '@/lib/db/schema'
 
 async function getCfEnv(): Promise<Env | undefined> {
@@ -26,21 +27,60 @@ function formatBytes(bytes: number): string {
   return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`
 }
 
-function formatDateTime(date: Date): string {
-  return date.toLocaleString('th-TH', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-  })
+function formatRelativeTime(date: Date): string {
+  const nowMs = Date.now()
+  const diffMs = nowMs - date.getTime()
+  const diffMins = Math.floor(diffMs / (1000 * 60))
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffMins < 1) return 'เพิ่งสักครู่'
+  if (diffMins < 60) return `${diffMins} นาทีที่แล้ว`
+  if (diffHours < 24) return `${diffHours} ชั่วโมงที่แล้ว`
+  if (diffDays === 1) return 'เมื่อวาน'
+  return `${diffDays} วันที่แล้ว`
 }
 
-const STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
+const CUSTOMER_STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
   active:     { bg: '#d1fae5', color: '#065f46', label: 'Active' },
   setup:      { bg: '#dbeafe', color: '#1e40af', label: 'Setup' },
   suspended:  { bg: '#fef3c7', color: '#92400e', label: 'Suspended' },
   terminated: { bg: '#fee2e2', color: '#991b1b', label: 'Terminated' },
+}
+
+const BACKUP_STATUS_BADGE: Record<string, { bg: string; color: string; label: string }> = {
+  ok:      { bg: '#d1fae5', color: '#065f46', label: 'OK' },
+  warning: { bg: '#fef3c7', color: '#92400e', label: 'Warning' },
+  fail:    { bg: '#fee2e2', color: '#991b1b', label: 'Fail' },
+}
+
+// ─── Group files by folder prefix ─────────────────────────
+
+const KNOWN_FOLDERS = ['config', 'db', 'upload']
+
+function groupFiles(files: { key: string; size: number; lastModified: Date }[]) {
+  const groups: Record<string, { key: string; size: number; lastModified: string }[]> = {}
+  for (const f of KNOWN_FOLDERS) groups[f] = []
+  groups['other'] = []
+
+  for (const file of files) {
+    const firstSlash = file.key.indexOf('/')
+    const prefix = firstSlash > 0 ? file.key.substring(0, firstSlash) : null
+    const folder = prefix && KNOWN_FOLDERS.includes(prefix) ? prefix : 'other'
+    groups[folder].push({
+      key: file.key,
+      size: file.size,
+      lastModified: file.lastModified.toISOString(),
+    })
+  }
+
+  return KNOWN_FOLDERS.concat('other')
+    .filter((f) => groups[f].length > 0)
+    .map((f) => ({
+      folder: f,
+      files: groups[f],
+      totalSize: groups[f].reduce((s, file) => s + file.size, 0),
+    }))
 }
 
 // ─── Page ─────────────────────────────────────────────────
@@ -110,7 +150,22 @@ export default async function BackupDetailPage({
     }
   }
 
-  const statusBadge = STATUS_BADGE[customer.status ?? 'setup'] ?? STATUS_BADGE.setup
+  // Compute backup summary
+  const totalFiles = files.length
+  const totalSize = files.reduce((s, f) => s + f.size, 0)
+  const lastBackup = files.length > 0 ? files[0].lastModified : null
+
+  let backupStatus: 'ok' | 'warning' | 'fail' = 'fail'
+  if (lastBackup) {
+    const hoursSince = (Date.now() - lastBackup.getTime()) / (1000 * 60 * 60)
+    backupStatus = hoursSince < 26 ? 'ok' : hoursSince <= 48 ? 'warning' : 'fail'
+  }
+
+  const customerBadge = CUSTOMER_STATUS_BADGE[customer.status ?? 'setup'] ?? CUSTOMER_STATUS_BADGE.setup
+  const backupBadge = BACKUP_STATUS_BADGE[backupStatus]
+
+  // Group files by folder for BackupFolderView
+  const folderGroups = groupFiles(files)
 
   return (
     <div>
@@ -136,7 +191,7 @@ export default async function BackupDetailPage({
           background: '#fff',
           borderRadius: 12,
           padding: '20px 24px',
-          marginBottom: 24,
+          marginBottom: 20,
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
           border: '1px solid #e5e9f0',
         }}
@@ -159,11 +214,11 @@ export default async function BackupDetailPage({
               borderRadius: 20,
               fontSize: 12,
               fontWeight: 600,
-              background: statusBadge.bg,
-              color: statusBadge.color,
+              background: customerBadge.bg,
+              color: customerBadge.color,
             }}
           >
-            {statusBadge.label}
+            {customerBadge.label}
           </span>
         </div>
 
@@ -196,7 +251,54 @@ export default async function BackupDetailPage({
         </div>
       </div>
 
-      {/* ── File list table ── */}
+      {/* ── Backup summary row ── */}
+      {customer.r2Bucket && !r2Error && (
+        <div
+          style={{
+            background: '#fff',
+            borderRadius: 12,
+            padding: '14px 20px',
+            marginBottom: 20,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            border: '1px solid #e5e9f0',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 20,
+            flexWrap: 'wrap',
+            fontSize: 13,
+          }}
+        >
+          <span style={{ color: '#737373' }}>
+            Total:{' '}
+            <strong style={{ color: '#0d2749' }}>{totalFiles} files</strong>
+          </span>
+          <span style={{ color: '#737373' }}>
+            Size:{' '}
+            <strong style={{ color: '#0d2749' }}>{formatBytes(totalSize)}</strong>
+          </span>
+          <span style={{ color: '#737373' }}>
+            Last backup:{' '}
+            <strong style={{ color: '#0d2749' }}>
+              {lastBackup ? formatRelativeTime(lastBackup) : '—'}
+            </strong>
+          </span>
+          <span
+            style={{
+              marginLeft: 'auto',
+              padding: '3px 10px',
+              borderRadius: 20,
+              fontSize: 12,
+              fontWeight: 600,
+              background: backupBadge.bg,
+              color: backupBadge.color,
+            }}
+          >
+            {backupBadge.label}
+          </span>
+        </div>
+      )}
+
+      {/* ── Folder view ── */}
       <div
         style={{
           background: '#fff',
@@ -222,101 +324,41 @@ export default async function BackupDetailPage({
             }}
           >
             Backup Files
-            {files.length > 0 && (
+            {totalFiles > 0 && (
               <span style={{ fontWeight: 400, fontSize: 13, color: '#737373', marginLeft: 8 }}>
-                ({files.length} ไฟล์)
+                ({totalFiles} ไฟล์)
               </span>
             )}
           </h2>
         </div>
 
-        {!customer.r2Bucket ? (
-          <div
-            style={{
-              padding: '60px 20px',
-              textAlign: 'center',
-              color: '#737373',
-              fontSize: 14,
-            }}
-          >
-            Customer นี้ยังไม่ได้ตั้งค่า R2 bucket
-          </div>
-        ) : r2Error ? (
-          <div
-            style={{
-              padding: '60px 20px',
-              textAlign: 'center',
-              color: '#991b1b',
-              fontSize: 14,
-            }}
-          >
-            ไม่สามารถโหลดข้อมูล R2 ได้
-          </div>
-        ) : files.length === 0 ? (
-          <div
-            style={{
-              padding: '60px 20px',
-              textAlign: 'center',
-              color: '#737373',
-              fontSize: 14,
-            }}
-          >
-            No backup files found
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-              <thead>
-                <tr style={{ background: '#0d2749' }}>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 500, fontSize: 13 }}>Key (Filename)</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'right', color: '#fff', fontWeight: 500, fontSize: 13 }}>Size</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 500, fontSize: 13 }}>Last Modified</th>
-                </tr>
-              </thead>
-              <tbody>
-                {files.map((file, i) => (
-                  <tr
-                    key={file.key}
-                    style={{
-                      borderBottom: i < files.length - 1 ? '1px solid #f0f4f8' : 'none',
-                    }}
-                  >
-                    <td
-                      style={{
-                        padding: '11px 16px',
-                        color: '#0d2749',
-                        fontFamily: 'monospace',
-                        fontSize: 13,
-                        wordBreak: 'break-all',
-                      }}
-                    >
-                      {file.key}
-                    </td>
-                    <td
-                      style={{
-                        padding: '11px 16px',
-                        color: '#737373',
-                        textAlign: 'right',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {formatBytes(file.size)}
-                    </td>
-                    <td
-                      style={{
-                        padding: '11px 16px',
-                        color: '#737373',
-                        whiteSpace: 'nowrap',
-                      }}
-                    >
-                      {formatDateTime(file.lastModified)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        <div style={{ padding: 16 }}>
+          {!customer.r2Bucket ? (
+            <div
+              style={{
+                padding: '40px 20px',
+                textAlign: 'center',
+                color: '#737373',
+                fontSize: 14,
+              }}
+            >
+              Customer นี้ยังไม่ได้ตั้งค่า R2 bucket
+            </div>
+          ) : r2Error ? (
+            <div
+              style={{
+                padding: '40px 20px',
+                textAlign: 'center',
+                color: '#991b1b',
+                fontSize: 14,
+              }}
+            >
+              ไม่สามารถโหลดข้อมูล R2 ได้
+            </div>
+          ) : (
+            <BackupFolderView folders={folderGroups} />
+          )}
+        </div>
       </div>
     </div>
   )

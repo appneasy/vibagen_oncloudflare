@@ -161,3 +161,101 @@ export async function getMultiBucketStatus(
   }
   return map
 }
+
+// ─── Folder-grouped types and helpers ─────────────────────
+
+export interface FolderSummary {
+  folder: string          // 'config' | 'db' | 'upload' | 'other'
+  fileCount: number
+  totalSize: number
+  lastModified: Date | null
+}
+
+// Group R2 objects by folder prefix (config/, db/, upload/)
+// Files without a known prefix go into 'other'
+export function groupObjectsByFolder(objects: R2Object[]): FolderSummary[] {
+  const KNOWN_FOLDERS = ['config', 'db', 'upload']
+  const groups: Record<string, { files: number; size: number; lastMod: Date | null }> = {}
+
+  // Initialize known folders
+  for (const f of KNOWN_FOLDERS) {
+    groups[f] = { files: 0, size: 0, lastMod: null }
+  }
+  groups['other'] = { files: 0, size: 0, lastMod: null }
+
+  for (const obj of objects) {
+    const firstSlash = obj.key.indexOf('/')
+    const prefix = firstSlash > 0 ? obj.key.substring(0, firstSlash) : null
+    const folder = prefix && KNOWN_FOLDERS.includes(prefix) ? prefix : 'other'
+
+    groups[folder].files++
+    groups[folder].size += obj.size
+    if (!groups[folder].lastMod || obj.lastModified > groups[folder].lastMod) {
+      groups[folder].lastMod = obj.lastModified
+    }
+  }
+
+  // Return only folders that have files, with known folders first
+  return [...KNOWN_FOLDERS, 'other']
+    .filter((f) => groups[f].files > 0)
+    .map((f) => ({
+      folder: f,
+      fileCount: groups[f].files,
+      totalSize: groups[f].size,
+      lastModified: groups[f].lastMod,
+    }))
+}
+
+export interface BucketGroupedStatus {
+  bucket: string
+  folders: FolderSummary[]
+  totalFiles: number
+  totalSize: number
+  lastBackup: Date | null
+  status: BackupStatus
+  hoursSinceBackup: number | null
+}
+
+export async function getGroupedBucketStatus(env: Env, bucket: string): Promise<BucketGroupedStatus> {
+  try {
+    const objects = await listObjects(env, bucket)
+    const folders = groupObjectsByFolder(objects)
+    const totalFiles = folders.reduce((s, f) => s + f.fileCount, 0)
+    const totalSize = folders.reduce((s, f) => s + f.totalSize, 0)
+
+    let lastBackup: Date | null = null
+    for (const f of folders) {
+      if (f.lastModified && (!lastBackup || f.lastModified > lastBackup)) {
+        lastBackup = f.lastModified
+      }
+    }
+
+    let hoursSinceBackup: number | null = null
+    let status: BackupStatus = 'fail'
+    if (lastBackup) {
+      hoursSinceBackup = (Date.now() - lastBackup.getTime()) / (1000 * 60 * 60)
+      status = hoursSinceBackup < 26 ? 'ok' : hoursSinceBackup <= 48 ? 'warning' : 'fail'
+    }
+
+    return { bucket, folders, totalFiles, totalSize, lastBackup, status, hoursSinceBackup }
+  } catch {
+    return { bucket, folders: [], totalFiles: 0, totalSize: 0, lastBackup: null, status: 'fail', hoursSinceBackup: null }
+  }
+}
+
+export async function getMultiBucketGroupedStatus(
+  env: Env,
+  buckets: { slug: string; bucket: string }[],
+): Promise<Map<string, BucketGroupedStatus>> {
+  const results = await Promise.all(
+    buckets.map(async ({ slug, bucket }) => {
+      const status = await getGroupedBucketStatus(env, bucket)
+      return { slug, status }
+    }),
+  )
+  const map = new Map<string, BucketGroupedStatus>()
+  for (const { slug, status } of results) {
+    map.set(slug, status)
+  }
+  return map
+}
