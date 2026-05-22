@@ -25,6 +25,7 @@
 *.pem
 .pnpm-store/
 .claude/
+pnpm-lock.yaml
 
 # debug
 npm-debug.log*
