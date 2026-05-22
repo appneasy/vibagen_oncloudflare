@@ -34,18 +34,34 @@ export default function AdminSidebar() {
       {/* Logo / Title */}
       <div
         style={{
-          padding: '24px 20px 16px',
+          padding: '20px 20px 16px',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
-          fontFamily: 'var(--font-prompt)',
-          fontWeight: 700,
-          fontSize: 18,
-          letterSpacing: '-0.01em',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
         }}
       >
-        VIBAGEN
-        <span style={{ display: 'block', fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.45)', marginTop: 2 }}>
-          Admin Panel
-        </span>
+        <img
+          src="/images/vlogo.png"
+          alt="V"
+          style={{ width: 36, height: 36, objectFit: 'contain' }}
+        />
+        <div>
+          <div
+            style={{
+              fontFamily: 'var(--font-prompt)',
+              fontWeight: 700,
+              fontSize: 17,
+              letterSpacing: '-0.01em',
+              lineHeight: 1.2,
+            }}
+          >
+            VIBAGEN
+          </div>
+          <span style={{ fontSize: 11, fontWeight: 400, color: 'rgba(255,255,255,0.45)' }}>
+            Admin Panel
+          </span>
+        </div>
       </div>
 
       {/* Nav Items */}
@@ -152,26 +168,31 @@ export default function AdminSidebar() {
   return (
     <>
       {/* ── Mobile hamburger button ── */}
-      <button
-        aria-label="Open menu"
-        onClick={() => setMobileOpen(true)}
-        style={{
-          position: 'fixed',
-          top: 14,
-          left: 16,
-          zIndex: 60,
-          background: 'none',
-          border: 'none',
-          cursor: 'pointer',
-          fontSize: 22,
-          color: '#0d2749',
-          display: 'none',
-          lineHeight: 1,
-        }}
-        className="admin-hamburger"
-      >
-        ☰
-      </button>
+      {!mobileOpen && (
+        <button
+          aria-label="Open menu"
+          onClick={() => setMobileOpen(true)}
+          style={{
+            position: 'fixed',
+            top: 10,
+            left: 12,
+            zIndex: 60,
+            background: '#fff',
+            border: '1px solid #e5e9f0',
+            borderRadius: 8,
+            cursor: 'pointer',
+            fontSize: 18,
+            color: '#0d2749',
+            display: 'none',
+            lineHeight: 1,
+            padding: '6px 8px',
+            boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
+          }}
+          className="admin-hamburger"
+        >
+          ☰
+        </button>
+      )}
 
       {/* ── Desktop sidebar ── */}
       <aside

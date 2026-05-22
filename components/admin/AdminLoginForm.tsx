@@ -60,11 +60,16 @@ export default function AdminLoginForm() {
       >
         {/* Logo/Title */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
+          <img
+            src="/images/vlogo.png"
+            alt="VIBAGEN"
+            style={{ width: 56, height: 56, objectFit: 'contain', marginBottom: 8 }}
+          />
           <div
             style={{
               fontFamily: 'var(--font-prompt)',
               fontWeight: 700,
-              fontSize: 24,
+              fontSize: 22,
               color: '#0d2749',
               letterSpacing: '-0.01em',
             }}
