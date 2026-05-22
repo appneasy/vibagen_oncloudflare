@@ -7,6 +7,8 @@ import { managedCustomers } from '@/lib/db/schema'
 import type { ManagedCustomer } from '@/lib/db/schema'
 import DeleteCustomerButton from './DeleteCustomerButton'
 import SubscriptionSection from '@/components/admin/SubscriptionSection'
+import ContractSection from '@/components/admin/ContractSection'
+import AppSection from '@/components/admin/AppSection'
 
 async function getCfEnv(): Promise<Env | undefined> {
   try {
@@ -253,6 +255,16 @@ export default async function CustomerDetailPage({
       {/* ── Subscriptions ── */}
       <div style={{ marginTop: 24 }}>
         <SubscriptionSection customerSlug={slug} />
+      </div>
+
+      {/* ── Contracts ── */}
+      <div style={{ marginTop: 24 }}>
+        <ContractSection customerSlug={slug} />
+      </div>
+
+      {/* ── Apps ── */}
+      <div style={{ marginTop: 24 }}>
+        <AppSection customerSlug={slug} />
       </div>
     </div>
   )

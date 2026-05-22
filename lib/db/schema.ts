@@ -67,6 +67,44 @@ export const customerSubscriptions = sqliteTable('customer_subscriptions', {
 export type CustomerSubscription    = typeof customerSubscriptions.$inferSelect
 export type NewCustomerSubscription = typeof customerSubscriptions.$inferInsert
 
+// ─── Customer Contracts ──────────────────────────────────
+export const customerContracts = sqliteTable('customer_contracts', {
+  id:            int('id').primaryKey({ autoIncrement: true }),
+  customerSlug:  text('customer_slug').notNull(),
+  title:         text('title').notNull(),              // 'สัญญาพัฒนาระบบ POS'
+  type:          text('type').notNull().default('contract'), // 'contract' | 'quotation' | 'invoice' | 'requirement' | 'other'
+  r2Key:         text('r2_key'),                       // path in R2 bucket e.g. 'contracts/contract-pos-2026.pdf'
+  fileSize:      int('file_size'),                     // bytes
+  status:        text('status').default('draft'),      // 'draft' | 'signed' | 'expired'
+  signedDate:    text('signed_date'),
+  expiryDate:    text('expiry_date'),
+  notes:         text('notes'),
+  createdAt:     text('created_at').default(sql`(datetime('now'))`),
+  updatedAt:     text('updated_at').default(sql`(datetime('now'))`),
+})
+
+export type CustomerContract    = typeof customerContracts.$inferSelect
+export type NewCustomerContract = typeof customerContracts.$inferInsert
+
+// ─── Customer Apps ───────────────────────────────────────
+export const customerApps = sqliteTable('customer_apps', {
+  id:            int('id').primaryKey({ autoIncrement: true }),
+  customerSlug:  text('customer_slug').notNull(),
+  appType:       text('app_type').notNull(),           // 'pos' | 'crm' | 'hr' | 'inventory' | 'liff' | 'website' | 'custom'
+  appName:       text('app_name').notNull(),            // 'AutoCar POS'
+  version:       text('version'),                       // 'v1.2.0'
+  deployUrl:     text('deploy_url'),                    // URL where deployed
+  techStack:     text('tech_stack'),                    // 'Next.js + PostgreSQL'
+  status:        text('status').default('development'), // 'development' | 'staging' | 'production' | 'retired'
+  launchDate:    text('launch_date'),
+  notes:         text('notes'),
+  createdAt:     text('created_at').default(sql`(datetime('now'))`),
+  updatedAt:     text('updated_at').default(sql`(datetime('now'))`),
+})
+
+export type CustomerApp    = typeof customerApps.$inferSelect
+export type NewCustomerApp = typeof customerApps.$inferInsert
+
 // ─── Uptime Monitors ─────────────────────────────────────
 export const uptimeMonitors = sqliteTable('uptime_monitors', {
   id:              int('id').primaryKey({ autoIncrement: true }),

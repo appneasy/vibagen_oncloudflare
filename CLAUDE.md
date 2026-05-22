@@ -384,9 +384,77 @@ Keywords expanded to cover actual Thai search terms found via competitor researc
 
 ---
 
+## Admin Panel
+
+### Architecture
+- Auth: cookie-based HMAC-SHA256 token (30-day expiry), password in `wrangler.toml` [vars] `ADMIN_PASSWORD`
+- Layout: `app/admin/layout.tsx` — auth check → login form or sidebar+main layout
+- All admin pages use **inline styles only** (no Tailwind), responsive via `<style>` media queries + CSS classes
+- Responsive pattern: desktop table (`admin-table-desktop`) + mobile card stack (`admin-card-mobile`), hidden/shown at 768px breakpoint
+- Main padding: `32px 24px` desktop, `16px` mobile (`admin-main` class)
+
+### Auth Files
+- `lib/admin-auth.ts` — `createAdminToken()`, `verifyAdminToken()`, COOKIE_NAME, COOKIE_MAX_AGE
+- `app/api/admin/auth/route.ts` — POST login, DELETE logout (fallback `process.env.ADMIN_PASSWORD` for local dev)
+- `middleware.ts` — blocks `/api/admin/*` (except `/api/admin/auth`) without cookie
+
+### Admin Pages
+| Page | Path | Description |
+|------|------|-------------|
+| Dashboard | `/admin/dashboard` | Stat cards (customers, uptime, backup alerts) + CustomerCardGrid with monitor modals |
+| Customers | `/admin/customers` | List (table/cards) + add/edit/delete |
+| Customer Detail | `/admin/customers/[slug]` | Info card + subscriptions section + action buttons |
+| Backups | `/admin/backups` | Card grid with folder breakdown (config/db/upload) |
+| Backup Detail | `/admin/backups/[slug]` | BackupFolderView (expandable folders, file table/cards) |
+| Uptime | `/admin/uptime` | Monitor list + summary cards (online/offline/paused) |
+| Monitor Detail | `/admin/uptime/[id]` | Stats grid + recent checks + incidents tables |
+
+### D1 Tables (Admin)
+| Table | Purpose | Migration |
+|-------|---------|-----------|
+| `managed_customers` | Customer info (name, slug, subdomain, VPS, R2, LINE OA) | 0002 |
+| `uptime_monitors` | URL monitors with check intervals | 0003 |
+| `uptime_checks` | Raw check results (status, response time) | 0003 |
+| `uptime_incidents` | Downtime incidents with duration | 0003 |
+| `uptime_maintenance` | Planned maintenance windows | 0003 |
+| `customer_subscriptions` | Provider subscriptions (Cloudflare/Hetzner), plan, price, due dates | 0004 |
+
+### API Routes
+| Route | Methods | Description |
+|-------|---------|-------------|
+| `/api/admin/auth` | POST, DELETE | Login/logout |
+| `/api/admin/customers` | GET, POST | List/create customers |
+| `/api/admin/customers/[slug]` | GET, PUT, DELETE | Single customer CRUD |
+| `/api/admin/monitors` | GET, POST | List/create monitors |
+| `/api/admin/monitors/[id]` | GET, PUT, DELETE | Single monitor CRUD |
+| `/api/admin/subscriptions` | GET, POST | List (filter by `?customerSlug=`), create |
+| `/api/admin/subscriptions/[id]` | GET, PUT, DELETE | Single subscription CRUD |
+
+### Key Components
+| Component | Type | Location |
+|-----------|------|----------|
+| `AdminSidebar` | client | Sidebar with nav, logo, logout, mobile hamburger |
+| `AdminLoginForm` | client | Password login form with logo-banner |
+| `CustomerForm` | client | Add/edit customer form |
+| `MonitorForm` | client | Add/edit uptime monitor form |
+| `CustomerCardGrid` | client | Dashboard customer cards with monitor detail modals |
+| `ResponseTimeChart` | client | SVG sparkline chart for response times |
+| `BackupFolderView` | client | Expandable folder sections with file list |
+| `SubscriptionSection` | client | Subscription CRUD with card list + add/edit modal |
+| `DeleteCustomerButton` | client | Confirm-delete button |
+
+### Upcoming Tables (Planned)
+| Table | Purpose | Status |
+|-------|---------|--------|
+| `customer_contracts` | เอกสารสัญญา, ใบเสนอราคา (R2 file refs) | Next |
+| `customer_apps` | ประเภท App ที่ลูกค้าซื้อ (POS, LIFF, Website) | Next |
+
+---
+
 ## Environment Variables
 ```
 RESEND_API_KEY=re_xxxxx
 NEXT_PUBLIC_SITE_URL=https://vibagen.com
 NEXT_PUBLIC_CF_ANALYTICS_TOKEN=xxxxx
+ADMIN_PASSWORD=vibagen@2026  # in wrangler.toml [vars] + .env.local for local dev
 ```
