@@ -4,8 +4,9 @@ import Link from 'next/link'
 import { getDB } from '@/lib/db'
 import { managedCustomers, uptimeMonitors, uptimeChecks, uptimeIncidents } from '@/lib/db/schema'
 import { getMultiBucketStatus } from '@/lib/r2'
-import type { ManagedCustomer, UptimeCheck, UptimeIncident, UptimeMonitor } from '@/lib/db/schema'
-import { desc, eq, sql, and, isNull } from 'drizzle-orm'
+import type { ManagedCustomer } from '@/lib/db/schema'
+import { desc, eq, sql, and, isNull, gte } from 'drizzle-orm'
+import CustomerCardGrid from '@/components/admin/CustomerCardGrid'
 
 async function getCfEnv(): Promise<Env | undefined> {
   try {
@@ -16,46 +17,25 @@ async function getCfEnv(): Promise<Env | undefined> {
   }
 }
 
-function relativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr + 'Z').getTime()
-  const minutes = Math.floor(diff / 60000)
-  if (minutes < 1) return 'เมื่อสักครู่'
-  if (minutes < 60) return `${minutes} นาทีที่แล้ว`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} ชม.ที่แล้ว`
-  const days = Math.floor(hours / 24)
-  return `${days} วันที่แล้ว`
+function toDbDatetime(d: Date): string {
+  return d.toISOString().replace('T', ' ').slice(0, 19)
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  setup:       'Setup',
-  active:      'Active',
-  suspended:   'Suspended',
-  terminated:  'Terminated',
+type MonitorSummary = {
+  id: number
+  label: string
+  url: string
+  isActive: number
+  customerSlug: string | null
+  lastStatus: 'up' | 'down' | null
+  lastResponseTimeMs: number | null
+  lastCheckedAt: string | null
+  uptime24h: number | null
+  uptime7d: number | null
+  uptime30d: number | null
+  streakSeconds: number | null
+  recentChecks: { responseTimeMs: number | null; status: string; checkedAt: string }[]
 }
-
-const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  active:     { bg: '#d1fae5', color: '#065f46' },
-  setup:      { bg: '#dbeafe', color: '#1e40af' },
-  suspended:  { bg: '#fef3c7', color: '#92400e' },
-  terminated: { bg: '#fee2e2', color: '#991b1b' },
-}
-
-// ── Types for uptime activity feed ──
-type CheckActivity = {
-  kind: 'check'
-  monitorLabel: string
-  status: string
-  checkedAt: string
-}
-type IncidentActivity = {
-  kind: 'incident'
-  monitorLabel: string
-  severity: string
-  resolvedAt: string | null
-  startedAt: string
-}
-type ActivityItem = CheckActivity | IncidentActivity
 
 export default async function DashboardPage() {
   const env = await getCfEnv()
@@ -73,7 +53,7 @@ export default async function DashboardPage() {
   let monitorsUp = 0
   let monitorsDown = 0
   let openIncidents = 0
-  let recentActivity: ActivityItem[] = []
+  let monitorSummaries: MonitorSummary[] = []
 
   if (env?.DB) {
     try {
@@ -95,42 +75,6 @@ export default async function DashboardPage() {
         ).length
       }
 
-      // ── Uptime queries ──
-      const allMonitors: UptimeMonitor[] = await db
-        .select()
-        .from(uptimeMonitors)
-        .where(eq(uptimeMonitors.isActive, 1))
-
-      totalMonitors = allMonitors.length
-
-      // Latest check status per monitor — subquery approach using raw SQL
-      if (totalMonitors > 0) {
-        const latestChecks: { monitorId: number; status: string }[] =
-          await db
-            .select({
-              monitorId: uptimeChecks.monitorId,
-              status: uptimeChecks.status,
-            })
-            .from(uptimeChecks)
-            .innerJoin(
-              db
-                .select({
-                  monitorId: uptimeChecks.monitorId,
-                  maxAt: sql<string>`MAX(${uptimeChecks.checkedAt})`.as('max_at'),
-                })
-                .from(uptimeChecks)
-                .groupBy(uptimeChecks.monitorId)
-                .as('latest'),
-              and(
-                eq(uptimeChecks.monitorId, sql`latest.monitor_id`),
-                eq(uptimeChecks.checkedAt, sql`latest.max_at`),
-              ),
-            )
-
-        monitorsUp   = latestChecks.filter((r) => r.status === 'up').length
-        monitorsDown = latestChecks.filter((r) => r.status === 'down').length
-      }
-
       // Open incidents (resolvedAt IS NULL)
       const openIncidentsResult = await db
         .select({ count: sql<number>`COUNT(*)` })
@@ -139,58 +83,87 @@ export default async function DashboardPage() {
         .get()
       openIncidents = openIncidentsResult ? Number(openIncidentsResult.count) : 0
 
-      // Last 5 checks across all monitors (for activity feed)
-      const monitorMap = new Map(allMonitors.map((m) => [m.id, m.label]))
-      // Also fetch all monitors (including paused) for label lookup
-      const allMonitorsFull: UptimeMonitor[] = await db.select().from(uptimeMonitors)
-      for (const m of allMonitorsFull) monitorMap.set(m.id, m.label)
+      // ── Build monitor summaries (replaces allMonitors + latestChecks queries) ──
+      const allMonitorsForCards = await db.select().from(uptimeMonitors)
 
-      const recentChecks: UptimeCheck[] = await db
-        .select()
-        .from(uptimeChecks)
-        .orderBy(desc(uptimeChecks.checkedAt))
-        .limit(5)
+      const nowTime = new Date()
+      const since24h = toDbDatetime(new Date(nowTime.getTime() - 24 * 60 * 60 * 1000))
+      const since7d  = toDbDatetime(new Date(nowTime.getTime() - 7 * 24 * 60 * 60 * 1000))
+      const since30d = toDbDatetime(new Date(nowTime.getTime() - 30 * 24 * 60 * 60 * 1000))
 
-      // Last 3 incidents
-      const recentIncidents: UptimeIncident[] = await db
-        .select()
-        .from(uptimeIncidents)
-        .orderBy(desc(uptimeIncidents.startedAt))
-        .limit(3)
+      monitorSummaries = await Promise.all(
+        allMonitorsForCards.map(async (m) => {
+          // Recent 20 checks
+          const checks = await db
+            .select()
+            .from(uptimeChecks)
+            .where(eq(uptimeChecks.monitorId, m.id))
+            .orderBy(desc(uptimeChecks.checkedAt))
+            .limit(20)
 
-      // Build combined activity feed
-      const checkItems: CheckActivity[] = recentChecks.map((c) => ({
-        kind: 'check',
-        monitorLabel: monitorMap.get(c.monitorId) ?? `Monitor #${c.monitorId}`,
-        status: c.status,
-        checkedAt: c.checkedAt,
-      }))
+          const lastCheck = checks[0] ?? null
 
-      const incidentItems: IncidentActivity[] = recentIncidents.map((inc) => ({
-        kind: 'incident',
-        monitorLabel: monitorMap.get(inc.monitorId) ?? `Monitor #${inc.monitorId}`,
-        severity: inc.severity,
-        resolvedAt: inc.resolvedAt ?? null,
-        startedAt: inc.startedAt,
-      }))
+          // Uptime calculations
+          async function calcUptime(sinceIso: string): Promise<number | null> {
+            const row = await db
+              .select({
+                total:   sql<number>`COUNT(*)`,
+                upCount: sql<number>`SUM(CASE WHEN ${uptimeChecks.status} = 'up' THEN 1 ELSE 0 END)`,
+              })
+              .from(uptimeChecks)
+              .where(and(eq(uptimeChecks.monitorId, m.id), gte(uptimeChecks.checkedAt, sinceIso)))
+              .get()
+            if (!row || Number(row.total) === 0) return null
+            return Math.round((Number(row.upCount) / Number(row.total)) * 1000) / 10
+          }
 
-      // Merge and sort by most recent date
-      recentActivity = [...checkItems, ...incidentItems].sort((a, b) => {
-        const aTime = a.kind === 'check' ? a.checkedAt : a.startedAt
-        const bTime = b.kind === 'check' ? b.checkedAt : b.startedAt
-        return bTime.localeCompare(aTime)
-      })
+          const [uptime24h, uptime7d, uptime30d] = await Promise.all([
+            calcUptime(since24h),
+            calcUptime(since7d),
+            calcUptime(since30d),
+          ])
+
+          // Streak: walk checks from newest, count consecutive "up"
+          let streakCount = 0
+          for (const c of checks) {
+            if (c.status === 'up') streakCount++
+            else break
+          }
+          const streakSeconds = streakCount > 0 ? streakCount * m.checkInterval : null
+
+          return {
+            id: m.id,
+            label: m.label,
+            url: m.url,
+            isActive: m.isActive,
+            customerSlug: m.customerSlug,
+            lastStatus: (lastCheck?.status ?? null) as 'up' | 'down' | null,
+            lastResponseTimeMs: lastCheck?.responseTimeMs ?? null,
+            lastCheckedAt: lastCheck?.checkedAt ?? null,
+            uptime24h,
+            uptime7d,
+            uptime30d,
+            streakSeconds,
+            recentChecks: checks.map((c) => ({
+              responseTimeMs: c.responseTimeMs,
+              status: c.status,
+              checkedAt: c.checkedAt,
+            })),
+          }
+        })
+      )
+
+      // Derive stat card values from summaries (active monitors only)
+      const activeMonitorSummaries = monitorSummaries.filter((m) => m.isActive === 1)
+      totalMonitors = activeMonitorSummaries.length
+      monitorsUp    = activeMonitorSummaries.filter((m) => m.lastStatus === 'up').length
+      monitorsDown  = activeMonitorSummaries.filter((m) => m.lastStatus === 'down').length
     } catch {
       dbError = true
     }
   } else {
     dbError = true
   }
-
-  // Top 5 most recent customers
-  const recentCustomers = [...customers]
-    .sort((a, b) => (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
-    .slice(0, 5)
 
   const formattedDate = now.toLocaleDateString('th-TH', {
     weekday: 'long',
@@ -205,6 +178,26 @@ export default async function DashboardPage() {
   })
 
   const allUp = totalMonitors > 0 && monitorsDown === 0
+
+  // ── Group monitors by customerSlug ──
+  const monitorsByCustomer = new Map<string, MonitorSummary[]>()
+  for (const ms of monitorSummaries) {
+    if (ms.customerSlug) {
+      const existing = monitorsByCustomer.get(ms.customerSlug) ?? []
+      existing.push(ms)
+      monitorsByCustomer.set(ms.customerSlug, existing)
+    }
+  }
+
+  // ── Build customer cards array ──
+  const customerCards = customers.map((c) => ({
+    name: c.name,
+    slug: c.slug,
+    subdomain: c.subdomain,
+    status: c.status,
+    startDate: c.startDate,
+    monitors: monitorsByCustomer.get(c.slug) ?? [],
+  }))
 
   return (
     <div>
@@ -533,246 +526,8 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* ── Recent Customers Table ── */}
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 12,
-          overflow: 'hidden',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          border: '1px solid #e5e9f0',
-          marginBottom: 24,
-        }}
-      >
-        <div
-          style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid #e5e9f0',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: 'var(--font-prompt)',
-              fontWeight: 600,
-              fontSize: 16,
-              color: '#0d2749',
-              margin: 0,
-            }}
-          >
-            Recent Customers
-          </h2>
-        </div>
-
-        {recentCustomers.length === 0 ? (
-          <div
-            style={{
-              padding: '40px 20px',
-              textAlign: 'center',
-              color: '#737373',
-              fontSize: 14,
-            }}
-          >
-            {dbError ? 'ไม่สามารถโหลดข้อมูลได้' : 'ยังไม่มีลูกค้า'}
-          </div>
-        ) : (
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 14 }}>
-              <thead>
-                <tr style={{ background: '#0d2749' }}>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 500, fontSize: 13 }}>Name</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 500, fontSize: 13 }}>Subdomain</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 500, fontSize: 13 }}>Status</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'left', color: '#fff', fontWeight: 500, fontSize: 13 }}>Start Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {recentCustomers.map((c, i) => {
-                  const statusStyle = STATUS_COLORS[c.status ?? 'setup'] ?? STATUS_COLORS.setup
-                  return (
-                    <tr
-                      key={c.id}
-                      style={{
-                        borderBottom: i < recentCustomers.length - 1 ? '1px solid #f0f4f8' : 'none',
-                      }}
-                    >
-                      <td style={{ padding: '12px 16px', color: '#0d2749', fontWeight: 500 }}>
-                        {c.name}
-                      </td>
-                      <td style={{ padding: '12px 16px', color: '#737373', fontFamily: 'monospace', fontSize: 13 }}>
-                        {c.subdomain}
-                      </td>
-                      <td style={{ padding: '12px 16px' }}>
-                        <span
-                          style={{
-                            display: 'inline-block',
-                            padding: '2px 10px',
-                            borderRadius: 20,
-                            fontSize: 12,
-                            fontWeight: 500,
-                            background: statusStyle.bg,
-                            color: statusStyle.color,
-                          }}
-                        >
-                          {STATUS_LABELS[c.status ?? 'setup'] ?? c.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: '12px 16px', color: '#737373' }}>
-                        {c.startDate ?? '—'}
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
-
-      {/* ── Recent Activity Feed ── */}
-      <div
-        style={{
-          background: '#fff',
-          borderRadius: 12,
-          overflow: 'hidden',
-          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-          border: '1px solid #e5e9f0',
-        }}
-      >
-        <div
-          style={{
-            padding: '16px 20px',
-            borderBottom: '1px solid #e5e9f0',
-          }}
-        >
-          <h2
-            style={{
-              fontFamily: 'var(--font-prompt)',
-              fontWeight: 600,
-              fontSize: 16,
-              color: '#0d2749',
-              margin: 0,
-            }}
-          >
-            Recent Activity
-          </h2>
-        </div>
-
-        {dbError || recentActivity.length === 0 ? (
-          <div
-            style={{
-              padding: '40px 20px',
-              textAlign: 'center',
-              color: '#737373',
-              fontSize: 14,
-            }}
-          >
-            {dbError
-              ? 'ไม่สามารถโหลดข้อมูลได้'
-              : totalMonitors === 0
-              ? 'No monitors configured'
-              : 'ยังไม่มีข้อมูล Activity'}
-          </div>
-        ) : (
-          <ul style={{ listStyle: 'none', margin: 0, padding: '8px 0' }}>
-            {recentActivity.map((item, i) => {
-              if (item.kind === 'check') {
-                const isUp = item.status === 'up'
-                return (
-                  <li
-                    key={`check-${i}`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '10px 20px',
-                      borderBottom: i < recentActivity.length - 1 ? '1px solid #f0f4f8' : 'none',
-                    }}
-                  >
-                    {/* Status dot */}
-                    <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        background: isUp ? '#10b981' : '#ef4444',
-                        flexShrink: 0,
-                        display: 'inline-block',
-                      }}
-                    />
-                    <span style={{ flex: 1, fontSize: 13, color: '#0d2749', fontWeight: 500 }}>
-                      {item.monitorLabel}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: isUp ? '#16a34a' : '#dc2626',
-                        background: isUp ? '#f0fdf4' : '#fff1f1',
-                        padding: '2px 8px',
-                        borderRadius: 12,
-                      }}
-                    >
-                      {isUp ? 'up' : 'down'}
-                    </span>
-                    <span style={{ fontSize: 12, color: '#9ca3af', whiteSpace: 'nowrap' }}>
-                      {relativeTime(item.checkedAt)}
-                    </span>
-                  </li>
-                )
-              } else {
-                const isOngoing = !item.resolvedAt
-                return (
-                  <li
-                    key={`incident-${i}`}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                      padding: '10px 20px',
-                      borderBottom: i < recentActivity.length - 1 ? '1px solid #f0f4f8' : 'none',
-                      background: isOngoing ? '#fffbeb' : 'transparent',
-                    }}
-                  >
-                    {/* Incident dot */}
-                    <span
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        background: isOngoing ? '#f59e0b' : '#9ca3af',
-                        flexShrink: 0,
-                        display: 'inline-block',
-                      }}
-                    />
-                    <span style={{ flex: 1, fontSize: 13, color: '#0d2749', fontWeight: 500 }}>
-                      {item.monitorLabel}
-                    </span>
-                    <span
-                      style={{
-                        fontSize: 12,
-                        fontWeight: 500,
-                        color: isOngoing ? '#92400e' : '#737373',
-                        background: isOngoing ? '#fef3c7' : '#f3f4f6',
-                        padding: '2px 8px',
-                        borderRadius: 12,
-                        textTransform: 'capitalize',
-                      }}
-                    >
-                      {item.severity} {isOngoing ? '(ongoing)' : 'incident'}
-                    </span>
-                    <span style={{ fontSize: 12, color: '#9ca3af', whiteSpace: 'nowrap' }}>
-                      {relativeTime(item.startedAt)}
-                    </span>
-                  </li>
-                )
-              }
-            })}
-          </ul>
-        )}
-      </div>
+      {/* ── Customer & Monitor Cards ── */}
+      <CustomerCardGrid cards={customerCards} />
     </div>
   )
 }
