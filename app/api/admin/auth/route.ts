@@ -15,7 +15,8 @@ async function getCfEnv(): Promise<Env | undefined> {
 // POST — Login
 export async function POST(request: Request) {
   const env = await getCfEnv()
-  if (!env?.ADMIN_PASSWORD) {
+  const adminPassword = env?.ADMIN_PASSWORD ?? process.env.ADMIN_PASSWORD
+  if (!adminPassword) {
     return NextResponse.json({ error: 'Auth not configured' }, { status: 500 })
   }
 
@@ -26,11 +27,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid request' }, { status: 400 })
   }
 
-  if (!body.password || body.password !== env.ADMIN_PASSWORD) {
+  if (!body.password || body.password !== adminPassword) {
     return NextResponse.json({ error: 'Wrong password' }, { status: 401 })
   }
 
-  const token = await createAdminToken(env.ADMIN_PASSWORD)
+  const token = await createAdminToken(adminPassword)
 
   const res = NextResponse.json({ ok: true })
   res.cookies.set(COOKIE_NAME, token, {

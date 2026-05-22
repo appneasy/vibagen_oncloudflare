@@ -6,6 +6,7 @@ import { getDB } from '@/lib/db'
 import { managedCustomers } from '@/lib/db/schema'
 import type { ManagedCustomer } from '@/lib/db/schema'
 import DeleteCustomerButton from './DeleteCustomerButton'
+import SubscriptionSection from '@/components/admin/SubscriptionSection'
 
 async function getCfEnv(): Promise<Env | undefined> {
   try {
@@ -247,6 +248,11 @@ export default async function CustomerDetailPage({
         )}
 
         <DeleteCustomerButton slug={slug} name={customer.name} />
+      </div>
+
+      {/* ── Subscriptions ── */}
+      <div style={{ marginTop: 24 }}>
+        <SubscriptionSection customerSlug={slug} />
       </div>
     </div>
   )

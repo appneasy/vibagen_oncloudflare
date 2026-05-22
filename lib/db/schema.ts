@@ -47,6 +47,26 @@ export const managedCustomers = sqliteTable('managed_customers', {
 export type ManagedCustomer    = typeof managedCustomers.$inferSelect
 export type NewManagedCustomer = typeof managedCustomers.$inferInsert
 
+// ─── Customer Subscriptions ──────────────────────────────
+export const customerSubscriptions = sqliteTable('customer_subscriptions', {
+  id:            int('id').primaryKey({ autoIncrement: true }),
+  customerSlug:  text('customer_slug').notNull(),
+  provider:      text('provider').notNull(),         // 'cloudflare' | 'hetzner' | 'other'
+  serviceName:   text('service_name').notNull(),     // 'VPS CPX22' | 'R2 Storage' | 'Domain'
+  plan:          text('plan').default('monthly'),    // 'monthly' | 'yearly' | 'one-time'
+  priceThb:      int('price_thb'),
+  startDate:     text('start_date'),
+  nextDueDate:   text('next_due_date'),
+  autoRenew:     int('auto_renew').notNull().default(1),
+  status:        text('status').default('active'),   // 'active' | 'cancelled' | 'expired'
+  notes:         text('notes'),
+  createdAt:     text('created_at').default(sql`(datetime('now'))`),
+  updatedAt:     text('updated_at').default(sql`(datetime('now'))`),
+})
+
+export type CustomerSubscription    = typeof customerSubscriptions.$inferSelect
+export type NewCustomerSubscription = typeof customerSubscriptions.$inferInsert
+
 // ─── Uptime Monitors ─────────────────────────────────────
 export const uptimeMonitors = sqliteTable('uptime_monitors', {
   id:              int('id').primaryKey({ autoIncrement: true }),

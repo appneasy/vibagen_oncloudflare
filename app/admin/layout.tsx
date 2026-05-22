@@ -24,9 +24,10 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const cookieStore = await cookies()
   const token = cookieStore.get(COOKIE_NAME)?.value
 
+  const adminPassword = env?.ADMIN_PASSWORD ?? process.env.ADMIN_PASSWORD
   let isAuthed = false
-  if (token && env?.ADMIN_PASSWORD) {
-    isAuthed = await verifyAdminToken(token, env.ADMIN_PASSWORD)
+  if (token && adminPassword) {
+    isAuthed = await verifyAdminToken(token, adminPassword)
   }
 
   if (!isAuthed) {
