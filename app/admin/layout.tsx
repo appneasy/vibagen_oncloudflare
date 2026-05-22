@@ -46,6 +46,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             height: 56,
             display: 'flex',
             alignItems: 'center',
+            position: 'sticky',
+            top: 0,
+            zIndex: 40,
           }}
         >
           <div style={{ width: 40 }} className="admin-topbar-spacer" />
