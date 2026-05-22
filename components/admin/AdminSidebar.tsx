@@ -34,16 +34,26 @@ export default function AdminSidebar() {
       {/* Logo / Title */}
       <div
         style={{
-          padding: '16px 20px',
+          padding: '14px 16px',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
-          textAlign: 'center',
         }}
       >
-        <img
-          src="/images/logosquare.png"
-          alt="VIBAGEN"
-          style={{ width: 120, height: 'auto', objectFit: 'contain' }}
-        />
+        <div
+          style={{
+            background: '#fff',
+            borderRadius: 8,
+            padding: '10px 14px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <img
+            src="/images/logo-banner.png"
+            alt="VIBAGEN"
+            style={{ width: '100%', height: 'auto', objectFit: 'contain' }}
+          />
+        </div>
       </div>
 
       {/* Nav Items */}

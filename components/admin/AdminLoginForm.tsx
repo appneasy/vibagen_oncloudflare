@@ -61,9 +61,9 @@ export default function AdminLoginForm() {
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 24 }}>
           <img
-            src="/images/logosquare.png"
+            src="/images/logo-banner.png"
             alt="VIBAGEN"
-            style={{ width: 120, height: 'auto', objectFit: 'contain', marginBottom: 6 }}
+            style={{ width: '100%', maxWidth: 260, height: 'auto', objectFit: 'contain', marginBottom: 8 }}
           />
           <div style={{ fontSize: 13, color: '#737373' }}>
             Admin Panel
