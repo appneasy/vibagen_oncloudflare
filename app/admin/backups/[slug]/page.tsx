@@ -1,3 +1,5 @@
+export const runtime = 'edge'
+
 import Link from 'next/link'
 import { eq } from 'drizzle-orm'
 import { getDB } from '@/lib/db'
