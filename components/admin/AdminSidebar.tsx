@@ -4,11 +4,11 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 
-const navItems = [
+const navItems: { label: string; icon: string; href: string; comingSoon?: boolean }[] = [
   { label: 'Dashboard',  icon: '📊', href: '/admin/dashboard' },
   { label: 'Backups',    icon: '💾', href: '/admin/backups' },
   { label: 'Customers',  icon: '👥', href: '/admin/customers' },
-  { label: 'Uptime',     icon: '🔔', href: '/admin/uptime',     comingSoon: true },
+  { label: 'Uptime',     icon: '🔔', href: '/admin/uptime' },
 ]
 
 export default function AdminSidebar() {
