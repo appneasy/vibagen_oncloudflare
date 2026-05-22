@@ -105,6 +105,36 @@ export default function AdminSidebar() {
         })}
       </ul>
 
+      {/* Logout button */}
+      <div
+        style={{
+          padding: '8px 20px 0',
+        }}
+      >
+        <button
+          onClick={async () => {
+            await fetch('/api/admin/auth', { method: 'DELETE' })
+            window.location.href = '/admin/dashboard'
+          }}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 10,
+            width: '100%',
+            padding: '10px 0',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontSize: 13,
+            color: 'rgba(255,255,255,0.5)',
+            textAlign: 'left',
+          }}
+        >
+          <span style={{ fontSize: 14 }}>↪</span>
+          <span>Logout</span>
+        </button>
+      </div>
+
       {/* Version */}
       <div
         style={{

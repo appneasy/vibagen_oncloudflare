@@ -3,23 +3,30 @@ import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
   const hostname = request.headers.get('host') || ''
-  
-  // autocar.vibagen.com → rewrite to /autocar/*
-  if (hostname.startsWith('autocar.')) {
+  const pathname = request.nextUrl.pathname
+
+  // ── Protect admin API routes ──
+  if (pathname.startsWith('/api/admin') && !pathname.startsWith('/api/admin/auth')) {
+    const token = request.cookies.get('admin_token')?.value
+    if (!token) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+  }
+
+  // ── autocar.vibagen.com → rewrite to /autocar/* (skip API routes) ──
+  if (hostname.startsWith('autocar.') && !pathname.startsWith('/api')) {
     const url = request.nextUrl.clone()
-    // Don't rewrite if already under /autocar
     if (!url.pathname.startsWith('/autocar')) {
       url.pathname = `/autocar${url.pathname === '/' ? '' : url.pathname}`
       return NextResponse.rewrite(url)
     }
   }
-  
+
   return NextResponse.next()
 }
 
 export const config = {
   matcher: [
-    // Match all paths except static files and API routes
-    '/((?!api|_next/static|_next/image|favicon\.png|images|icon\.png).*)',
+    '/((?!_next/static|_next/image|favicon\\.png|images|icon\\.png).*)',
   ],
 }
