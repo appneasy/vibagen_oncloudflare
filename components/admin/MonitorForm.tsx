@@ -165,7 +165,7 @@ export default function MonitorForm({ mode, initialData, monitorId }: MonitorFor
         style={{
           background: '#fff',
           borderRadius: 12,
-          padding: '24px',
+          padding: '20px 16px',
           boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
           border: '1px solid #e5e9f0',
         }}
@@ -174,7 +174,7 @@ export default function MonitorForm({ mode, initialData, monitorId }: MonitorFor
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
             gap: 20,
           }}
         >

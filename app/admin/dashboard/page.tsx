@@ -307,7 +307,7 @@ export default async function DashboardPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
           gap: 16,
           marginBottom: 20,
         }}
@@ -317,7 +317,7 @@ export default async function DashboardPage() {
           style={{
             background: '#fff',
             borderRadius: 12,
-            padding: 24,
+            padding: 16,
             boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
             border: '1px solid #e5e9f0',
           }}
@@ -328,7 +328,7 @@ export default async function DashboardPage() {
           <div
             style={{
               fontFamily: 'var(--font-prompt)',
-              fontSize: 36,
+              fontSize: 28,
               fontWeight: 700,
               color: '#0d2749',
               lineHeight: 1,
@@ -343,7 +343,7 @@ export default async function DashboardPage() {
           style={{
             background: '#fff',
             borderRadius: 12,
-            padding: 24,
+            padding: 16,
             boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
             border: '1px solid #e5e9f0',
           }}
@@ -354,7 +354,7 @@ export default async function DashboardPage() {
           <div
             style={{
               fontFamily: 'var(--font-prompt)',
-              fontSize: 36,
+              fontSize: 28,
               fontWeight: 700,
               color: '#0d2749',
               lineHeight: 1,
@@ -369,7 +369,7 @@ export default async function DashboardPage() {
           style={{
             background: backupAlerts > 0 ? '#fff1f1' : '#fff',
             borderRadius: 12,
-            padding: 24,
+            padding: 16,
             boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
             border: backupAlerts > 0 ? '1px solid #fca5a5' : '1px solid #e5e9f0',
           }}
@@ -386,7 +386,7 @@ export default async function DashboardPage() {
           <div
             style={{
               fontFamily: 'var(--font-prompt)',
-              fontSize: 36,
+              fontSize: 28,
               fontWeight: 700,
               color: backupAlerts > 0 ? '#dc2626' : '#0d2749',
               lineHeight: 1,
@@ -401,7 +401,7 @@ export default async function DashboardPage() {
           style={{
             background: '#fff',
             borderRadius: 12,
-            padding: 24,
+            padding: 16,
             boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
             border: '1px solid #e5e9f0',
           }}
@@ -430,7 +430,7 @@ export default async function DashboardPage() {
       <div
         style={{
           display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+          gridTemplateColumns: 'repeat(auto-fill, minmax(140px, 1fr))',
           gap: 16,
           marginBottom: 32,
         }}
@@ -440,7 +440,7 @@ export default async function DashboardPage() {
           style={{
             background: allUp ? '#f0fdf4' : '#fff',
             borderRadius: 12,
-            padding: 24,
+            padding: 16,
             boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
             border: allUp ? '1px solid #86efac' : '1px solid #e5e9f0',
           }}
@@ -451,7 +451,7 @@ export default async function DashboardPage() {
           <div
             style={{
               fontFamily: 'var(--font-prompt)',
-              fontSize: 36,
+              fontSize: 28,
               fontWeight: 700,
               color: allUp ? '#16a34a' : '#0d2749',
               lineHeight: 1,
@@ -466,7 +466,7 @@ export default async function DashboardPage() {
           style={{
             background: monitorsDown > 0 ? '#fff1f1' : '#fff',
             borderRadius: 12,
-            padding: 24,
+            padding: 16,
             boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
             border: monitorsDown > 0 ? '1px solid #fca5a5' : '1px solid #e5e9f0',
           }}
@@ -483,7 +483,7 @@ export default async function DashboardPage() {
           <div
             style={{
               fontFamily: 'var(--font-prompt)',
-              fontSize: 36,
+              fontSize: 28,
               fontWeight: 700,
               color: monitorsDown > 0 ? '#dc2626' : '#0d2749',
               lineHeight: 1,
@@ -498,7 +498,7 @@ export default async function DashboardPage() {
           style={{
             background: openIncidents > 0 ? '#fff1f1' : '#fff',
             borderRadius: 12,
-            padding: 24,
+            padding: 16,
             boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
             border: openIncidents > 0 ? '1px solid #fca5a5' : '1px solid #e5e9f0',
           }}
@@ -515,7 +515,7 @@ export default async function DashboardPage() {
           <div
             style={{
               fontFamily: 'var(--font-prompt)',
-              fontSize: 36,
+              fontSize: 28,
               fontWeight: 700,
               color: openIncidents > 0 ? '#dc2626' : '#0d2749',
               lineHeight: 1,

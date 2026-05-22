@@ -177,93 +177,126 @@ export default function BackupFolderView({ folders }: Props) {
             {/* File list — shown when expanded */}
             {isExpanded && (
               <div style={{ borderTop: '1px solid #f0f4f8' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
-                  <thead>
-                    <tr style={{ background: '#f8fafc' }}>
-                      <th
-                        style={{
-                          padding: '8px 20px',
-                          textAlign: 'left',
-                          color: '#737373',
-                          fontWeight: 500,
-                          fontSize: 12,
-                        }}
-                      >
-                        Filename
-                      </th>
-                      <th
-                        style={{
-                          padding: '8px 20px',
-                          textAlign: 'right',
-                          color: '#737373',
-                          fontWeight: 500,
-                          fontSize: 12,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        Size
-                      </th>
-                      <th
-                        style={{
-                          padding: '8px 20px',
-                          textAlign: 'left',
-                          color: '#737373',
-                          fontWeight: 500,
-                          fontSize: 12,
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        Last Modified
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {folderData.files.map((file, i) => (
-                      <tr
-                        key={file.key}
-                        style={{
-                          borderTop: '1px solid #f0f4f8',
-                        }}
-                      >
-                        <td
+                {/* Desktop table */}
+                <div className="admin-table-desktop">
+                  <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: '#f8fafc' }}>
+                        <th
                           style={{
-                            padding: '10px 20px',
-                            color: '#0d2749',
-                            fontFamily: 'monospace',
+                            padding: '8px 20px',
+                            textAlign: 'left',
+                            color: '#737373',
+                            fontWeight: 500,
                             fontSize: 12,
-                            wordBreak: 'break-all',
                           }}
                         >
-                          {stripFolderPrefix(file.key, folderData.folder)}
-                        </td>
-                        <td
+                          Filename
+                        </th>
+                        <th
                           style={{
-                            padding: '10px 20px',
-                            color: '#737373',
+                            padding: '8px 20px',
                             textAlign: 'right',
-                            whiteSpace: 'nowrap',
-                          }}
-                        >
-                          {formatBytes(file.size)}
-                        </td>
-                        <td
-                          style={{
-                            padding: '10px 20px',
                             color: '#737373',
+                            fontWeight: 500,
+                            fontSize: 12,
                             whiteSpace: 'nowrap',
                           }}
                         >
-                          {formatDateTime(file.lastModified)}
-                        </td>
+                          Size
+                        </th>
+                        <th
+                          style={{
+                            padding: '8px 20px',
+                            textAlign: 'left',
+                            color: '#737373',
+                            fontWeight: 500,
+                            fontSize: 12,
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          Last Modified
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {folderData.files.map((file) => (
+                        <tr
+                          key={file.key}
+                          style={{
+                            borderTop: '1px solid #f0f4f8',
+                          }}
+                        >
+                          <td
+                            style={{
+                              padding: '10px 20px',
+                              color: '#0d2749',
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                              wordBreak: 'break-all',
+                            }}
+                          >
+                            {stripFolderPrefix(file.key, folderData.folder)}
+                          </td>
+                          <td
+                            style={{
+                              padding: '10px 20px',
+                              color: '#737373',
+                              textAlign: 'right',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {formatBytes(file.size)}
+                          </td>
+                          <td
+                            style={{
+                              padding: '10px 20px',
+                              color: '#737373',
+                              whiteSpace: 'nowrap',
+                            }}
+                          >
+                            {formatDateTime(file.lastModified)}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile card stack */}
+                <div className="admin-card-mobile">
+                  {folderData.files.map((file) => (
+                    <div
+                      key={file.key}
+                      style={{ padding: '10px 16px', borderTop: '1px solid #f0f4f8' }}
+                    >
+                      <div
+                        style={{
+                          fontFamily: 'monospace',
+                          fontSize: 12,
+                          color: '#0d2749',
+                          wordBreak: 'break-all',
+                          marginBottom: 4,
+                        }}
+                      >
+                        {stripFolderPrefix(file.key, folderData.folder)}
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, fontSize: 12, color: '#737373' }}>
+                        <span>{formatBytes(file.size)}</span>
+                        <span>{formatDateTime(file.lastModified)}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         )
       })}
+      <style>{`
+        @media (min-width: 769px) { .admin-card-mobile { display: none !important; } }
+        @media (max-width: 768px) { .admin-table-desktop { display: none !important; } }
+      `}</style>
     </div>
   )
 }

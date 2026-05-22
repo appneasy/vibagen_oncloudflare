@@ -64,13 +64,14 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             VIBAGEN Admin
           </span>
         </header>
-        <main style={{ flex: 1, padding: '32px 24px', background: '#f8f9fc' }}>
+        <main className="admin-main" style={{ flex: 1, padding: '32px 24px', background: '#f8f9fc' }}>
           {children}
         </main>
       </div>
       <style>{`
         @media (max-width: 768px) {
           .admin-topbar-spacer { display: block !important; }
+          .admin-main { padding: 16px !important; }
         }
         @media (min-width: 769px) {
           .admin-topbar-spacer { display: none !important; }
