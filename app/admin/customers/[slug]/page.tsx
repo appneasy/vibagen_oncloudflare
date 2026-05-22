@@ -171,7 +171,7 @@ export default async function CustomerDetailPage({
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))',
             gap: '20px 32px',
           }}
         >
