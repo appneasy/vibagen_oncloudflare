@@ -6,6 +6,7 @@ import { eq, desc, and, gte, inArray, sql } from 'drizzle-orm'
 import { getDB } from '@/lib/db'
 import { uptimeMonitors, uptimeChecks, uptimeIncidents, managedCustomers } from '@/lib/db/schema'
 import type { UptimeMonitor, UptimeCheck, UptimeIncident, ManagedCustomer } from '@/lib/db/schema'
+import ResponseTimeChart from '@/components/admin/ResponseTimeChart'
 
 async function getCfEnv(): Promise<Env | undefined> {
   try {
@@ -65,6 +66,7 @@ type EnrichedMonitor = UptimeMonitor & {
   uptime24h: number | null
   uptime7d:  number | null
   uptime30d: number | null
+  recentChecks: UptimeCheck[]
 }
 
 export default async function CustomerStatusPage({
@@ -122,13 +124,14 @@ export default async function CustomerStatusPage({
 
         monitors = await Promise.all(
           monitorRows.map(async (m) => {
-            const lastCheck = await db
+            const checksRows = await db
               .select()
               .from(uptimeChecks)
               .where(eq(uptimeChecks.monitorId, m.id))
               .orderBy(desc(uptimeChecks.checkedAt))
-              .limit(1)
-              .get() ?? null
+              .limit(50)
+
+            const lastCheck = checksRows[0] ?? null
 
             const [uptime24h, uptime7d, uptime30d] = await Promise.all([
               calcUptime(m.id, since24h),
@@ -136,7 +139,7 @@ export default async function CustomerStatusPage({
               calcUptime(m.id, since30d),
             ])
 
-            return { ...m, lastCheck, uptime24h, uptime7d, uptime30d }
+            return { ...m, lastCheck, uptime24h, uptime7d, uptime30d, recentChecks: checksRows }
           }),
         )
 
@@ -408,6 +411,7 @@ export default async function CustomerStatusPage({
                   display: 'grid',
                   gridTemplateColumns: 'repeat(3, 1fr)',
                   gap: 10,
+                  marginBottom: 20,
                 }}
               >
                 {([
@@ -439,6 +443,14 @@ export default async function CustomerStatusPage({
                     </div>
                   </div>
                 ))}
+              </div>
+
+              {/* Response time chart */}
+              <div style={{ borderTop: '1px solid #f0f4f8', paddingTop: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
+                  Response Time
+                </div>
+                <ResponseTimeChart checks={m.recentChecks} />
               </div>
             </div>
           )

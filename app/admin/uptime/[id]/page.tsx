@@ -7,6 +7,7 @@ import { uptimeMonitors, uptimeChecks, uptimeIncidents, uptimeMaintenance } from
 import type { UptimeMonitor, UptimeCheck, UptimeIncident, UptimeMaintenance } from '@/lib/db/schema'
 import DeleteMonitorButton from './DeleteMonitorButton'
 import PauseResumeButton from './PauseResumeButton'
+import ResponseTimeChart from '@/components/admin/ResponseTimeChart'
 
 async function getCfEnv(): Promise<Env | undefined> {
   try {
@@ -339,6 +340,23 @@ export default async function MonitorDetailPage({
           <DetailField label="Alert Emails" value={monitor.alertEmails} />
           <DetailField label="Telegram Chat ID" value={monitor.telegramChatId} mono />
         </div>
+      </div>
+
+      {/* ── D-pre. Response Time Chart ── */}
+      <div
+        style={{
+          background: '#fff',
+          borderRadius: 12,
+          padding: '24px',
+          marginBottom: 20,
+          boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+          border: '1px solid #e5e9f0',
+        }}
+      >
+        <div style={{ fontFamily: 'var(--font-prompt)', fontWeight: 600, fontSize: 16, color: '#0d2749', marginBottom: 16 }}>
+          Response Time
+        </div>
+        <ResponseTimeChart checks={recentChecks} />
       </div>
 
       {/* ── D. Recent Checks table ── */}
