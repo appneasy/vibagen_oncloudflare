@@ -38,7 +38,7 @@ export async function GET(
     return Response.json(files)
   } catch (err) {
     console.error('[Contracts/Files] GET failed:', err)
-    return Response.json({ error: 'DB error' }, { status: 500 })
+    return Response.json({ error: 'DB error', detail: String(err) }, { status: 500 })
   }
 }
 
@@ -122,6 +122,6 @@ export async function POST(
     return Response.json(created, { status: 201 })
   } catch (err) {
     console.error('[Contracts/Files] POST failed:', err)
-    return Response.json({ error: 'Upload failed' }, { status: 500 })
+    return Response.json({ error: 'Upload failed', detail: String(err) }, { status: 500 })
   }
 }
