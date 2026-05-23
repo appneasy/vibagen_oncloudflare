@@ -266,7 +266,7 @@ export async function putObject(
   env: Env,
   bucket: string,
   key: string,
-  body: ArrayBuffer | Uint8Array,
+  body: ArrayBuffer,
   contentType: string,
 ): Promise<void> {
   const client = getR2Client(env)
