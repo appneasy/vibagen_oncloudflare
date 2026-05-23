@@ -1,6 +1,6 @@
-import { z } from 'zod'
 import { getDB } from '@/lib/db'
 import { managedCustomers } from '@/lib/db/schema'
+import { customerCreateSchema } from '@/lib/validators/customer'
 
 export const runtime = 'edge'
 
@@ -12,22 +12,6 @@ async function getCfEnv(): Promise<Env | undefined> {
     return undefined
   }
 }
-
-// ─── Validation Schema ────────────────────────────────────
-const customerSchema = z.object({
-  name:       z.string().min(1),
-  slug:       z.string().min(1),
-  subdomain:  z.string().min(1),
-  vpsIp:      z.string().optional(),
-  vpsPlan:    z.string().optional(),
-  vpsLocation: z.string().optional(),
-  r2Bucket:   z.string().optional(),
-  status:     z.enum(['setup', 'active', 'suspended', 'terminated']).optional(),
-  startDate:  z.string().optional(),
-  lineOaName: z.string().optional(),
-  liffId:     z.string().optional(),
-  notes:      z.string().optional(),
-})
 
 // ─── GET /api/admin/customers ─────────────────────────────
 export async function GET() {
@@ -60,7 +44,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const result = customerSchema.safeParse(body)
+  const result = customerCreateSchema.safeParse(body)
   if (!result.success) {
     return Response.json(
       { error: 'Validation failed', details: result.error.flatten().fieldErrors },

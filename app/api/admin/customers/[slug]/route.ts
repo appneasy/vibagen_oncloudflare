@@ -1,7 +1,7 @@
-import { z } from 'zod'
 import { eq } from 'drizzle-orm'
 import { getDB } from '@/lib/db'
 import { managedCustomers } from '@/lib/db/schema'
+import { customerUpdateSchema } from '@/lib/validators/customer'
 
 export const runtime = 'edge'
 
@@ -13,22 +13,6 @@ async function getCfEnv(): Promise<Env | undefined> {
     return undefined
   }
 }
-
-// ─── Validation Schema (all fields optional for PUT) ─────
-const updateSchema = z.object({
-  name:        z.string().min(1).optional(),
-  slug:        z.string().min(1).optional(),
-  subdomain:   z.string().min(1).optional(),
-  vpsIp:       z.string().optional(),
-  vpsPlan:     z.string().optional(),
-  vpsLocation: z.string().optional(),
-  r2Bucket:    z.string().optional(),
-  status:      z.enum(['setup', 'active', 'suspended', 'terminated']).optional(),
-  startDate:   z.string().optional(),
-  lineOaName:  z.string().optional(),
-  liffId:      z.string().optional(),
-  notes:       z.string().optional(),
-})
 
 // ─── GET /api/admin/customers/[slug] ─────────────────────
 export async function GET(
@@ -80,7 +64,7 @@ export async function PUT(
     return Response.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  const result = updateSchema.safeParse(body)
+  const result = customerUpdateSchema.safeParse(body)
   if (!result.success) {
     return Response.json(
       { error: 'Validation failed', details: result.error.flatten().fieldErrors },

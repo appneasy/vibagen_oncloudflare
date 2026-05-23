@@ -10,7 +10,8 @@
     "preview": "npm run pages:build && wrangler pages dev",
     "deploy": "npm run pages:build && wrangler pages deploy",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "wrangler d1 execute vibagen-db --file ./migrations/0001_init.sql"
+    "db:migrate": "wrangler d1 execute vibagen-db --file ./migrations/0001_init.sql",
+    "test": "vitest run"
   },
   "dependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
@@ -35,6 +36,7 @@
     "drizzle-kit": "^0.31.10",
     "tailwindcss": "^4",
     "typescript": "^5",
+    "vitest": "^4.1.7",
     "wrangler": "^4.90.0"
   }
 }
