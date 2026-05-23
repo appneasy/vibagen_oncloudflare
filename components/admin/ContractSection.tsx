@@ -140,7 +140,6 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
   const [saveError, setSaveError] = useState<string | null>(null)
 
   // File management state
-  const [expandedFiles, setExpandedFiles] = useState<number | null>(null)
   const [files, setFiles] = useState<ContractFile[]>([])
   const [filesLoading, setFilesLoading] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -198,12 +197,16 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
     })
     setSaveError(null)
     setShowModal(true)
+    fetchFiles(contract.id)
   }
 
   function closeModal() {
     setShowModal(false)
     setEditTarget(null)
     setSaveError(null)
+    setFiles([])
+    setUploadError(null)
+    setUploadLabel('')
   }
 
   async function handleSave() {
@@ -267,16 +270,6 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
       setFiles([])
     } finally {
       setFilesLoading(false)
-    }
-  }
-
-  function toggleFiles(contractId: number) {
-    if (expandedFiles === contractId) {
-      setExpandedFiles(null)
-      setFiles([])
-    } else {
-      setExpandedFiles(contractId)
-      fetchFiles(contractId)
     }
   }
 
@@ -519,143 +512,6 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
                   </div>
                 </div>
 
-                {/* Files toggle button */}
-                <div style={{ marginTop: 10, borderTop: '1px solid #e5e9f0', paddingTop: 10 }}>
-                  <button
-                    onClick={() => toggleFiles(contract.id)}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      padding: 0,
-                      fontSize: 13,
-                      fontWeight: 600,
-                      color: expandedFiles === contract.id ? '#0d2749' : '#737373',
-                      cursor: 'pointer',
-                      fontFamily: 'inherit',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <span style={{ fontSize: 11 }}>{expandedFiles === contract.id ? '▼' : '▶'}</span>
-                    Files
-                  </button>
-                </div>
-
-                {/* Expanded files section */}
-                {expandedFiles === contract.id && (
-                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f4f8' }}>
-                    {/* File list */}
-                    {filesLoading ? (
-                      <div style={{ fontSize: 13, color: '#737373', padding: '8px 0' }}>กำลังโหลด...</div>
-                    ) : files.length === 0 ? (
-                      <div style={{ fontSize: 13, color: '#9ca3af', padding: '8px 0' }}>ยังไม่มีไฟล์แนบ</div>
-                    ) : (
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                        {files.map((f) => (
-                          <div
-                            key={f.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 10,
-                              background: '#f8fafc',
-                              borderRadius: 8,
-                              padding: '8px 12px',
-                              border: '1px solid #e5e9f0',
-                              flexWrap: 'wrap',
-                            }}
-                          >
-                            {/* File icon based on type */}
-                            <span style={{ fontSize: 18, flexShrink: 0 }}>
-                              {f.fileType.startsWith('image/') ? '🖼' : f.fileType === 'application/pdf' ? '📄' : '📎'}
-                            </span>
-                            {/* File info */}
-                            <div style={{ flex: 1, minWidth: 120 }}>
-                              <a
-                                href={`/api/admin/contracts/files/${f.id}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                style={{ fontSize: 13, color: '#0d2749', fontWeight: 500, textDecoration: 'none' }}
-                              >
-                                {f.fileName}
-                              </a>
-                              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
-                                {formatFileSize(f.fileSize)}
-                                {f.label && (
-                                  <span style={{ marginLeft: 8, color: '#737373', fontStyle: 'italic' }}>
-                                    — {f.label}
-                                  </span>
-                                )}
-                              </div>
-                            </div>
-                            {/* Delete button */}
-                            <button
-                              onClick={() => handleDeleteFile(f.id, f.fileName, contract.id)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                padding: '2px 6px',
-                                fontSize: 13,
-                                fontWeight: 600,
-                                color: '#dc2626',
-                                cursor: 'pointer',
-                                fontFamily: 'inherit',
-                                flexShrink: 0,
-                              }}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {/* Upload area */}
-                    <div style={{
-                      border: '2px dashed #d1d5db',
-                      borderRadius: 8,
-                      padding: '12px 14px',
-                      background: '#fafbfc',
-                    }}>
-                      {uploadError && (
-                        <div style={{ fontSize: 12, color: '#dc2626', marginBottom: 8 }}>{uploadError}</div>
-                      )}
-                      {/* Label input */}
-                      <div style={{ marginBottom: 8 }}>
-                        <input
-                          type="text"
-                          value={uploadLabel}
-                          onChange={(e) => setUploadLabel(e.target.value)}
-                          placeholder="กำกับเอกสาร เช่น สัญญาหน้า 1-5, ใบเสนอราคา..."
-                          style={{
-                            ...inputStyle,
-                            fontSize: 13,
-                            padding: '6px 10px',
-                          }}
-                        />
-                      </div>
-                      {/* File input + upload button */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          multiple
-                          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-                          onChange={(e) => handleFileUpload(contract.id, e.target.files)}
-                          disabled={uploading}
-                          style={{ fontSize: 13, flex: 1, minWidth: 0 }}
-                        />
-                        {uploading && (
-                          <span style={{ fontSize: 12, color: '#ff6c01', fontWeight: 600 }}>กำลังอัปโหลด...</span>
-                        )}
-                      </div>
-                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>
-                        รูปภาพจะถูกบีบอัดอัตโนมัติ (80% quality) · PDF ไม่เกิน 20MB
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )
           })}
@@ -684,7 +540,7 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
               overflow: 'hidden',
               boxShadow: '0 8px 32px rgba(0,0,0,0.18)',
               width: '100%',
-              maxWidth: 480,
+              maxWidth: 560,
               maxHeight: '90vh',
               overflowY: 'auto',
             }}
@@ -779,31 +635,6 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
                   </select>
                 </div>
 
-                {/* R2 Key */}
-                <div>
-                  <label style={labelStyle}>R2 Key</label>
-                  <input
-                    type="text"
-                    value={form.r2Key}
-                    onChange={(e) => setForm((f) => ({ ...f, r2Key: e.target.value }))}
-                    placeholder="contracts/filename.pdf"
-                    style={inputStyle}
-                  />
-                </div>
-
-                {/* File Size */}
-                <div>
-                  <label style={labelStyle}>File Size (bytes)</label>
-                  <input
-                    type="number"
-                    value={form.fileSize}
-                    onChange={(e) => setForm((f) => ({ ...f, fileSize: e.target.value }))}
-                    placeholder="0"
-                    min="0"
-                    style={inputStyle}
-                  />
-                </div>
-
                 {/* Status */}
                 <div>
                   <label style={labelStyle}>Status</label>
@@ -856,6 +687,120 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
                   }}
                 />
               </div>
+
+              {/* ── File Attachments ── */}
+              {editTarget ? (
+                <div style={{ marginTop: 18, borderTop: '1px solid #e5e9f0', paddingTop: 16 }}>
+                  <label style={{ ...labelStyle, marginBottom: 10, fontSize: 14 }}>
+                    Attached Files
+                  </label>
+
+                  {/* File list */}
+                  {filesLoading ? (
+                    <div style={{ fontSize: 13, color: '#737373', padding: '8px 0' }}>กำลังโหลด...</div>
+                  ) : files.length > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                      {files.map((f) => (
+                        <div
+                          key={f.id}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            background: '#f8fafc',
+                            borderRadius: 8,
+                            padding: '8px 12px',
+                            border: '1px solid #e5e9f0',
+                            flexWrap: 'wrap',
+                          }}
+                        >
+                          <span style={{ fontSize: 18, flexShrink: 0 }}>
+                            {f.fileType.startsWith('image/') ? '\u{1F5BC}' : f.fileType === 'application/pdf' ? '\u{1F4C4}' : '\u{1F4CE}'}
+                          </span>
+                          <div style={{ flex: 1, minWidth: 100 }}>
+                            <a
+                              href={`/api/admin/contracts/files/${f.id}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{ fontSize: 13, color: '#0d2749', fontWeight: 500, textDecoration: 'none' }}
+                            >
+                              {f.fileName}
+                            </a>
+                            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
+                              {formatFileSize(f.fileSize)}
+                              {f.label && (
+                                <span style={{ marginLeft: 8, color: '#737373', fontStyle: 'italic' }}>
+                                  — {f.label}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleDeleteFile(f.id, f.fileName, editTarget.id)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              padding: '2px 6px',
+                              fontSize: 16,
+                              fontWeight: 600,
+                              color: '#dc2626',
+                              cursor: 'pointer',
+                              fontFamily: 'inherit',
+                              flexShrink: 0,
+                            }}
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Upload area */}
+                  <div style={{
+                    border: '2px dashed #d1d5db',
+                    borderRadius: 8,
+                    padding: '12px 14px',
+                    background: '#fafbfc',
+                  }}>
+                    {uploadError && (
+                      <div style={{ fontSize: 12, color: '#dc2626', marginBottom: 8 }}>{uploadError}</div>
+                    )}
+                    <div style={{ marginBottom: 8 }}>
+                      <input
+                        type="text"
+                        value={uploadLabel}
+                        onChange={(e) => setUploadLabel(e.target.value)}
+                        placeholder="กำกับเอกสาร เช่น สัญญาหน้า 1-5, ใบเสนอราคา..."
+                        style={{ ...inputStyle, fontSize: 13, padding: '6px 10px' }}
+                      />
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        multiple
+                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                        onChange={(e) => handleFileUpload(editTarget.id, e.target.files)}
+                        disabled={uploading}
+                        style={{ fontSize: 13, flex: 1, minWidth: 0 }}
+                      />
+                      {uploading && (
+                        <span style={{ fontSize: 12, color: '#ff6c01', fontWeight: 600 }}>กำลังอัปโหลด...</span>
+                      )}
+                    </div>
+                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>
+                      รูปภาพจะถูกบีบอัดอัตโนมัติ (80% quality) · PDF ไม่เกิน 20MB
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginTop: 18, borderTop: '1px solid #e5e9f0', paddingTop: 12 }}>
+                  <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic' }}>
+                    บันทึก contract ก่อน จึงแนบไฟล์ได้
+                  </div>
+                </div>
+              )}
 
               {/* Buttons */}
               <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
