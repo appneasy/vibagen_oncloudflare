@@ -49,9 +49,9 @@ export async function GET(
       return Response.json({ error: 'File not found in storage' }, { status: 404 })
     }
 
-    // Determine if we should inline (images) or download (other files)
-    const isImage = file.fileType.startsWith('image/')
-    const disposition = isImage
+    // Inline for images and PDFs, download for others
+    const isViewable = file.fileType.startsWith('image/') || file.fileType === 'application/pdf'
+    const disposition = isViewable
       ? `inline; filename="${file.fileName}"`
       : `attachment; filename="${file.fileName}"`
 
