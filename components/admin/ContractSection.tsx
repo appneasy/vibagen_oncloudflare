@@ -217,8 +217,6 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
         customerSlug,
         title:      form.title      || null,
         type:       form.type       || 'contract',
-        r2Key:      form.r2Key      || null,
-        fileSize:   form.fileSize !== '' ? Number(form.fileSize) : null,
         status:     form.status     || null,
         signedDate: form.signedDate || null,
         expiryDate: form.expiryDate || null,

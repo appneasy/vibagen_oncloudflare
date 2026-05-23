@@ -19,12 +19,12 @@ const updateSchema = z.object({
   customerSlug: z.string().min(1).optional(),
   title:        z.string().min(1).optional(),
   type:         z.enum(['contract', 'quotation', 'invoice', 'requirement', 'other']).optional(),
-  r2Key:        z.string().optional(),
-  fileSize:     z.number().int().min(0).optional(),
-  status:       z.enum(['draft', 'signed', 'expired']).optional(),
-  signedDate:   z.string().optional(),
-  expiryDate:   z.string().optional(),
-  notes:        z.string().optional(),
+  r2Key:        z.string().nullable().optional(),
+  fileSize:     z.number().int().min(0).nullable().optional(),
+  status:       z.enum(['draft', 'signed', 'expired']).nullable().optional(),
+  signedDate:   z.string().nullable().optional(),
+  expiryDate:   z.string().nullable().optional(),
+  notes:        z.string().nullable().optional(),
 })
 
 // ─── GET /api/admin/contracts/[id] ───────────────────────
