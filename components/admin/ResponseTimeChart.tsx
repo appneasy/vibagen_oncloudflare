@@ -92,7 +92,7 @@ export default function ResponseTimeChart({ checks }: Props) {
 
   function shortTime(dateStr: string): string {
     // dateStr is "YYYY-MM-DD HH:MM:SS" (DB format, UTC)
-    const d = new Date(dateStr + 'Z')
+    const d = new Date(dateStr.replace(' ', 'T') + 'Z')
     const h = d.getUTCHours().toString().padStart(2, '0')
     const m = d.getUTCMinutes().toString().padStart(2, '0')
     return `${h}:${m}`

@@ -23,7 +23,7 @@ async function getCfEnv(): Promise<Env | undefined> {
 }
 
 function relativeTime(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr + 'Z').getTime()
+  const diff = Date.now() - new Date(dateStr.replace(' ', 'T') + 'Z').getTime()
   const minutes = Math.floor(diff / 60000)
   if (minutes < 1) return 'just now'
   if (minutes < 60) return `${minutes}m ago`

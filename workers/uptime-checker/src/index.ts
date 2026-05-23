@@ -248,7 +248,7 @@ async function handleIncidents(
       }
     } else if (result.status === 'up' && existing) {
       // Resolve existing incident
-      const startedAt = new Date(existing.started_at + 'Z').getTime()
+      const startedAt = new Date(existing.started_at.replace(' ', 'T') + 'Z').getTime()
       const nowMs = new Date(now).getTime()
       const durationSeconds = Math.round((nowMs - startedAt) / 1000)
 
@@ -264,7 +264,7 @@ async function handleIncidents(
       }
     } else if (result.status === 'down' && existing) {
       // Still down — check if we need to escalate severity
-      const startedAt = new Date(existing.started_at + 'Z').getTime()
+      const startedAt = new Date(existing.started_at.replace(' ', 'T') + 'Z').getTime()
       const nowMs = new Date(now).getTime()
       const downMinutes = (nowMs - startedAt) / 60000
 
