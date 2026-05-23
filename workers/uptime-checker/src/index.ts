@@ -2,6 +2,7 @@ interface Env {
   DB: D1Database
   RESEND_API_KEY?: string
   TELEGRAM_BOT_TOKEN?: string
+  ADMIN_TELEGRAM_CHAT_ID?: string
   ADMIN_ALERT_EMAIL?: string
 }
 
@@ -286,8 +287,68 @@ async function handleIncidents(
   return alertActions
 }
 
+interface DueSoonSubscription {
+  id: number
+  customer_slug: string
+  service_name: string | null
+  provider: string | null
+  next_due_date: string | null
+  price_thb: number | null
+  plan: string | null
+}
+
+async function checkDueSoonSubscriptions(env: Env): Promise<void> {
+  if (!env.TELEGRAM_BOT_TOKEN || !env.ADMIN_TELEGRAM_CHAT_ID) return
+
+  const today = new Date().toISOString().split('T')[0]
+  const in7days = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+  const result = await env.DB.prepare(
+    `SELECT id, customer_slug, service_name, provider, next_due_date, price_thb, plan
+     FROM customer_subscriptions
+     WHERE status = 'active'
+       AND next_due_date >= ?1
+       AND next_due_date <= ?2
+     ORDER BY next_due_date ASC`
+  ).bind(today, in7days).all<DueSoonSubscription>()
+
+  const subs = result.results ?? []
+  if (subs.length === 0) return
+
+  // Build Telegram message
+  let text = `🔔 *Subscriptions Due Soon* (${subs.length} รายการ)\n\n`
+  for (const sub of subs) {
+    const daysLeft = Math.ceil((new Date(sub.next_due_date!).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    text += `• *${escapeMarkdown(sub.customer_slug)}* — ${escapeMarkdown(sub.service_name ?? '—')}\n`
+    text += `  Provider: ${escapeMarkdown(sub.provider ?? 'Other')}`
+    if (sub.price_thb != null) text += ` · ฿${sub.price_thb.toLocaleString()}`
+    text += `\n  Due: ${sub.next_due_date} (${daysLeft} วัน)\n\n`
+  }
+
+  try {
+    await fetch(`https://api.telegram.org/bot${env.TELEGRAM_BOT_TOKEN}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: env.ADMIN_TELEGRAM_CHAT_ID,
+        text,
+        parse_mode: 'Markdown',
+      }),
+    })
+  } catch (err) {
+    console.error('[DueSoon/Telegram] Failed:', err)
+  }
+}
+
 export default {
   async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
+    // Daily subscription due-soon check (runs at 01:00 UTC = 08:00 Thai time)
+    if (controller.cron === '0 1 * * *') {
+      await checkDueSoonSubscriptions(env)
+      return
+    }
+
+    // Default: uptime monitoring (every 5 minutes)
     const now = new Date().toISOString()
 
     // 1. Get all active monitors

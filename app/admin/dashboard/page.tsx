@@ -2,7 +2,7 @@ export const runtime = 'edge'
 
 import Link from 'next/link'
 import { getDB } from '@/lib/db'
-import { managedCustomers, uptimeMonitors, uptimeChecks, uptimeIncidents } from '@/lib/db/schema'
+import { managedCustomers, uptimeMonitors, uptimeChecks, uptimeIncidents, customerSubscriptions } from '@/lib/db/schema'
 import { getMultiBucketStatus } from '@/lib/r2'
 import type { ManagedCustomer } from '@/lib/db/schema'
 import { desc, eq, sql, and, isNull, gte } from 'drizzle-orm'
@@ -54,6 +54,10 @@ export default async function DashboardPage() {
   let monitorsDown = 0
   let openIncidents = 0
   let monitorSummaries: MonitorSummary[] = []
+
+  // ── Due-soon subscriptions ────────────────────────────────
+  let dueSoonSubs: { id: number; customerSlug: string; serviceName: string | null; provider: string | null; nextDueDate: string | null; priceThb: number | null; plan: string | null }[] = []
+  let dueSoonCount = 0
 
   if (env?.DB) {
     try {
@@ -158,6 +162,32 @@ export default async function DashboardPage() {
       totalMonitors = activeMonitorSummaries.length
       monitorsUp    = activeMonitorSummaries.filter((m) => m.lastStatus === 'up').length
       monitorsDown  = activeMonitorSummaries.filter((m) => m.lastStatus === 'down').length
+
+      // ── Due-soon subscriptions (within 7 days) ──
+      const today = now.toISOString().split('T')[0] // YYYY-MM-DD
+      const in7days = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+
+      const dueSoonResult = await db
+        .select({
+          id: customerSubscriptions.id,
+          customerSlug: customerSubscriptions.customerSlug,
+          serviceName: customerSubscriptions.serviceName,
+          provider: customerSubscriptions.provider,
+          nextDueDate: customerSubscriptions.nextDueDate,
+          priceThb: customerSubscriptions.priceThb,
+          plan: customerSubscriptions.plan,
+        })
+        .from(customerSubscriptions)
+        .where(
+          and(
+            eq(customerSubscriptions.status, 'active'),
+            gte(customerSubscriptions.nextDueDate, today),
+            sql`${customerSubscriptions.nextDueDate} <= ${in7days}`
+          )
+        )
+
+      dueSoonSubs = dueSoonResult
+      dueSoonCount = dueSoonSubs.length
     } catch {
       dbError = true
     }
@@ -396,6 +426,36 @@ export default async function DashboardPage() {
           </div>
         </div>
 
+        {/* Due Soon */}
+        <div
+          style={{
+            background: dueSoonCount > 0 ? '#fffbeb' : '#fff',
+            borderRadius: 12,
+            padding: 16,
+            boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
+            border: dueSoonCount > 0 ? '1px solid #fbbf24' : '1px solid #e5e9f0',
+          }}
+        >
+          <div style={{ fontSize: 12, color: dueSoonCount > 0 ? '#92400e' : '#737373', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            Due Soon
+          </div>
+          <div
+            style={{
+              fontFamily: 'var(--font-prompt)',
+              fontSize: 28,
+              fontWeight: 700,
+              color: dueSoonCount > 0 ? '#d97706' : '#0d2749',
+              lineHeight: 1,
+            }}
+          >
+            {dueSoonCount}
+          </div>
+        </div>
+
         {/* Last Check */}
         <div
           style={{
@@ -525,6 +585,79 @@ export default async function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* ── Due Soon Subscriptions ── */}
+      {dueSoonCount > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{
+            fontSize: 11,
+            fontWeight: 600,
+            color: '#92400e',
+            textTransform: 'uppercase',
+            letterSpacing: '0.06em',
+            marginBottom: 10,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 6,
+          }}>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+              <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+            </svg>
+            Subscriptions Due Soon (within 7 days)
+          </div>
+          <div style={{
+            background: '#fffbeb',
+            border: '1px solid #fbbf24',
+            borderRadius: 10,
+            overflow: 'hidden',
+          }}>
+            {dueSoonSubs.map((sub, i) => (
+              <div
+                key={sub.id}
+                style={{
+                  padding: '10px 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 12,
+                  flexWrap: 'wrap',
+                  borderBottom: i < dueSoonSubs.length - 1 ? '1px solid #fde68a' : 'none',
+                  fontSize: 13,
+                }}
+              >
+                {/* Provider badge */}
+                <span style={{
+                  padding: '2px 8px',
+                  borderRadius: 12,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  background: sub.provider === 'cloudflare' ? '#dbeafe' : sub.provider === 'hetzner' ? '#fee2e2' : '#f3f4f6',
+                  color: sub.provider === 'cloudflare' ? '#1d4ed8' : sub.provider === 'hetzner' ? '#b91c1c' : '#4b5563',
+                }}>
+                  {sub.provider ?? 'Other'}
+                </span>
+                {/* Customer + Service */}
+                <span style={{ fontWeight: 600, color: '#0d2749' }}>
+                  {sub.customerSlug}
+                </span>
+                <span style={{ color: '#374151' }}>
+                  {sub.serviceName ?? '—'}
+                </span>
+                {/* Due date */}
+                <span style={{ marginLeft: 'auto', fontWeight: 600, color: '#d97706' }}>
+                  {sub.nextDueDate}
+                </span>
+                {/* Price */}
+                {sub.priceThb != null && (
+                  <span style={{ color: '#737373', fontSize: 12 }}>
+                    ฿{sub.priceThb.toLocaleString()}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Customer & Monitor Cards ── */}
       <CustomerCardGrid cards={customerCards} />

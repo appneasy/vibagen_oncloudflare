@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { Fragment, useEffect, useState, useCallback, useRef } from 'react'
 
 interface Contract {
   id: number
@@ -147,8 +147,8 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
   const [uploadLabel, setUploadLabel] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // File count indicators on cards
-  const [fileCounts, setFileCounts] = useState<Record<number, number>>({})
+  // Expand state — single row expanded at a time
+  const [expandedId, setExpandedId] = useState<number | null>(null)
 
   // Preview modal
   const [previewFile, setPreviewFile] = useState<ContractFile | null>(null)
@@ -172,24 +172,6 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
     fetchContracts()
   }, [fetchContracts])
 
-  // Fetch file counts for all contracts to show attachment indicator on cards
-  useEffect(() => {
-    if (contracts.length === 0) return
-    Promise.all(
-      contracts.map(async (c) => {
-        try {
-          const res = await fetch(`/api/admin/contracts/${c.id}/files`)
-          if (res.ok) { const files = await res.json() as ContractFile[]; return { id: c.id, count: files.length } }
-        } catch { /* ignore */ }
-        return { id: c.id, count: 0 }
-      })
-    ).then(results => {
-      const counts: Record<number, number> = {}
-      for (const r of results) counts[r.id] = r.count
-      setFileCounts(counts)
-    })
-  }, [contracts])
-
   // Close modal on Escape key
   useEffect(() => {
     if (!showModal) return
@@ -199,6 +181,16 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [showModal])
+
+  function toggleExpand(contractId: number) {
+    if (expandedId === contractId) {
+      setExpandedId(null)
+      setFiles([])
+    } else {
+      setExpandedId(contractId)
+      fetchFiles(contractId)
+    }
+  }
 
   function openAdd() {
     setEditTarget(null)
@@ -221,14 +213,12 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
     })
     setSaveError(null)
     setShowModal(true)
-    fetchFiles(contract.id)
   }
 
   function closeModal() {
     setShowModal(false)
     setEditTarget(null)
     setSaveError(null)
-    setFiles([])
     setUploadError(null)
     setUploadLabel('')
   }
@@ -275,6 +265,10 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
     try {
       const res = await fetch(`/api/admin/contracts/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (expandedId === id) {
+        setExpandedId(null)
+        setFiles([])
+      }
       await fetchContracts()
     } catch (e) {
       alert(e instanceof Error ? e.message : 'ลบไม่สำเร็จ')
@@ -316,10 +310,8 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
           try {
             const compressed = await compressImage(file, 0.8)
             uploadFile = compressed
-            // Change extension to .jpg if compressed
             uploadName = file.name.replace(/\.[^.]+$/, '.jpg')
           } catch {
-            // If compression fails, upload original
             uploadFile = file
           }
         }
@@ -361,6 +353,166 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
     }
   }
 
+  // Shared expanded content for both desktop and mobile layouts
+  function renderExpandedContent(contract: Contract) {
+    return (
+      <div style={{ padding: '14px 16px', background: '#f8fafc' }}>
+        {/* Notes */}
+        {contract.notes && (
+          <div style={{ marginBottom: 14 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: '#737373', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>
+              Notes
+            </div>
+            <div style={{ fontSize: 13, color: '#374151', lineHeight: 1.6 }}>
+              {contract.notes}
+            </div>
+          </div>
+        )}
+
+        {/* Attached Files */}
+        <div>
+          <div style={{ fontSize: 11, fontWeight: 700, color: '#737373', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+            Attached Files
+          </div>
+
+          {filesLoading ? (
+            <div style={{ fontSize: 13, color: '#737373', padding: '4px 0' }}>กำลังโหลด...</div>
+          ) : files.length > 0 ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+              {files.map((f) => (
+                <div
+                  key={f.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 10,
+                    background: '#fff',
+                    borderRadius: 8,
+                    padding: '8px 12px',
+                    border: '1px solid #e5e9f0',
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <span style={{ fontSize: 18, flexShrink: 0 }}>
+                    {f.fileType.startsWith('image/') ? '\u{1F5BC}' : f.fileType === 'application/pdf' ? '\u{1F4C4}' : '\u{1F4CE}'}
+                  </span>
+                  <div style={{ flex: 1, minWidth: 100 }}>
+                    <a
+                      href={`/api/admin/contracts/files/${f.id}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ fontSize: 13, color: '#0d2749', fontWeight: 500, textDecoration: 'none' }}
+                    >
+                      {f.fileName}
+                    </a>
+                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
+                      {formatFileSize(f.fileSize)}
+                      {f.label && (
+                        <span style={{ marginLeft: 8, color: '#737373', fontStyle: 'italic' }}>
+                          — {f.label}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {/* Eye/Preview icon — only for images and PDFs */}
+                  {(isImageFile(f.fileType) || isPdfFile(f.fileType)) && (
+                    <button
+                      onClick={() => setPreviewFile(f)}
+                      title="Preview"
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        padding: '2px 6px',
+                        color: '#3b82f6',
+                        cursor: 'pointer',
+                        fontFamily: 'inherit',
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </svg>
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteFile(f.id, f.fileName, contract.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: '2px 6px',
+                      fontSize: 16,
+                      fontWeight: 600,
+                      color: '#dc2626',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      flexShrink: 0,
+                    }}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: '#9ca3af', marginBottom: 12 }}>ยังไม่มีไฟล์แนบ</div>
+          )}
+
+          {/* Upload area */}
+          <div style={{
+            border: '2px dashed #d1d5db',
+            borderRadius: 8,
+            padding: '12px 14px',
+            background: '#fff',
+          }}>
+            {uploadError && (
+              <div style={{ fontSize: 12, color: '#dc2626', marginBottom: 8 }}>{uploadError}</div>
+            )}
+            <div style={{ marginBottom: 8 }}>
+              <input
+                type="text"
+                value={uploadLabel}
+                onChange={(e) => setUploadLabel(e.target.value)}
+                placeholder="กำกับเอกสาร เช่น สัญญาหน้า 1-5, ใบเสนอราคา..."
+                style={{ ...inputStyle, fontSize: 13, padding: '6px 10px' }}
+              />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                onChange={(e) => handleFileUpload(contract.id, e.target.files)}
+                disabled={uploading}
+                style={{ fontSize: 13, flex: 1, minWidth: 0 }}
+              />
+              {uploading && (
+                <span style={{ fontSize: 12, color: '#ff6c01', fontWeight: 600 }}>กำลังอัปโหลด...</span>
+              )}
+            </div>
+            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>
+              รูปภาพจะถูกบีบอัดอัตโนมัติ (80% quality) · PDF ไม่เกิน 20MB
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  const chevronRight = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M9 18l6-6-6-6" />
+    </svg>
+  )
+  const chevronDown = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M6 9l6 6 6-6" />
+    </svg>
+  )
+
   return (
     <div
       style={{
@@ -371,6 +523,16 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
         border: '1px solid #e5e9f0',
       }}
     >
+      <style>{`
+        .contract-table-desktop { display: block; }
+        .contract-card-mobile { display: none; }
+        .contract-tr-data:hover td { background: #f8fafc; }
+        @media (max-width: 767px) {
+          .contract-table-desktop { display: none !important; }
+          .contract-card-mobile { display: block !important; }
+        }
+      `}</style>
+
       {/* ── Header ── */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
         <h2
@@ -413,120 +575,207 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
           <div style={{ fontSize: 13, color: '#9ca3af' }}>คลิก &quot;+ Add&quot; เพื่อเพิ่มรายการแรก</div>
         </div>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {contracts.map((contract) => {
-            const typeBadge   = getTypeBadge(contract.type)
-            const statusBadge = getStatusBadge(contract.status)
+        <>
+          {/* ── Desktop Table (≥768px) ── */}
+          <div className="contract-table-desktop">
+            <table style={{ width: '100%', borderCollapse: 'collapse', borderRadius: 8, overflow: 'hidden' }}>
+              <thead>
+                <tr>
+                  <th style={{ background: '#0d2749', color: '#fff', padding: '10px 12px', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', textAlign: 'left', width: 32 }}></th>
+                  <th style={{ background: '#0d2749', color: '#fff', padding: '10px 12px', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', textAlign: 'left' }}>Type</th>
+                  <th style={{ background: '#0d2749', color: '#fff', padding: '10px 12px', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', textAlign: 'left' }}>Title</th>
+                  <th style={{ background: '#0d2749', color: '#fff', padding: '10px 12px', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', textAlign: 'left' }}>Status</th>
+                  <th style={{ background: '#0d2749', color: '#fff', padding: '10px 12px', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', textAlign: 'left' }}>Signed</th>
+                  <th style={{ background: '#0d2749', color: '#fff', padding: '10px 12px', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', textAlign: 'left' }}>Expires</th>
+                  <th style={{ background: '#0d2749', color: '#fff', padding: '10px 12px', fontSize: 12, fontWeight: 600, textTransform: 'uppercase', textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {contracts.map((contract) => {
+                  const typeBadge   = getTypeBadge(contract.type)
+                  const statusBadge = getStatusBadge(contract.status)
+                  const isExpanded  = expandedId === contract.id
 
-            return (
-              <div
-                key={contract.id}
-                style={{
-                  border: '1px solid #e5e9f0',
-                  borderRadius: 10,
-                  padding: '14px 16px',
-                  background: '#fafbfc',
-                }}
-              >
-                {/* Top row: type badge + title + status badge */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
-                  <span
-                    style={{
-                      padding: '2px 10px',
-                      borderRadius: 20,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      background: typeBadge.bg,
-                      color: typeBadge.color,
-                    }}
-                  >
-                    {typeBadge.label}
-                  </span>
-                  <span
-                    style={{
-                      fontSize: 15,
-                      fontWeight: 600,
-                      color: '#0d2749',
-                      fontFamily: 'var(--font-prompt)',
-                      flex: 1,
-                      minWidth: 120,
-                    }}
-                  >
-                    {contract.title ?? '—'}
-                  </span>
-                  <span
-                    style={{
-                      padding: '2px 10px',
-                      borderRadius: 20,
-                      fontSize: 12,
-                      fontWeight: 600,
-                      background: statusBadge.bg,
-                      color: statusBadge.color,
-                    }}
-                  >
-                    {statusBadge.label}
-                  </span>
-                </div>
+                  return (
+                    <Fragment key={contract.id}>
+                      <tr
+                        className="contract-tr-data"
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {/* Chevron toggle */}
+                        <td
+                          style={{ padding: '10px 12px', fontSize: 13, color: '#374151', borderBottom: isExpanded ? 'none' : '1px solid #e5e9f0', verticalAlign: 'middle' }}
+                          onClick={() => toggleExpand(contract.id)}
+                        >
+                          <span style={{ color: '#6b7280', display: 'flex', alignItems: 'center' }}>
+                            {isExpanded ? chevronDown : chevronRight}
+                          </span>
+                        </td>
+                        {/* Type */}
+                        <td
+                          style={{ padding: '10px 12px', fontSize: 13, color: '#374151', borderBottom: isExpanded ? 'none' : '1px solid #e5e9f0', verticalAlign: 'middle' }}
+                          onClick={() => toggleExpand(contract.id)}
+                        >
+                          <span style={{ padding: '2px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: typeBadge.bg, color: typeBadge.color, whiteSpace: 'nowrap' }}>
+                            {typeBadge.label}
+                          </span>
+                        </td>
+                        {/* Title */}
+                        <td
+                          style={{ padding: '10px 12px', fontSize: 13, color: '#0d2749', borderBottom: isExpanded ? 'none' : '1px solid #e5e9f0', verticalAlign: 'middle', fontWeight: 600 }}
+                          onClick={() => toggleExpand(contract.id)}
+                        >
+                          {contract.title ?? '—'}
+                        </td>
+                        {/* Status */}
+                        <td
+                          style={{ padding: '10px 12px', fontSize: 13, color: '#374151', borderBottom: isExpanded ? 'none' : '1px solid #e5e9f0', verticalAlign: 'middle' }}
+                          onClick={() => toggleExpand(contract.id)}
+                        >
+                          <span style={{ padding: '2px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: statusBadge.bg, color: statusBadge.color, whiteSpace: 'nowrap' }}>
+                            {statusBadge.label}
+                          </span>
+                        </td>
+                        {/* Signed */}
+                        <td
+                          style={{ padding: '10px 12px', fontSize: 13, color: '#374151', borderBottom: isExpanded ? 'none' : '1px solid #e5e9f0', verticalAlign: 'middle' }}
+                          onClick={() => toggleExpand(contract.id)}
+                        >
+                          {contract.signedDate ?? '—'}
+                        </td>
+                        {/* Expires */}
+                        <td
+                          style={{ padding: '10px 12px', fontSize: 13, color: '#374151', borderBottom: isExpanded ? 'none' : '1px solid #e5e9f0', verticalAlign: 'middle' }}
+                          onClick={() => toggleExpand(contract.id)}
+                        >
+                          {contract.expiryDate ?? '—'}
+                        </td>
+                        {/* Actions */}
+                        <td style={{ padding: '10px 12px', fontSize: 13, color: '#374151', borderBottom: isExpanded ? 'none' : '1px solid #e5e9f0', verticalAlign: 'middle', textAlign: 'right' }}>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); openEdit(contract) }}
+                            style={{ background: 'none', border: 'none', padding: '0 6px', fontSize: 13, fontWeight: 600, color: '#ff6c01', cursor: 'pointer', fontFamily: 'inherit' }}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleDelete(contract.id, contract.title) }}
+                            style={{ background: 'none', border: 'none', padding: '0 6px', fontSize: 13, fontWeight: 600, color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit' }}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
 
-                {/* Bottom row: signed date + expiry date + actions */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-                  <div style={{ fontSize: 12, color: '#737373' }}>
-                    <span style={{ fontWeight: 600 }}>Signed:</span>{' '}
-                    {contract.signedDate ?? '—'}
+                      {/* Expanded row */}
+                      {isExpanded && (
+                        <tr>
+                          <td
+                            colSpan={7}
+                            style={{ padding: 0, borderBottom: '1px solid #e5e9f0' }}
+                          >
+                            {renderExpandedContent(contract)}
+                          </td>
+                        </tr>
+                      )}
+                    </Fragment>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* ── Mobile Cards (<768px) ── */}
+          <div className="contract-card-mobile" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {contracts.map((contract) => {
+              const typeBadge   = getTypeBadge(contract.type)
+              const statusBadge = getStatusBadge(contract.status)
+              const isExpanded  = expandedId === contract.id
+
+              return (
+                <div
+                  key={contract.id}
+                  style={{
+                    border: '1px solid #e5e9f0',
+                    borderRadius: 10,
+                    background: '#fafbfc',
+                    overflow: 'hidden',
+                  }}
+                >
+                  {/* Card header: type + title + status */}
+                  <div style={{ padding: '12px 14px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 6 }}>
+                      <span style={{ padding: '2px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: typeBadge.bg, color: typeBadge.color }}>
+                        {typeBadge.label}
+                      </span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: '#0d2749', fontFamily: 'var(--font-prompt)', flex: 1, minWidth: 100 }}>
+                        {contract.title ?? '—'}
+                      </span>
+                      <span style={{ padding: '2px 10px', borderRadius: 20, fontSize: 12, fontWeight: 600, background: statusBadge.bg, color: statusBadge.color }}>
+                        {statusBadge.label}
+                      </span>
+                    </div>
+
+                    {/* Dates */}
+                    <div style={{ display: 'flex', gap: 16, marginBottom: 10, flexWrap: 'wrap' }}>
+                      <div style={{ fontSize: 12, color: '#737373' }}>
+                        <span style={{ fontWeight: 600 }}>Signed:</span> {contract.signedDate ?? '—'}
+                      </div>
+                      <div style={{ fontSize: 12, color: '#737373' }}>
+                        <span style={{ fontWeight: 600 }}>Expires:</span> {contract.expiryDate ?? '—'}
+                      </div>
+                    </div>
+
+                    {/* Actions row */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <button
+                        onClick={() => openEdit(contract)}
+                        style={{ background: 'none', border: 'none', padding: 0, fontSize: 13, fontWeight: 600, color: '#ff6c01', cursor: 'pointer', fontFamily: 'inherit' }}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        onClick={() => handleDelete(contract.id, contract.title)}
+                        style={{ background: 'none', border: 'none', padding: 0, fontSize: 13, fontWeight: 600, color: '#dc2626', cursor: 'pointer', fontFamily: 'inherit' }}
+                      >
+                        Delete
+                      </button>
+                      <button
+                        onClick={() => toggleExpand(contract.id)}
+                        style={{
+                          marginLeft: 'auto',
+                          background: 'none',
+                          border: '1px solid #e5e9f0',
+                          borderRadius: 6,
+                          padding: '4px 8px',
+                          cursor: 'pointer',
+                          color: '#6b7280',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 4,
+                          fontSize: 12,
+                        }}
+                      >
+                        {isExpanded ? chevronDown : chevronRight}
+                        {isExpanded ? 'Close' : 'Files'}
+                      </button>
+                    </div>
                   </div>
-                  <div style={{ fontSize: 12, color: '#737373' }}>
-                    <span style={{ fontWeight: 600 }}>Expires:</span>{' '}
-                    {contract.expiryDate ?? '—'}
-                  </div>
-                  {(fileCounts[contract.id] ?? 0) > 0 && (
-                    <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.49" />
-                      </svg>
-                      {fileCounts[contract.id]} ไฟล์
+
+                  {/* Expanded area */}
+                  {isExpanded && (
+                    <div style={{ borderTop: '1px solid #e5e9f0' }}>
+                      {renderExpandedContent(contract)}
                     </div>
                   )}
-                  <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
-                    <button
-                      onClick={() => openEdit(contract)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        padding: 0,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: '#ff6c01',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      onClick={() => handleDelete(contract.id, contract.title)}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        padding: 0,
-                        fontSize: 13,
-                        fontWeight: 600,
-                        color: '#dc2626',
-                        cursor: 'pointer',
-                        fontFamily: 'inherit',
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
                 </div>
-
-              </div>
-            )
-          })}
-        </div>
+              )
+            })}
+          </div>
+        </>
       )}
 
-      {/* ── Modal ── */}
+      {/* ── Modal (form fields only, no file section) ── */}
       {showModal && (
         <div
           style={{
@@ -695,144 +944,6 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
                   }}
                 />
               </div>
-
-              {/* ── File Attachments ── */}
-              {editTarget ? (
-                <div style={{ marginTop: 18, borderTop: '1px solid #e5e9f0', paddingTop: 16 }}>
-                  <label style={{ ...labelStyle, marginBottom: 10, fontSize: 14 }}>
-                    Attached Files
-                  </label>
-
-                  {/* File list */}
-                  {filesLoading ? (
-                    <div style={{ fontSize: 13, color: '#737373', padding: '8px 0' }}>กำลังโหลด...</div>
-                  ) : files.length > 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
-                      {files.map((f) => (
-                        <div
-                          key={f.id}
-                          style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 10,
-                            background: '#f8fafc',
-                            borderRadius: 8,
-                            padding: '8px 12px',
-                            border: '1px solid #e5e9f0',
-                            flexWrap: 'wrap',
-                          }}
-                        >
-                          <span style={{ fontSize: 18, flexShrink: 0 }}>
-                            {f.fileType.startsWith('image/') ? '\u{1F5BC}' : f.fileType === 'application/pdf' ? '\u{1F4C4}' : '\u{1F4CE}'}
-                          </span>
-                          <div style={{ flex: 1, minWidth: 100 }}>
-                            <a
-                              href={`/api/admin/contracts/files/${f.id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              style={{ fontSize: 13, color: '#0d2749', fontWeight: 500, textDecoration: 'none' }}
-                            >
-                              {f.fileName}
-                            </a>
-                            <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
-                              {formatFileSize(f.fileSize)}
-                              {f.label && (
-                                <span style={{ marginLeft: 8, color: '#737373', fontStyle: 'italic' }}>
-                                  — {f.label}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {/* Eye/Preview icon — only for images and PDFs */}
-                          {(isImageFile(f.fileType) || isPdfFile(f.fileType)) && (
-                            <button
-                              onClick={() => setPreviewFile(f)}
-                              title="Preview"
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                padding: '2px 6px',
-                                fontSize: 16,
-                                color: '#3b82f6',
-                                cursor: 'pointer',
-                                fontFamily: 'inherit',
-                                flexShrink: 0,
-                                display: 'flex',
-                                alignItems: 'center',
-                              }}
-                            >
-                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                <circle cx="12" cy="12" r="3" />
-                              </svg>
-                            </button>
-                          )}
-                          <button
-                            onClick={() => handleDeleteFile(f.id, f.fileName, editTarget.id)}
-                            style={{
-                              background: 'none',
-                              border: 'none',
-                              padding: '2px 6px',
-                              fontSize: 16,
-                              fontWeight: 600,
-                              color: '#dc2626',
-                              cursor: 'pointer',
-                              fontFamily: 'inherit',
-                              flexShrink: 0,
-                            }}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Upload area */}
-                  <div style={{
-                    border: '2px dashed #d1d5db',
-                    borderRadius: 8,
-                    padding: '12px 14px',
-                    background: '#fafbfc',
-                  }}>
-                    {uploadError && (
-                      <div style={{ fontSize: 12, color: '#dc2626', marginBottom: 8 }}>{uploadError}</div>
-                    )}
-                    <div style={{ marginBottom: 8 }}>
-                      <input
-                        type="text"
-                        value={uploadLabel}
-                        onChange={(e) => setUploadLabel(e.target.value)}
-                        placeholder="กำกับเอกสาร เช่น สัญญาหน้า 1-5, ใบเสนอราคา..."
-                        style={{ ...inputStyle, fontSize: 13, padding: '6px 10px' }}
-                      />
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
-                        onChange={(e) => handleFileUpload(editTarget.id, e.target.files)}
-                        disabled={uploading}
-                        style={{ fontSize: 13, flex: 1, minWidth: 0 }}
-                      />
-                      {uploading && (
-                        <span style={{ fontSize: 12, color: '#ff6c01', fontWeight: 600 }}>กำลังอัปโหลด...</span>
-                      )}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>
-                      รูปภาพจะถูกบีบอัดอัตโนมัติ (80% quality) · PDF ไม่เกิน 20MB
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ marginTop: 18, borderTop: '1px solid #e5e9f0', paddingTop: 12 }}>
-                  <div style={{ fontSize: 13, color: '#9ca3af', fontStyle: 'italic' }}>
-                    บันทึก contract ก่อน จึงแนบไฟล์ได้
-                  </div>
-                </div>
-              )}
 
               {/* Buttons */}
               <div style={{ display: 'flex', gap: 10, marginTop: 20, justifyContent: 'flex-end' }}>
