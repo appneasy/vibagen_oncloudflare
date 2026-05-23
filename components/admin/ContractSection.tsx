@@ -179,7 +179,7 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
       contracts.map(async (c) => {
         try {
           const res = await fetch(`/api/admin/contracts/${c.id}/files`)
-          if (res.ok) { const files = await res.json(); return { id: c.id, count: files.length } }
+          if (res.ok) { const files = await res.json() as ContractFile[]; return { id: c.id, count: files.length } }
         } catch { /* ignore */ }
         return { id: c.id, count: 0 }
       })
