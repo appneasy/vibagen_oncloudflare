@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 
 interface Contract {
   id: number
@@ -13,6 +13,17 @@ interface Contract {
   signedDate: string | null
   expiryDate: string | null
   notes: string | null
+  createdAt: string | null
+}
+
+interface ContractFile {
+  id: number
+  contractId: number
+  fileName: string
+  r2Key: string
+  fileSize: number
+  fileType: string
+  label: string | null
   createdAt: string | null
 }
 
@@ -85,6 +96,39 @@ const labelStyle: React.CSSProperties = {
   marginBottom: 4,
 }
 
+function compressImage(file: File, quality: number = 0.8): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    img.onload = () => {
+      const canvas = document.createElement('canvas')
+      canvas.width = img.naturalWidth
+      canvas.height = img.naturalHeight
+      const ctx = canvas.getContext('2d')
+      if (!ctx) { reject(new Error('Canvas not supported')); return }
+      ctx.drawImage(img, 0, 0)
+      canvas.toBlob(
+        (blob) => {
+          if (blob) resolve(blob)
+          else reject(new Error('Compression failed'))
+        },
+        'image/jpeg',
+        quality,
+      )
+      URL.revokeObjectURL(img.src)
+    }
+    img.onerror = () => { URL.revokeObjectURL(img.src); reject(new Error('Invalid image')) }
+    img.src = URL.createObjectURL(file)
+  })
+}
+
+function isImageFile(type: string): boolean {
+  return type.startsWith('image/')
+}
+
+function isPdfFile(type: string): boolean {
+  return type === 'application/pdf'
+}
+
 export default function ContractSection({ customerSlug }: { customerSlug: string }) {
   const [contracts, setContracts] = useState<Contract[]>([])
   const [loading, setLoading] = useState(true)
@@ -94,6 +138,15 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
   const [form, setForm] = useState<FormData>(EMPTY_FORM)
   const [saving, setSaving] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+
+  // File management state
+  const [expandedFiles, setExpandedFiles] = useState<number | null>(null)
+  const [files, setFiles] = useState<ContractFile[]>([])
+  const [filesLoading, setFilesLoading] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [uploadError, setUploadError] = useState<string | null>(null)
+  const [uploadLabel, setUploadLabel] = useState('')
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchContracts = useCallback(async () => {
     setLoading(true)
@@ -198,6 +251,96 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
       const res = await fetch(`/api/admin/contracts/${id}`, { method: 'DELETE' })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       await fetchContracts()
+    } catch (e) {
+      alert(e instanceof Error ? e.message : 'ลบไม่สำเร็จ')
+    }
+  }
+
+  async function fetchFiles(contractId: number) {
+    setFilesLoading(true)
+    try {
+      const res = await fetch(`/api/admin/contracts/${contractId}/files`)
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json() as ContractFile[]
+      setFiles(data)
+    } catch {
+      setFiles([])
+    } finally {
+      setFilesLoading(false)
+    }
+  }
+
+  function toggleFiles(contractId: number) {
+    if (expandedFiles === contractId) {
+      setExpandedFiles(null)
+      setFiles([])
+    } else {
+      setExpandedFiles(contractId)
+      fetchFiles(contractId)
+    }
+  }
+
+  async function handleFileUpload(contractId: number, fileList: FileList | null) {
+    if (!fileList || fileList.length === 0) return
+    setUploading(true)
+    setUploadError(null)
+
+    for (const file of Array.from(fileList)) {
+      try {
+        // Validate PDF size
+        if (isPdfFile(file.type) && file.size > 20 * 1024 * 1024) {
+          setUploadError(`"${file.name}" เกิน 20MB`)
+          continue
+        }
+
+        let uploadFile: File | Blob = file
+        let uploadName = file.name
+
+        // Compress images to 80% quality
+        if (isImageFile(file.type)) {
+          try {
+            const compressed = await compressImage(file, 0.8)
+            uploadFile = compressed
+            // Change extension to .jpg if compressed
+            uploadName = file.name.replace(/\.[^.]+$/, '.jpg')
+          } catch {
+            // If compression fails, upload original
+            uploadFile = file
+          }
+        }
+
+        const formData = new FormData()
+        formData.append('file', uploadFile, uploadName)
+        if (uploadLabel.trim()) {
+          formData.append('label', uploadLabel.trim())
+        }
+
+        const res = await fetch(`/api/admin/contracts/${contractId}/files`, {
+          method: 'POST',
+          body: formData,
+        })
+
+        if (!res.ok) {
+          const data = await res.json() as { error?: string }
+          throw new Error(data.error || `HTTP ${res.status}`)
+        }
+      } catch (e) {
+        setUploadError(e instanceof Error ? e.message : 'อัปโหลดไม่สำเร็จ')
+      }
+    }
+
+    setUploadLabel('')
+    setUploading(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+    await fetchFiles(contractId)
+  }
+
+  async function handleDeleteFile(fileId: number, fileName: string, contractId: number) {
+    if (!window.confirm(`ลบไฟล์ "${fileName}" ใช่ไหม?`)) return
+    try {
+      const res = await fetch(`/api/admin/contracts/files/${fileId}`, { method: 'DELETE' })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      await fetchFiles(contractId)
     } catch (e) {
       alert(e instanceof Error ? e.message : 'ลบไม่สำเร็จ')
     }
@@ -375,6 +518,144 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
                     </button>
                   </div>
                 </div>
+
+                {/* Files toggle button */}
+                <div style={{ marginTop: 10, borderTop: '1px solid #e5e9f0', paddingTop: 10 }}>
+                  <button
+                    onClick={() => toggleFiles(contract.id)}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      padding: 0,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: expandedFiles === contract.id ? '#0d2749' : '#737373',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <span style={{ fontSize: 11 }}>{expandedFiles === contract.id ? '▼' : '▶'}</span>
+                    Files
+                  </button>
+                </div>
+
+                {/* Expanded files section */}
+                {expandedFiles === contract.id && (
+                  <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f0f4f8' }}>
+                    {/* File list */}
+                    {filesLoading ? (
+                      <div style={{ fontSize: 13, color: '#737373', padding: '8px 0' }}>กำลังโหลด...</div>
+                    ) : files.length === 0 ? (
+                      <div style={{ fontSize: 13, color: '#9ca3af', padding: '8px 0' }}>ยังไม่มีไฟล์แนบ</div>
+                    ) : (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                        {files.map((f) => (
+                          <div
+                            key={f.id}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 10,
+                              background: '#f8fafc',
+                              borderRadius: 8,
+                              padding: '8px 12px',
+                              border: '1px solid #e5e9f0',
+                              flexWrap: 'wrap',
+                            }}
+                          >
+                            {/* File icon based on type */}
+                            <span style={{ fontSize: 18, flexShrink: 0 }}>
+                              {f.fileType.startsWith('image/') ? '🖼' : f.fileType === 'application/pdf' ? '📄' : '📎'}
+                            </span>
+                            {/* File info */}
+                            <div style={{ flex: 1, minWidth: 120 }}>
+                              <a
+                                href={`/api/admin/contracts/files/${f.id}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                style={{ fontSize: 13, color: '#0d2749', fontWeight: 500, textDecoration: 'none' }}
+                              >
+                                {f.fileName}
+                              </a>
+                              <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>
+                                {formatFileSize(f.fileSize)}
+                                {f.label && (
+                                  <span style={{ marginLeft: 8, color: '#737373', fontStyle: 'italic' }}>
+                                    — {f.label}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                            {/* Delete button */}
+                            <button
+                              onClick={() => handleDeleteFile(f.id, f.fileName, contract.id)}
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                padding: '2px 6px',
+                                fontSize: 13,
+                                fontWeight: 600,
+                                color: '#dc2626',
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                flexShrink: 0,
+                              }}
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Upload area */}
+                    <div style={{
+                      border: '2px dashed #d1d5db',
+                      borderRadius: 8,
+                      padding: '12px 14px',
+                      background: '#fafbfc',
+                    }}>
+                      {uploadError && (
+                        <div style={{ fontSize: 12, color: '#dc2626', marginBottom: 8 }}>{uploadError}</div>
+                      )}
+                      {/* Label input */}
+                      <div style={{ marginBottom: 8 }}>
+                        <input
+                          type="text"
+                          value={uploadLabel}
+                          onChange={(e) => setUploadLabel(e.target.value)}
+                          placeholder="กำกับเอกสาร เช่น สัญญาหน้า 1-5, ใบเสนอราคา..."
+                          style={{
+                            ...inputStyle,
+                            fontSize: 13,
+                            padding: '6px 10px',
+                          }}
+                        />
+                      </div>
+                      {/* File input + upload button */}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          multiple
+                          accept="image/*,.pdf,.doc,.docx,.xls,.xlsx"
+                          onChange={(e) => handleFileUpload(contract.id, e.target.files)}
+                          disabled={uploading}
+                          style={{ fontSize: 13, flex: 1, minWidth: 0 }}
+                        />
+                        {uploading && (
+                          <span style={{ fontSize: 12, color: '#ff6c01', fontWeight: 600 }}>กำลังอัปโหลด...</span>
+                        )}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 6 }}>
+                        รูปภาพจะถูกบีบอัดอัตโนมัติ (80% quality) · PDF ไม่เกิน 20MB
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             )
           })}

@@ -24,4 +24,7 @@ interface Env {
 
   /** Admin panel password — set in Cloudflare Pages dashboard */
   ADMIN_PASSWORD: string
+
+  /** R2 bucket for contract file attachments */
+  CONTRACTS_R2_BUCKET: string
 }

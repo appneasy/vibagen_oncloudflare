@@ -11,3 +11,4 @@ database_id = "8e46686e-0c24-456f-baca-024b6218897a"
 [vars]
 NEXT_PUBLIC_SITE_URL = "https://vibagen.com"
 ADMIN_PASSWORD = "vibagen@2026"
+CONTRACTS_R2_BUCKET = "vibagen-contracts"

@@ -86,6 +86,21 @@ export const customerContracts = sqliteTable('customer_contracts', {
 export type CustomerContract    = typeof customerContracts.$inferSelect
 export type NewCustomerContract = typeof customerContracts.$inferInsert
 
+// ─── Contract Files (Attachments) ──────────────────────
+export const contractFiles = sqliteTable('contract_files', {
+  id:         int('id').primaryKey({ autoIncrement: true }),
+  contractId: int('contract_id').notNull(),
+  fileName:   text('file_name').notNull(),    // original filename
+  r2Key:      text('r2_key').notNull(),        // full R2 object key
+  fileSize:   int('file_size').notNull(),       // bytes after compression
+  fileType:   text('file_type').notNull(),      // MIME type
+  label:      text('label'),                    // user description e.g. "สัญญาหน้า 1-5"
+  createdAt:  text('created_at').default(sql`(datetime('now'))`),
+})
+
+export type ContractFile    = typeof contractFiles.$inferSelect
+export type NewContractFile = typeof contractFiles.$inferInsert
+
 // ─── Customer Apps ───────────────────────────────────────
 export const customerApps = sqliteTable('customer_apps', {
   id:            int('id').primaryKey({ autoIncrement: true }),

@@ -259,3 +259,66 @@ export async function getMultiBucketGroupedStatus(
   }
   return map
 }
+
+// ─── Upload / Download / Delete ──────────────────────────
+
+export async function putObject(
+  env: Env,
+  bucket: string,
+  key: string,
+  body: ArrayBuffer | Uint8Array,
+  contentType: string,
+): Promise<void> {
+  const client = getR2Client(env)
+  const endpoint = getR2Endpoint(env)
+  const url = `${endpoint}/${bucket}/${encodeURIComponent(key)}`
+
+  const response = await client.fetch(url, {
+    method: 'PUT',
+    body,
+    headers: { 'Content-Type': contentType },
+  })
+
+  if (!response.ok) {
+    throw new Error(`R2 PUT failed: ${response.status} ${response.statusText}`)
+  }
+}
+
+export async function deleteObject(
+  env: Env,
+  bucket: string,
+  key: string,
+): Promise<void> {
+  const client = getR2Client(env)
+  const endpoint = getR2Endpoint(env)
+  const url = `${endpoint}/${bucket}/${encodeURIComponent(key)}`
+
+  const response = await client.fetch(url, { method: 'DELETE' })
+
+  if (!response.ok && response.status !== 404) {
+    throw new Error(`R2 DELETE failed: ${response.status} ${response.statusText}`)
+  }
+}
+
+export async function getObject(
+  env: Env,
+  bucket: string,
+  key: string,
+): Promise<{ body: ReadableStream; contentType: string; size: number } | null> {
+  const client = getR2Client(env)
+  const endpoint = getR2Endpoint(env)
+  const url = `${endpoint}/${bucket}/${encodeURIComponent(key)}`
+
+  const response = await client.fetch(url)
+
+  if (response.status === 404) return null
+  if (!response.ok) {
+    throw new Error(`R2 GET failed: ${response.status} ${response.statusText}`)
+  }
+
+  return {
+    body: response.body!,
+    contentType: response.headers.get('Content-Type') || 'application/octet-stream',
+    size: parseInt(response.headers.get('Content-Length') || '0', 10),
+  }
+}
