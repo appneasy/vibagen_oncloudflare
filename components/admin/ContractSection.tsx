@@ -525,11 +525,11 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
     >
       <style>{`
         .contract-table-desktop { display: block; }
-        .contract-card-mobile { display: none; }
+        .contract-card-mobile { display: none !important; }
         .contract-tr-data:hover td { background: #f8fafc; }
         @media (max-width: 767px) {
           .contract-table-desktop { display: none !important; }
-          .contract-card-mobile { display: block !important; }
+          .contract-card-mobile { display: flex !important; }
         }
       `}</style>
 
@@ -686,7 +686,7 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
           </div>
 
           {/* ── Mobile Cards (<768px) ── */}
-          <div className="contract-card-mobile" style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+          <div className="contract-card-mobile" style={{ flexDirection: 'column', gap: 10 }}>
             {contracts.map((contract) => {
               const typeBadge   = getTypeBadge(contract.type)
               const statusBadge = getStatusBadge(contract.status)
