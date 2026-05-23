@@ -147,6 +147,12 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
   const [uploadLabel, setUploadLabel] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // File count indicators on cards
+  const [fileCounts, setFileCounts] = useState<Record<number, number>>({})
+
+  // Preview modal
+  const [previewFile, setPreviewFile] = useState<ContractFile | null>(null)
+
   const fetchContracts = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -165,6 +171,24 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
   useEffect(() => {
     fetchContracts()
   }, [fetchContracts])
+
+  // Fetch file counts for all contracts to show attachment indicator on cards
+  useEffect(() => {
+    if (contracts.length === 0) return
+    Promise.all(
+      contracts.map(async (c) => {
+        try {
+          const res = await fetch(`/api/admin/contracts/${c.id}/files`)
+          if (res.ok) { const files = await res.json(); return { id: c.id, count: files.length } }
+        } catch { /* ignore */ }
+        return { id: c.id, count: 0 }
+      })
+    ).then(results => {
+      const counts: Record<number, number> = {}
+      for (const r of results) counts[r.id] = r.count
+      setFileCounts(counts)
+    })
+  }, [contracts])
 
   // Close modal on Escape key
   useEffect(() => {
@@ -444,28 +468,6 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
                   </span>
                 </div>
 
-                {/* Middle row: R2 key + file size */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 8, flexWrap: 'wrap' }}>
-                  {contract.r2Key && (
-                    <span
-                      style={{
-                        fontSize: 12,
-                        color: '#737373',
-                        fontFamily: 'monospace',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        maxWidth: 280,
-                      }}
-                    >
-                      {contract.r2Key}
-                    </span>
-                  )}
-                  <span style={{ fontSize: 12, color: '#737373' }}>
-                    {formatFileSize(contract.fileSize)}
-                  </span>
-                </div>
-
                 {/* Bottom row: signed date + expiry date + actions */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
                   <div style={{ fontSize: 12, color: '#737373' }}>
@@ -476,6 +478,14 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
                     <span style={{ fontWeight: 600 }}>Expires:</span>{' '}
                     {contract.expiryDate ?? '—'}
                   </div>
+                  {(fileCounts[contract.id] ?? 0) > 0 && (
+                    <div style={{ fontSize: 12, color: '#6b7280', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.49" />
+                      </svg>
+                      {fileCounts[contract.id]} ไฟล์
+                    </div>
+                  )}
                   <div style={{ marginLeft: 'auto', display: 'flex', gap: 12 }}>
                     <button
                       onClick={() => openEdit(contract)}
@@ -733,6 +743,30 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
                               )}
                             </div>
                           </div>
+                          {/* Eye/Preview icon — only for images and PDFs */}
+                          {(isImageFile(f.fileType) || isPdfFile(f.fileType)) && (
+                            <button
+                              onClick={() => setPreviewFile(f)}
+                              title="Preview"
+                              style={{
+                                background: 'none',
+                                border: 'none',
+                                padding: '2px 6px',
+                                fontSize: 16,
+                                color: '#3b82f6',
+                                cursor: 'pointer',
+                                fontFamily: 'inherit',
+                                flexShrink: 0,
+                                display: 'flex',
+                                alignItems: 'center',
+                              }}
+                            >
+                              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                            </button>
+                          )}
                           <button
                             onClick={() => handleDeleteFile(f.id, f.fileName, editTarget.id)}
                             style={{
@@ -837,6 +871,83 @@ export default function ContractSection({ customerSlug }: { customerSlug: string
                   {saving ? 'กำลังบันทึก...' : 'Save'}
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Preview Modal ── */}
+      {previewFile && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.75)',
+            zIndex: 200,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: 16,
+          }}
+          onClick={(e) => { if (e.target === e.currentTarget) setPreviewFile(null) }}
+        >
+          <div style={{
+            position: 'relative',
+            background: '#fff',
+            borderRadius: 12,
+            overflow: 'hidden',
+            maxWidth: '90vw',
+            maxHeight: '90vh',
+            display: 'flex',
+            flexDirection: 'column',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+          }}>
+            {/* Header bar */}
+            <div style={{
+              padding: '10px 16px',
+              borderBottom: '1px solid #e5e9f0',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              background: '#f8fafc',
+              flexShrink: 0,
+            }}>
+              <span style={{ fontSize: 13, fontWeight: 600, color: '#0d2749' }}>
+                {previewFile.fileName}
+                {previewFile.label && (
+                  <span style={{ fontWeight: 400, color: '#737373', marginLeft: 8 }}>— {previewFile.label}</span>
+                )}
+              </span>
+              <button
+                onClick={() => setPreviewFile(null)}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: 22,
+                  cursor: 'pointer',
+                  color: '#9ca3af',
+                  lineHeight: 1,
+                  padding: '0 4px',
+                }}
+              >
+                ×
+              </button>
+            </div>
+            {/* Content */}
+            <div style={{ overflow: 'auto', flex: 1 }}>
+              {isImageFile(previewFile.fileType) ? (
+                <img
+                  src={`/api/admin/contracts/files/${previewFile.id}`}
+                  alt={previewFile.fileName}
+                  style={{ maxWidth: '100%', maxHeight: '80vh', display: 'block', margin: '0 auto' }}
+                />
+              ) : isPdfFile(previewFile.fileType) ? (
+                <iframe
+                  src={`/api/admin/contracts/files/${previewFile.id}`}
+                  style={{ width: '80vw', maxWidth: 900, height: '80vh', border: 'none' }}
+                  title={previewFile.fileName}
+                />
+              ) : null}
             </div>
           </div>
         </div>

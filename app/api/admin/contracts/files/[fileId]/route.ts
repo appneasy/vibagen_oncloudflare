@@ -57,7 +57,7 @@ export async function GET(
 
     return new Response(obj.body, {
       headers: {
-        'Content-Type': obj.contentType,
+        'Content-Type': file.fileType || obj.contentType,
         'Content-Disposition': disposition,
         'Content-Length': String(obj.size),
         'Cache-Control': 'private, max-age=3600',
