@@ -271,7 +271,7 @@ export async function putObject(
 ): Promise<void> {
   const client = getR2Client(env)
   const endpoint = getR2Endpoint(env)
-  const url = `${endpoint}/${bucket}/${encodeURIComponent(key)}`
+  const url = `${endpoint}/${bucket}/${key.split('/').map(encodeURIComponent).join('/')}`
 
   const response = await client.fetch(url, {
     method: 'PUT',
@@ -291,7 +291,7 @@ export async function deleteObject(
 ): Promise<void> {
   const client = getR2Client(env)
   const endpoint = getR2Endpoint(env)
-  const url = `${endpoint}/${bucket}/${encodeURIComponent(key)}`
+  const url = `${endpoint}/${bucket}/${key.split('/').map(encodeURIComponent).join('/')}`
 
   const response = await client.fetch(url, { method: 'DELETE' })
 
@@ -307,7 +307,7 @@ export async function getObject(
 ): Promise<{ body: ReadableStream; contentType: string; size: number } | null> {
   const client = getR2Client(env)
   const endpoint = getR2Endpoint(env)
-  const url = `${endpoint}/${bucket}/${encodeURIComponent(key)}`
+  const url = `${endpoint}/${bucket}/${key.split('/').map(encodeURIComponent).join('/')}`
 
   const response = await client.fetch(url)
 
