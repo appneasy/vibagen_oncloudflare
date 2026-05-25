@@ -1,0 +1,340 @@
+---
+title: "MDX + Static Site + Cloudflare Pipeline: จาก .mdx ไฟล์ถึง CDN ทั่วโลก"
+slug: "mdx-static-site-cloudflare-pipeline"
+category: "Infrastructure"
+date: "2026-05-30"
+excerpt: "เข้าใจทุก step ของ pipeline ที่เปลี่ยน Markdown ธรรมดาให้กลายเป็นหน้าเว็บที่โหลดเร็วระดับ Edge — พร้อม code จริงและ config ที่ใช้ได้เลย"
+readTime: 7
+featured: false
+author: "Akkraphol"
+authorTitle: "Engineering & IT Manager | Founder, VIBAGEN"
+keywords: ["MDX", "Next.js", "Cloudflare", "Static Site", "Vibecoding", "pipeline", "CDN"]
+ogImage: "/images/og-default.png"
+---
+
+หลายคนสงสัยว่า "เขียน Markdown แล้วมันกลายเป็นหน้าเว็บได้ยังไง?"
+คำตอบสั้น ๆ คือ: มี pipeline ที่ทำงานอยู่เบื้องหลัง — แต่มันไม่ได้ทำงานแบบที่หลายคนคิด
+
+บทความนี้จะพา walk-through ทุก step ตั้งแต่เขียน `.mdx` ไฟล์
+ไปจนถึงไฟล์นั้น "live" อยู่บน Cloudflare CDN ทั่วโลก
+โดยใช้ code จริงจาก VIBAGEN website ไม่ใช่ตัวอย่างสมมติ
+
+---
+
+## MDX ในโปรเจกต์นี้คืออะไร?
+
+MDX โดยทั่วไปหมายถึง Markdown + JSX — เขียนเนื้อหา Markdown ผสม React component ได้
+แต่ใน VIBAGEN website เราใช้ `.mdx` เป็นแค่ **container สำหรับ frontmatter + Markdown ธรรมดา** เท่านั้น
+
+ไม่มีการ compile JSX, ไม่มี `<WarningBox>`, ไม่มี `<Mermaid>` — เพราะ pipeline ของเราอ่านไฟล์เป็น plain text
+แล้ว render ด้วย custom regex converter ที่เราเขียนเอง
+
+เหตุผลที่เลือก approach นี้: ทำงานได้บน Cloudflare Edge Runtime โดยไม่ต้องพึ่ง Node.js-only modules
+และ control ได้ทุกอย่างโดยไม่ต้องแบกน้ำหนัก dependency ของ MDX compiler
+
+---
+
+## The Pipeline: ทุก Step
+
+### Step 1 — เขียน Content (.mdx)
+
+```
+vibagen-website/
+└── content/
+    └── articles/
+        └── my-article.mdx   ← เขียนตรงนี้
+```
+
+Frontmatter schema ที่ใช้จริง:
+
+```yaml
+---
+title: "ชื่อบทความ"
+slug: "url-slug"
+category: "Infrastructure"
+date: "2026-05-30"
+excerpt: "คำอธิบายสั้น"
+readTime: 7
+featured: false
+author: "Akkraphol"
+authorTitle: "Engineering & IT Manager | Founder, VIBAGEN"
+keywords: ["keyword1", "keyword2"]
+ogImage: "/images/og-default.png"
+---
+```
+
+ตัวเนื้อหาหลังจาก `---` ที่สองคือ Markdown ธรรมดา — header, bold, list, table, code block ใช้ได้หมด
+
+---
+
+### Step 2 — `lib/mdx.ts` อ่าน Content
+
+ไม่ใช่ `@next/mdx` compiler — เราใช้ `gray-matter` อ่าน frontmatter และ `fs.readFileSync` อ่านไฟล์โดยตรง
+
+```typescript
+// lib/mdx.ts (สรุป pattern จริง)
+import fs from 'fs'
+import path from 'path'
+import matter from 'gray-matter'
+
+const ARTICLES_DIR = path.join(process.cwd(), 'content/articles')
+
+// sync — ไม่ใช่ async
+export function getAllArticleMeta() {
+  const files = fs.readdirSync(ARTICLES_DIR)
+  return files
+    .filter((f) => f.endsWith('.mdx'))
+    .map((filename) => {
+      const filePath = path.join(ARTICLES_DIR, filename)
+      const raw = fs.readFileSync(filePath, 'utf8')
+      const { data } = matter(raw)
+      return { slug: data.slug, ...data }
+    })
+}
+
+export function getAllArticleSlugs() {
+  return getAllArticleMeta().map((a) => a.slug as string)
+}
+
+export function getArticleBySlug(slug: string) {
+  const files = fs.readdirSync(ARTICLES_DIR)
+  for (const filename of files) {
+    const filePath = path.join(ARTICLES_DIR, filename)
+    const raw = fs.readFileSync(filePath, 'utf8')
+    const { data, content } = matter(raw)
+    if (data.slug === slug) {
+      return { slug, ...data, content }  // content คือ raw markdown string
+    }
+  }
+  return null
+}
+```
+
+ฟังก์ชันทั้งหมด **synchronous** — เรียกใช้ได้เลยโดยไม่ต้อง await
+
+---
+
+### Step 3 — Page Component อ่านข้อมูล
+
+```typescript
+// app/knowledge/[slug]/page.tsx
+
+import { getAllArticleSlugs, getArticleBySlug } from '@/lib/mdx'
+import { notFound } from 'next/navigation'
+
+// Next.js 15: generateStaticParams เป็น sync ได้
+export function generateStaticParams() {
+  return getAllArticleSlugs().map((slug) => ({ slug }))
+}
+
+// Next.js 15: params เป็น Promise
+export default async function ArticlePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>
+}) {
+  const { slug } = await params
+  const article = getArticleBySlug(slug)  // sync — ไม่ต้อง await
+  if (!article) notFound()
+
+  // render ด้วย dangerouslySetInnerHTML + simpleMarkdownToHtml
+  const html = simpleMarkdownToHtml(article.content)
+  return <div dangerouslySetInnerHTML={{ __html: html }} />
+}
+```
+
+การเปลี่ยนแปลงจาก Next.js เวอร์ชันเก่า: `params` ใน Next.js 15 เป็น `Promise` — ต้อง `await params` ก่อนใช้
+
+---
+
+### Step 4 — Markdown → HTML ด้วย Custom Converter
+
+เราไม่ใช้ library render markdown — เขียน `simpleMarkdownToHtml()` เองด้วย regex:
+
+```typescript
+// ตัวอย่างส่วนหนึ่งของ converter (ใน page.tsx)
+
+function simpleMarkdownToHtml(markdown: string): string {
+  let html = markdown.replace(/\r\n/g, '\n')  // normalize line endings
+
+  // extract code blocks ก่อน (ป้องกัน regex อื่นทับ)
+  const codeBlocks: string[] = []
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => {
+    const placeholder = `%%CODE_${codeBlocks.length}%%`
+    codeBlocks.push(
+      `<pre style="background:#011937;border-radius:8px;...">` +
+      `<div style="...font-size:11px;...">${lang || 'code'}</div>` +
+      `<code>${escapeHtml(code.trim())}</code></pre>`
+    )
+    return placeholder
+  })
+
+  // parse markdown tables → <table> with navy header
+  html = parseMarkdownTables(html)
+
+  // headings, bold, italic, list, blockquote, hr, paragraph
+  html = html
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // ... และอีกหลาย patterns
+
+  // restore code blocks
+  codeBlocks.forEach((block, i) => {
+    html = html.replace(`%%CODE_${i}%%`, block)
+  })
+
+  return html
+}
+```
+
+approach นี้ทำงานได้บน Cloudflare Edge Runtime เพราะไม่พึ่ง Node.js API ใด ๆ
+
+---
+
+### Step 5 — Build ด้วย `@cloudflare/next-on-pages`
+
+นี่คือส่วนที่ต่างจาก static export ทั่วไป — เราไม่ใช้ `output: 'export'`
+
+```bash
+# build command จริง (script ใน package.json)
+npx @cloudflare/next-on-pages
+```
+
+`@cloudflare/next-on-pages` แปลง Next.js App Router output ให้รันบน Cloudflare Workers/Pages ได้
+โดยใช้ Edge Runtime ทั้งหมด — ไม่ใช่ Node.js
+
+Output ไปอยู่ที่ `.vercel/output/static/` (ตาม config ใน wrangler.toml)
+
+```
+.mdx file
+  ↓ gray-matter (parse frontmatter)
+  ↓ Next.js generateStaticParams (pre-render routes)
+  ↓ @cloudflare/next-on-pages
+.vercel/output/static/
+├── knowledge/
+│   └── my-article/
+│       └── index.html   ← HTML สำเร็จรูป
+└── _next/
+    └── static/          ← CSS, JS assets
+```
+
+---
+
+### Step 6 — Deploy ด้วย Wrangler
+
+```bash
+# deploy จาก local หรือ CI
+wrangler pages deploy
+```
+
+wrangler.toml ที่เกี่ยวข้อง:
+
+```toml
+name = "vibagen-web"
+pages_build_output_dir = ".vercel/output/static"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "vibagen-db"
+database_id = "xxx"
+```
+
+`pages_build_output_dir` บอก Wrangler ว่า static files อยู่ที่ไหน
+ไม่ต้อง config build command ใน Cloudflare Dashboard แยกต่างหาก
+
+---
+
+### Step 7 — CDN Edge Distribution
+
+หลัง deploy เสร็จ Cloudflare กระจาย HTML ไปยัง Edge nodes ทั่วโลก:
+
+```
+ผู้ใช้ในไทย     → Bangkok Edge    → cache hit → ~8ms
+ผู้ใช้ในญี่ปุ่น  → Tokyo Edge     → cache hit → ~5ms
+ผู้ใช้ในยุโรป   → Frankfurt Edge  → cache hit → ~12ms
+```
+
+ไม่มี server ต้อง "คิด" อะไร — ส่ง HTML ที่ build ไว้แล้วออกไปเลย
+
+---
+
+## next.config.ts ที่ใช้จริง
+
+ไม่มี MDX plugin, ไม่มี `output: 'export'`:
+
+```typescript
+import type { NextConfig } from 'next'
+
+const nextConfig: NextConfig = {
+  images: {
+    remotePatterns: [{ protocol: 'https', hostname: 'assets.vibagen.com' }],
+    unoptimized: true,  // Cloudflare Pages ไม่รอง Next.js Image Optimization
+  },
+  typescript: { ignoreBuildErrors: false },
+}
+
+export default nextConfig
+```
+
+เรียบง่ายมาก — `@cloudflare/next-on-pages` จัดการ Edge Runtime config ส่วนที่เหลือเอง
+
+---
+
+## Static vs Dynamic: ทำไมต้องเลือก Static?
+
+| | Dynamic (SSR) | Static (SSG) |
+|---|---|---|
+| ทุก request | Edge function ทำงาน | ส่ง cache ทันที |
+| Speed | ขึ้นกับ cold start | คงที่ ~10-50ms |
+| Scale | จำกัดด้วย Worker invocations | ไม่จำกัด |
+| ค่าใช้จ่าย | นับตาม request | free plan ในช่วงเริ่มต้น |
+| เหมาะกับ | ข้อมูล real-time, auth | บทความ, portfolio, docs |
+
+สำหรับ content ที่ไม่เปลี่ยนทุก request — Static ชนะในเรื่อง speed และ cost
+
+---
+
+## Vibecoding ช่วยตรงไหน?
+
+ส่วนที่ใช้เวลาจริงในการสร้าง knowledge hub นี้:
+
+**เขียนเอง** (business logic, content decisions):
+- กำหนด frontmatter schema
+- ออกแบบ URL structure
+- เขียนบทความแต่ละชิ้น
+
+**AI ช่วยเขียน** (boilerplate, regex patterns):
+- `simpleMarkdownToHtml()` — regex ทั้งหมดสำหรับ h2, h3, bold, italic, list
+- `parseMarkdownTables()` — parse markdown table syntax → styled HTML table
+- `generateStaticParams()` + `getArticleBySlug()` pattern สำหรับ Next.js 15
+- Wrangler config สำหรับ D1 + Pages
+
+ผลลัพธ์: เราไม่ต้องติดตั้ง `remark`, `rehype`, `contentlayer` หรือ library ใด ๆ เพิ่ม
+code น้อยกว่า — debug ง่ายกว่า — ทำงานได้บน Edge
+
+---
+
+## สรุป
+
+Pipeline จริงทำงานแบบนี้:
+
+```
+เขียน .mdx  →  gray-matter parse  →  @cloudflare/next-on-pages build
+            →  wrangler pages deploy  →  CDN live ในไม่กี่นาที
+```
+
+ประเด็นสำคัญที่ต่างจากตัวอย่างทั่วไปในเน็ต:
+- ใช้ `gray-matter` อ่านไฟล์ ไม่ใช่ `@next/mdx` compiler
+- ฟังก์ชัน loader เป็น **synchronous** ทั้งหมด
+- Build ด้วย `@cloudflare/next-on-pages` ไม่ใช่ `next export`
+- Render markdown ด้วย custom regex — ไม่พึ่ง Node.js library
+- `next.config.ts` เรียบง่าย — ไม่มี plugin เพิ่ม
+
+สำหรับ VIBAGEN เอง บทความนี้ก็ deploy ด้วย pipeline เดียวกันนี้
+Cloudflare free plan ในช่วงเริ่มต้นรองรับ traffic ระดับ SME ได้สบาย
+
+---
+
+*อยากเข้าใจ Cloudflare infrastructure ทั้งหมดที่ใช้? ดู [Cloudflare Free Infrastructure](/knowledge/cloudflare-free-infrastructure-for-sme) สำหรับ setup เบื้องต้น*
