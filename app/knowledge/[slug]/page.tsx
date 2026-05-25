@@ -191,8 +191,51 @@ export default async function ArticlePage({
  * Handles: h2/h3, bold, italic, blockquote, ul/li, hr, p.
  * For production, replace with remark/rehype pipeline.
  */
+function parseMarkdownTables(md: string): string {
+  // Match table blocks: header row + separator row + data rows
+  const tableRegex = /^(\|.+\|)\n(\|[\s:|-]+\|)\n((?:\|.+\|\n?)+)/gm
+  return md.replace(tableRegex, (_match, headerLine: string, _sep: string, bodyBlock: string) => {
+    const parseRow = (row: string) =>
+      row.split('|').slice(1, -1).map((cell) => cell.trim())
+
+    const headers = parseRow(headerLine)
+    const rows = bodyBlock.trim().split('\n').map(parseRow)
+
+    const ths = headers
+      .map((h) => `<th style="padding:10px 14px;text-align:left;font-size:13px;font-weight:600;color:#fff;white-space:nowrap">${h}</th>`)
+      .join('')
+    const trs = rows
+      .map(
+        (cells) =>
+          '<tr>' +
+          cells
+            .map((c) => `<td style="padding:10px 14px;font-size:13px;color:#374151;border-bottom:1px solid #e5e9f0">${c}</td>`)
+            .join('') +
+          '</tr>',
+      )
+      .join('')
+
+    return `<div style="overflow-x:auto;margin:16px 0"><table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden"><thead><tr style="background:#0d2749">${ths}</tr></thead><tbody>${trs}</tbody></table></div>`
+  })
+}
+
 function simpleMarkdownToHtml(md: string): string {
-  return md
+  // Normalize Windows line endings (\r\n → \n) for consistent regex matching
+  md = md.replace(/\r\n/g, '\n')
+
+  // Extract code blocks before other processing (prevent lines being wrapped in <p>)
+  const codeBlocks: string[] = []
+  md = md.replace(/```(\w*)\n([\s\S]*?)```/gm, (_match, _lang: string, code: string) => {
+    const escaped = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const html = `<div style="margin:20px 0;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,0.08)"><div style="background:#0a1e38;padding:8px 16px;font-size:11px;color:#ff6c01;font-weight:600;letter-spacing:0.5px;text-transform:uppercase">${_lang || 'terminal'}</div><pre style="background:#0d2749;color:#e2e8f0;padding:20px 24px;margin:0;overflow-x:auto;font-size:13px;line-height:1.8;font-family:'Fira Code',Consolas,Monaco,monospace"><code>${escaped}</code></pre></div>`
+    codeBlocks.push(html)
+    return `<!--codeblock:${codeBlocks.length - 1}-->`
+  })
+
+  // Parse tables (before other replacements break the pipe syntax)
+  let html = parseMarkdownTables(md)
+
+  html = html
     .replace(/^---$/gm, '<hr class="border-[#e2e8f0] my-8" />')
     .replace(/^## (.+)$/gm, '<h2 class="font-heading font-bold text-[#0d2749] text-2xl mt-10 mb-4">$1</h2>')
     .replace(/^### (.+)$/gm, '<h3 class="font-heading font-semibold text-[#ff6c01] text-xl mt-8 mb-3">$1</h3>')
@@ -202,7 +245,14 @@ function simpleMarkdownToHtml(md: string): string {
     .replace(/(<li.*<\/li>\n?)+/g, '<ul class="list-disc list-inside space-y-1 my-4">$&</ul>')
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-[#1a202c] font-semibold">$1</strong>')
     .replace(/\*(.+?)\*/g, '<em class="italic">$1</em>')
-    .replace(/^(?!<[h|b|u|l|p|i|hr]).+$/gm, (line) =>
+    .replace(/^(?!<[h|b|u|l|p|i|d|hr]|<!--).+$/gm, (line) =>
       line.trim() ? `<p class="mb-4">${line}</p>` : '',
     )
+
+  // Restore code blocks
+  codeBlocks.forEach((block, i) => {
+    html = html.replace(`<!--codeblock:${i}-->`, block)
+  })
+
+  return html
 }

@@ -1,0 +1,163 @@
+---
+title: "Cloudflare Free Plan สำหรับ SME WebApp — ใช้ได้จริงแค่ไหนในปี 2026"
+slug: "cloudflare-free-infrastructure-for-sme"
+category: "Infrastructure"
+date: "2026-05-28"
+excerpt: "ประสบการณ์ deploy vibagen.com บน Cloudflare Pages + Workers ด้วย free plan — ได้อะไรบ้าง มีขีดจำกัดตรงไหน และเมื่อไหร่ที่ควรจ่ายเงิน"
+readTime: 8
+featured: false
+author: "Akkraphol"
+authorTitle: "Engineering & IT Manager | Founder, VIBAGEN"
+keywords: ["cloudflare", "cloudflare pages", "cloudflare workers", "infrastructure", "next.js", "deployment", "sme", "free hosting"]
+ogImage: "/images/og-default.png"
+---
+
+สำหรับ SME ที่เพิ่งเริ่ม digital product คำถามเรื่อง hosting cost เป็นเรื่องจริงจัง ยิ่ง budget จำกัด ยิ่งต้องเลือกให้คุ้ม
+
+บทความนี้แชร์ประสบการณ์จริงจากการ deploy vibagen.com บน Cloudflare Pages — ทั้งข้อดี ข้อจำกัด และจุดที่ต้องจ่ายเงิน
+
+---
+
+## ทำไมถึงเลือก Cloudflare ตั้งแต่แรก
+
+ตอนที่สร้าง VIBAGEN website ด้วย Next.js 15 ผมเลือกจาก 3 ตัวเลือกหลัก:
+
+**Vercel** — ตัวเลือกที่ชัดเจนที่สุดสำหรับ Next.js แต่ free plan มีข้อจำกัดด้าน serverless function duration (10 วินาที), bandwidth (100GB/เดือน), และที่สำคัญคือ database ต้องใช้ Vercel Postgres ซึ่งมี cold start และ connection limit ที่รู้สึกได้ใน production
+
+**AWS / GCP** — flexible มากกว่า แต่ต้องการ DevOps knowledge และมีค่าใช้จ่ายที่คาดเดาได้ยาก สำหรับ project ขนาด VIBAGEN (ไม่ใช่ enterprise ขนาดใหญ่) มันเป็น over-engineering ที่ชัดเจน
+
+**Cloudflare Pages** — ตัดสินใจลองเพราะ free plan ครอบคลุมสิ่งที่ต้องการ และ Cloudflare เป็น infrastructure provider ที่มีความน่าเชื่อถือระดับหนึ่ง
+
+---
+
+## สิ่งที่ได้จาก Cloudflare Free Plan จริงๆ
+
+หลังจากใช้งานจริง นี่คือสิ่งที่ได้:
+
+### Cloudflare Pages
+
+- **Static hosting ไม่จำกัด request** — ไม่มี bandwidth cap หรือ request limit สำหรับ static files
+- **500 build minutes/เดือน** — สำหรับ Next.js 15 แต่ละ build ใช้เวลาประมาณ 2-4 นาที แปลว่า deploy ได้ประมาณ 100-250 ครั้งต่อเดือน เกินพอสำหรับทีมเล็ก
+- **CDN ใน 300+ locations** — ผู้ใช้ในไทย มาเลเซีย สิงคโปร์ ได้ static content จาก edge ใกล้ตัวเอง latency ต่ำมาก
+- **Custom domain + SSL อัตโนมัติ** — ตั้ง domain แค่ครั้งเดียว SSL ต่ออายุเองตลอด
+- **Preview deployments** — ทุก branch/PR ได้ URL แยก ทดสอบก่อน merge ได้ทันที
+
+### Cloudflare Workers (สำหรับ API routes ใน Next.js)
+
+- **100,000 requests/วัน** — เพียงพอสำหรับ website SME ขนาดเล็กถึงกลางในช่วงเริ่มต้น
+- **10ms CPU time/request** — ข้อจำกัดที่สำคัญ ต้องออกแบบ API route ให้ทำงานเร็ว ไม่เหมาะกับ heavy computation
+- **Cold start ต่ำ** — Cloudflare Workers ใช้ V8 isolate ไม่ใช่ container จึงเริ่มทำงานเร็วกว่า Lambda หรือ Vercel serverless ในหลายกรณี
+
+### Cloudflare D1 (SQLite บน Edge)
+
+- **5GB storage ฟรี** — สำหรับ application ขนาดกลาง เกินพอ
+- **5M rows read + 100K rows write/วัน** — ใช้เก็บ article view counts และ contact form submissions ใน vibagen.com ตัวเลขนี้สบายมาก
+
+---
+
+## สิ่งที่ต้องรู้ก่อน Deploy (บทเรียนจาก 15 Build Errors)
+
+ความจริงที่ต้องบอก: Cloudflare Pages + Next.js ไม่ได้ plug and play แบบ Vercel
+
+ผมเจอ build error 15 รายการระหว่าง setup ครั้งแรก สิ่งที่ต้องเข้าใจ:
+
+### Edge Runtime ≠ Node.js Runtime
+
+Cloudflare Workers ทำงานใน V8 isolate ไม่ใช่ Node.js เต็มรูปแบบ หมายความว่า:
+
+- `fs` module ใช้ไม่ได้ใน API routes (ต้องใช้ SSG หรือ R2 storage แทน)
+- `require()` แบบ CommonJS ไม่ทำงานกับ ESM-only packages ต้องใช้ `await import()` แทน
+- Database client บางตัวไม่ compatible กับ Edge Runtime ต้องใช้ Drizzle ORM + D1 แทน Prisma
+
+### Next.js Version ต้องระวัง
+
+ตอนที่ทดสอบ `@cloudflare/next-on-pages@1.13.16` รองรับแค่ `next@<=15.5.2` เท่านั้น Next.js 16 ยัง build ไม่ผ่าน ถ้าจะ deploy บน Cloudflare Pages วันนี้ ใช้ Next.js 15 LTS แทน
+
+### เนื้อหาต้อง "สร้างไว้ล่วงหน้า" ตอน Deploy
+
+หน้าเว็บที่มีเนื้อหาคงที่ เช่น บทความ, หน้า About, หน้า Services — Cloudflare จะแปลงเป็น HTML สำเร็จรูปตอน deploy ไม่ได้สร้างหน้าใหม่ทุกครั้งที่มีคนเปิดดู
+
+พูดง่ายๆ คือ:
+- เขียนบทความ → push ขึ้น Git → ระบบ build เป็น HTML → ผู้ใช้เปิดดูได้ทันที (เร็วมาก)
+- แต่ถ้าต้องการหน้าที่เปลี่ยนข้อมูลตามผู้ใช้แต่ละคน (เช่น dashboard) → ต้องใช้ API route แทน
+
+ข้อดีคือหน้าเว็บโหลดเร็วมากเพราะเป็น HTML พร้อมเสิร์ฟ ไม่ต้องรอ server ประมวลผล
+
+---
+
+## เปรียบเทียบ Free vs Paid: จ่ายเมื่อไหร่คุ้ม?
+
+### สิ่งที่ได้ฟรี (ไม่ต้องจ่ายเลย)
+
+| รายการ | Free Plan |
+|---|---|
+| Static hosting + CDN ทั่วโลก | ✅ ไม่จำกัด |
+| Custom domain + SSL | ✅ ฟรี ต่ออายุอัตโนมัติ |
+| Preview URL ทุก branch | ✅ ได้ทุก PR |
+| D1 Database | ✅ 5GB / 5M reads ต่อวัน |
+
+### สิ่งที่มีจำกัด (Free → Paid เมื่อเกิน)
+
+| รายการ | Free | Paid ($5/เดือน+) |
+|---|---|---|
+| API requests ต่อวัน | 100,000 ครั้ง | 10 ล้านครั้ง+ |
+| CPU time ต่อ request | 10ms | 30ms+ |
+| Build/deploy ต่อเดือน | 500 นาที | 5,000 นาที+ |
+| Database storage | 5GB | 50GB+ |
+| Analytics | ดูภาพรวมได้ | ดูรายละเอียดทุกมิติ |
+
+### แล้วจ่ายเมื่อไหร่?
+
+เมื่อเข้าเงื่อนไขข้อใดข้อหนึ่ง:
+
+- **API ถูกเรียกเกิน 100,000 ครั้ง/วัน** — เช่น มี user ใช้ระบบหลายร้อยคนต่อวัน
+- **ต้องการ CPU time มากขึ้น** — เช่น มีการ query ข้อมูลซับซ้อน
+- **Deploy บ่อยมาก** — ทีมหลายคน push งานทุกวัน
+
+สำหรับ SME ที่เพิ่งเริ่ม free plan มักเพียงพอในช่วง 6-12 เดือนแรก แต่ควรวางแผนรองรับการ scale ไว้ด้วย
+
+---
+
+## Stack ที่ผมใช้จริง (vibagen.com production)
+
+```
+Next.js 15.3.3 (App Router)
+├── Static pages    → Cloudflare Pages (CDN edge)
+├── API routes      → Cloudflare Workers (V8 isolate)
+│   ├── /api/contact → Telegram Bot API notification
+│   └── /api/views  → Article view counter
+├── Database        → Cloudflare D1 (SQLite)
+│   └── Drizzle ORM (D1 compatible)
+├── Domain          → vibagen.com (Cloudflare DNS)
+└── Deploy          → Git push → auto build → deploy
+```
+
+**Infrastructure cost ปัจจุบัน: 0 บาท/เดือน** (อาจเปลี่ยนเมื่อ traffic เพิ่ม)
+
+---
+
+## ข้อสรุป
+
+Cloudflare free plan เป็นทางเลือกที่น่าสนใจสำหรับ:
+
+- **Portfolio / marketing website** ขนาดเล็กถึงกลาง
+- **MVP ระบบ internal** ที่มี user ไม่เกิน 500 คน
+- **Next.js static-heavy app** ที่ API calls ไม่ถี่
+
+แต่อาจไม่เหมาะกับ:
+
+- ระบบที่ต้อง heavy computation ใน API (เกิน 10ms CPU)
+- App ที่ใช้ file system ใน runtime (ต้องใช้ R2 storage แทน)
+- ทีมที่ไม่อยากจัดการ Edge Runtime gotchas
+
+Cloudflare เป็นหนึ่งในทางเลือก free plan ที่ดีสำหรับ static site + lightweight serverless แต่ก็ไม่ใช่คำตอบเดียว — Vercel, Netlify, Railway ก็มี free tier ที่ใช้ได้เช่นกัน ขึ้นอยู่กับ tech stack และข้อจำกัดที่รับได้
+
+สิ่งที่ Cloudflare ทำได้ดีคือช่วยลด infrastructure cost ในช่วงเริ่มต้น ให้ SME เอา budget ไปใช้กับสิ่งที่สำคัญกว่า เช่น การพัฒนา feature หรือหาลูกค้า
+
+---
+
+## ต่อยอด
+
+อยากเข้าใจ stack เต็มรูปแบบที่ VIBAGEN ใช้สร้างระบบ?
+
+→ [NoCode ดีพอแล้ว — แล้วทำไมถึงเปลี่ยนใจเมื่อ AI โค้ดแทนได้จริง](/knowledge/nocode-to-ai-assisted-development)
