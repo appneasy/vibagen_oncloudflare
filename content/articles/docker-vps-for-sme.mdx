@@ -1,0 +1,207 @@
+---
+title: "Docker + VPS สำหรับ SME: ง่ายกว่าที่คิด ไม่แพงอย่างที่กลัว"
+slug: "docker-vps-for-sme"
+category: "Infrastructure"
+date: "2026-06-09"
+excerpt: "เมื่อ free tier ไม่พอ VPS + Docker อาจเป็นคำตอบที่ดีกว่าที่คุณคิด — จากประสบการณ์จริงที่ deploy ระบบให้ลูกค้า SME"
+readTime: 8
+featured: true
+author: "Akkraphol"
+authorTitle: "Engineering & IT Manager | Founder, VIBAGEN"
+keywords: ["Docker", "VPS", "SME", "deployment", "infrastructure", "self-hosted"]
+ogImage: "/images/og-default.png"
+---
+
+## เมื่อ Free Tier ไม่พอ
+
+ผมเขียนไว้ใน[บทความที่แล้ว](/knowledge/cloudflare-free-infrastructure-for-sme)ว่า Cloudflare + free tier ต่างๆ สามารถรันระบบ production ให้ SME ได้จริง ไม่มีค่าใช้จ่ายแทบสักบาท และยืนยันว่ามันใช้ได้ดีจริงสำหรับงานหลายประเภท
+
+แต่มีวันหนึ่งที่ free tier มันไม่พอ
+
+ลูกค้า SME รายหนึ่งที่ผมดูแลอยู่เริ่มต้นด้วย Vercel + PlanetScale ฟรีได้สบายมาก แต่พอธุรกิจโตขึ้น ข้อมูลเพิ่มขึ้น มี background job ที่ต้องรันทุกคืน มี cron ที่ต้องดึงข้อมูลจาก API ภายนอกทุกชั่วโมง — free tier เริ่มไม่ตอบโจทย์ ไม่ใช่เพราะมันแย่ แต่เพราะ use case เปลี่ยนไป
+
+ตัวเลือกที่คิดถึงแรกคือ upgrade plan ของ Vercel ซึ่งไม่ได้แพงมาก แต่พอคำนวณรวมค่า database, compute, bandwidth — มันบวกกันเร็วกว่าที่คาด
+
+แล้วก็มาถึงคำถามที่ SME หลายเจ้าเจอเหมือนกัน: *"ควรใช้ VPS ไหม?"*
+
+คำตอบที่ได้ยินบ่อยคือ "ยาก" และ "แพง" ผมอยากบอกตรงๆ ว่า — ทั้งสองข้อนั้นไม่จริงอีกแล้ว VPS ปัจจุบันราคาไม่กี่ร้อยบาทต่อเดือน และถ้าใช้ Docker ความยากก็หายไปแทบหมด ยิ่งถ้าใช้ AI ช่วยเขียน config ต่างๆ ให้ — ความยากที่เหลือแทบเป็นศูนย์
+
+---
+
+## ทำไมต้อง Docker?
+
+ก่อนมี Docker ถ้าจะ deploy แอป Node.js บน VPS ต้องทำอะไรบ้าง?
+
+- ติดตั้ง Node.js version ที่ถูกต้อง
+- ติดตั้ง PostgreSQL แล้วตั้งค่า user, permission, port
+- ติดตั้ง Nginx แล้วเขียน config
+- ตั้งค่า SSL ด้วย Let's Encrypt
+- ตั้งค่า PM2 หรือ systemd ให้ app restart อัตโนมัติ
+- ทำซ้ำทุกอย่างเมื่อ server ใหม่
+
+ทั้งหมดนี้ใช้เวลาเป็นวัน และถ้าจำขั้นตอนไม่หมดก็ต้องนั่งหา documentation ใหม่ทุกครั้ง
+
+Docker เปลี่ยนสิ่งนี้ทั้งหมด
+
+ลองนึกภาพง่ายๆ: **Docker container คือกล่องที่บรรจุทุกอย่างที่ระบบต้องการ** — ทั้ง runtime, dependencies, config, environment ใส่ไว้ในกล่องเดียวกัน ไม่ว่าจะรันบน laptop, server development, หรือ production VPS ก็ได้ผลลัพธ์เหมือนกัน
+
+ปัญหา "works on my machine" หมดไปทันที
+
+**docker-compose.yml** คือ "สูตรอาหาร" ที่บอกว่าระบบของเรามีกล่องอะไรบ้าง แต่ละกล่องคุยกันยังไง และเริ่มต้นด้วยลำดับไหน
+
+```
+docker compose up -d
+```
+
+คำสั่งเดียว — ระบบทั้งหมดขึ้น
+
+---
+
+## สถาปัตยกรรมจริงที่ใช้ Deploy ให้ลูกค้า SME
+
+นี่คือ setup ที่ผม deploy ให้ลูกค้า SME หลายรายและใช้งาน production จริง:
+
+```
+Internet → Nginx (port 80/443) → App (Next.js, port 3000) → Database (PostgreSQL, internal)
+```
+
+4 containers หลัก:
+
+**1. Nginx (Reverse Proxy)**
+ทำหน้าที่เป็นประตูหน้าบ้าน รับ request จาก internet ทั้งหมด จัดการ SSL termination, security headers, redirect HTTP → HTTPS และส่งต่อ request ไปยัง app container
+
+**2. App (Next.js)**
+ตัวแอปจริงๆ รันอยู่ใน container ของตัวเอง ไม่ expose port ออก internet โดยตรง — Nginx เป็นคนส่งเข้ามา
+
+**3. Database (PostgreSQL)**
+ไม่เปิด port ออก internet เลย เข้าถึงได้เฉพาะภายใน Docker network เท่านั้น ถ้ามีคนพยายาม scan port หาฐานข้อมูล — หาไม่เจอ
+
+**4. Certbot**
+จัดการ SSL certificate จาก Let's Encrypt อัตโนมัติ ต่ออายุเองทุก 90 วัน ไม่ต้องทำอะไรเพิ่ม
+
+ทุก container อยู่ใน Docker network เดียวกัน คุยกันได้ด้วยชื่อ container โดยตรง เช่น `postgresql://db:5432/myapp` แทนที่จะใช้ IP address
+
+---
+
+## จาก 0 ถึง Live HTTPS ใน 7 คำสั่ง
+
+นี่คือขั้นตอนจริงที่ใช้ deploy ระบบใหม่บน VPS เปล่าๆ:
+
+```bash
+# 1. ติดตั้ง Docker บน VPS (รองรับ Ubuntu/Debian ทุกตัว)
+curl -fsSL https://get.docker.com | sh
+
+# 2. Clone โปรเจกต์
+git clone <repo-url> && cd <project>
+
+# 3. ตั้งค่า environment
+cp .env.production.example .env.production
+# แก้ไข: database password, domain, API keys
+
+# 4. ตั้งค่า SSL อัตโนมัติ (script นี้ขอ cert จาก Let's Encrypt)
+bash nginx/init-ssl.sh
+
+# 5. Build และ Deploy
+docker compose -f docker-compose.prod.yml up -d --build
+
+# 6. ตรวจสอบว่าทุก container ขึ้นปกติ
+docker compose -f docker-compose.prod.yml ps
+
+# 7. เปิดเว็บ
+# https://your-domain.com ✅
+```
+
+สิ่งที่ต้องติดตั้งบน server มีแค่ **Docker กับ Git** — ไม่มีอะไรเพิ่ม
+
+Build ครั้งแรกใช้เวลา 3-5 นาทีขึ้นกับขนาดโปรเจกต์ ครั้งต่อไปเร็วกว่าเดิมมากเพราะ Docker cache layer ที่ไม่เปลี่ยน
+
+ผมไม่ได้เขียน docker-compose.yml หรือ nginx config จากศูนย์เอง — บอก AI ว่าต้องการ Next.js + PostgreSQL + Nginx reverse proxy with SSL แล้วมันสร้าง config ให้ทั้งชุด รวมถึง init-ssl.sh ด้วย ผมแค่ review แก้บางจุดให้ตรงกับ domain และ path ของโปรเจกต์จริง งานที่เคยใช้เวลาเป็นวันย่นเหลือไม่กี่ชั่วโมง
+
+Deploy ใหม่เมื่อมี update ก็แค่:
+
+```bash
+git pull
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+---
+
+## Backup อัตโนมัติ — ไม่ต้องจำ
+
+จุดที่หลายคนลืมเมื่อย้ายมา VPS คือ backup ถ้าอยู่ใน managed service อย่าง PlanetScale หรือ Supabase เขาทำ backup ให้ แต่บน VPS เราดูแลเอง
+
+ระบบที่ผมใช้มี 3 ชั้น:
+
+**Daily Database Backup**
+Cron job รันทุกตี 2 — dump PostgreSQL ทั้งหมด compress แล้วส่งขึ้น cloud storage (S3 compatible) เก็บไว้ 30 วัน
+
+**Telegram แจ้งเตือนทุกเช้า**
+ตื่นมาได้รับแจ้งเตือนว่า backup สำเร็จหรือไม่ ถ้าวันไหนไม่มีแจ้งหรือแจ้งว่า fail — รู้ทันที ไม่ต้องรอให้พังก่อน
+
+**Pre-deploy Snapshot**
+ก่อน deploy ทุกครั้ง script สร้าง database snapshot อัตโนมัติ ถ้า deploy แล้วพัง — rollback กลับไปก่อน deploy ได้ใน 5 นาที
+
+script ทั้งหมดนี้ผม vibecoding ออกมา — บอก AI ว่าต้องการ cron ที่ dump PostgreSQL ทุกตี 2 compress แล้วส่งขึ้น S3 compatible storage พร้อม Telegram แจ้งเตือน ได้ script มาพร้อมใช้ ตรวจสอบแก้ path กับ credential แล้วทำงานได้เลย ความสงบใจมีราคา แต่ราคานี้คือเวลา review script ครั้งเดียว ไม่ใช่เวลาเขียนทั้งหมดจากศูนย์
+
+---
+
+## Vibecoding + Docker = จบครบในคนเดียว
+
+ทุกอย่างที่เล่ามาในบทความนี้ — docker-compose.yml, nginx config, init-ssl.sh, backup script, cron job, multi-stage Dockerfile — ผม vibecoding ออกมาทั้งหมด บอก AI ว่าต้องการอะไร แล้ว review สิ่งที่ได้กลับมา แก้ให้ตรงกับ domain จริง credential จริง แล้วใช้งาน
+
+vibecoding ไม่ได้แปลว่าไม่ต้องรู้อะไรเลย แต่แปลว่าไม่ต้องจำ syntax ทั้งหมด — แค่รู้ว่าต้องการอะไร และตรวจสอบสิ่งที่ AI สร้างให้ได้ว่ามันถูกและปลอดภัยจริงหรือเปล่า ทักษะจริงคือความเข้าใจ architecture ไม่ใช่การจำ nginx directive ได้ขึ้นใจ
+
+```
+Vibecoding → เขียนฟีเจอร์ใหม่เร็ว + สร้าง infra config ได้โดยไม่ต้องจำ syntax
+Docker     → deploy ง่าย ไม่ต้องมีทีม DevOps
+```
+
+SME ที่มี developer 1-2 คนสามารถจัดการได้ทั้ง dev และ deploy โดยไม่ต้องจ้าง DevOps engineer แยก
+
+**multi-stage Dockerfile** ก็เป็นอีกตัวอย่าง — build image ใน 2 stage: stage แรก compile/build (ใช้ image ใหญ่), stage สองคือ production runtime (ใช้เฉพาะสิ่งจำเป็น) ผลคือ image สุดท้ายเล็กลง 3-5 เท่า boot เร็วขึ้น ประหยัด bandwidth เวลา pull AI เขียน Dockerfile แบบนี้ให้ได้ทันที ผมแค่ตรวจว่า base image version ถูกต้องและ build args ครบ
+
+---
+
+## เมื่อไหร่ควรใช้ VPS แทน Serverless?
+
+ไม่ใช่ว่า VPS ดีกว่าเสมอ แต่ละ approach เหมาะกับ use case ต่างกัน
+
+| สถานการณ์ | Serverless / Free Tier | VPS + Docker |
+|---|---|---|
+| Landing page, blog | เหมาะมาก | เกินจำเป็น |
+| App + Database เล็ก | ดีถ้าอยู่ใน limit | ดีถ้าต้องการ control |
+| App + Database ขนาดกลาง-ใหญ่ | เริ่มติด limit | เหมาะมาก |
+| Background jobs, cron | ไม่รองรับหรือแพง | ทำได้เลย |
+| หลาย service ทำงานร่วมกัน | ซับซ้อน | Docker Compose จบ |
+| WebSocket, long-running connection | ติด timeout | ไม่มีปัญหา |
+| ต้องการ full control | ไม่ได้ | ได้ทั้งหมด |
+| ทีมเล็ก ต้องการ managed service | เหมาะมาก | ต้องดูแลเอง |
+
+Vercel ยังเป็นตัวเลือกที่ผมแนะนำสำหรับ Next.js app ที่ไม่ต้องการ database หรือ backend heavy — deploy ง่ายที่สุดในโลก และ performance ดีมาก แต่เมื่อ use case ซับซ้อนขึ้น VPS + Docker คือจุดที่คุ้มค่ากว่า
+
+---
+
+## ไม่แพงอย่างที่กลัว
+
+นี่คือสิ่งที่จ่ายจริงสำหรับระบบ production SME หนึ่งราย:
+
+- **VPS** — ไม่กี่ร้อยบาทต่อเดือน (spec ที่รัน Next.js + PostgreSQL ได้สบายๆ)
+- **Domain** — ประมาณ 300-400 บาทต่อปี
+- **SSL** — ฟรี (Let's Encrypt)
+- **Backup storage** — ถูกมากหรือฟรีในระดับที่ใช้
+
+เทียบกับ subscription SaaS หลายตัวที่จ่ายทุกเดือนโดยไม่ได้ทบทวน ค่า VPS มักถูกกว่า และได้ server เต็มตัว ไม่มี cold start ไม่มี request limit ไม่มี bandwidth cap
+
+สิ่งที่ไม่ได้จ่ายเพิ่ม:
+- ไม่มีค่า compute เพิ่มถ้า traffic เพิ่ม (ในขอบเขต VPS spec)
+- ไม่มีค่า database connection pool
+- ไม่มีค่า background job execution
+- ไม่มีค่า storage ถ้าอยู่ใน disk ที่มี
+
+**ถ้ายังไม่แน่ใจ ลองได้เลยโดยไม่เสียเงิน**
+
+สร้าง `docker-compose.yml` บน local machine แล้วรันดู ทุกอย่างทำงานบน laptop ได้เหมือนกัน ทดสอบให้แน่ใจก่อนค่อย deploy จริง ไม่ต้องเช่า VPS สักบาทจนกว่าพร้อม
+
+---
+
+ถ้าสนใจว่าเราใช้ setup แบบไหน จัดการ monitoring, backup หรือ deployment workflow อย่างไรในโปรเจกต์จริง — ทักมาคุยได้ครับ
