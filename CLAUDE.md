@@ -347,6 +347,25 @@ All copy is ready in:
 - `D:\My Data\Vibagen\content-sections\article-real-barrier-agentic-ai.txt` — first article
 - `D:\My Data\Vibagen\content-sections\section-tooltip-glossary.txt` — tooltip definitions
 
+## Published Articles (content/articles/)
+
+| # | Slug | Category | Date | Featured | Notes |
+|---|------|----------|------|----------|-------|
+| 1 | real-barrier-agentic-ai-is-not-technology | Agentic AI | 2026-05-07 | Yes | อุปสรรคจริงของ Agentic AI ไม่ใช่เทคโนโลยี |
+| 2 | from-appsheet-to-real-app | Case Study | 2026-05-10 | Yes | เคสย้ายจาก AppSheet → real app |
+| 3 | nocode-to-ai-assisted-development | Business Digital | 2026-05-12 | Yes | จาก No-Code สู่ AI-Assisted Development |
+| 4 | cloudflare-free-infrastructure-for-sme | Infrastructure | 2026-05-20 | Yes | Cloudflare free tier สำหรับ SME |
+| 5 | vibecoding-explained | Vibecoding | 2026-05-22 | No | Vibecoding คืออะไร |
+| 6 | mdx-static-site-cloudflare-pipeline | Infrastructure | 2026-05-23 | No | MDX + Static Site + Cloudflare Pipeline |
+| 7 | docker-vps-for-sme | Infrastructure | 2026-06-09 | Yes | Docker+VPS สำหรับ SME, vibecoding angle สอดแทรกทั่วบทความ |
+
+### Article Writing Style Guide
+- โทนคุยเหมือนเล่าให้เพื่อนฟัง — ใช้ "ผม", เล่าจากประสบการณ์จริง
+- Vibecoding angle: สอดแทรกว่า config/script ต่างๆ ถูก vibecoding มา (ไม่ใช่เขียนเองจากศูนย์)
+- Key message: ทักษะจริงคือเข้าใจ architecture ไม่ใช่จำ syntax
+- ไม่ระบุราคาตรงๆ — ใช้คำกว้างๆ เช่น "ไม่กี่ร้อยบาท"
+- ลิงก์กลับบทความก่อนหน้าเมื่อเกี่ยวข้อง (cross-reference)
+
 ## Contact
 - Email destination: akkraphol@gmail.com
 - Resend API key: set as RESEND_API_KEY env var in Cloudflare Pages
