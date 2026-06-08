@@ -7,7 +7,7 @@ excerpt: "เมื่อ free tier ไม่พอ VPS + Docker อาจเป
 readTime: 8
 featured: true
 author: "Akkraphol"
-authorTitle: "Engineering & IT Manager | Founder, VIBAGEN"
+authorTitle: "VIBAGEN"
 keywords: ["Docker", "VPS", "SME", "deployment", "infrastructure", "self-hosted"]
 ogImage: "/images/og-default.png"
 ---
@@ -24,7 +24,7 @@ ogImage: "/images/og-default.png"
 
 แล้วก็มาถึงคำถามที่ SME หลายเจ้าเจอเหมือนกัน: *"ควรใช้ VPS ไหม?"*
 
-คำตอบที่ได้ยินบ่อยคือ "ยาก" และ "แพง" ผมอยากบอกตรงๆ ว่า — ทั้งสองข้อนั้นไม่จริงอีกแล้ว VPS ปัจจุบันราคาไม่กี่ร้อยบาทต่อเดือน และถ้าใช้ Docker ความยากก็หายไปแทบหมด ยิ่งถ้าใช้ AI ช่วยเขียน config ต่างๆ ให้ — ความยากที่เหลือแทบเป็นศูนย์
+คำตอบที่ได้ยินบ่อยคือ "ยาก" และ "แพง" ผมอยากบอกตรงๆ ว่า — ทั้งสองข้อนั้นไม่จริงอีกแล้ว VPS ปัจจุบันราคาไม่กี่ร้อยบาทต่อเดือน และถ้าใช้ Docker ความยากก็หายไปแทบหมด
 
 ---
 
@@ -77,7 +77,7 @@ Internet → Nginx (port 80/443) → App (Next.js, port 3000) → Database (Post
 ไม่เปิด port ออก internet เลย เข้าถึงได้เฉพาะภายใน Docker network เท่านั้น ถ้ามีคนพยายาม scan port หาฐานข้อมูล — หาไม่เจอ
 
 **4. Certbot**
-จัดการ SSL certificate จาก Let's Encrypt อัตโนมัติ ต่ออายุเองทุก 90 วัน ไม่ต้องทำอะไรเพิ่ม
+สามารถใช้ การจัดการ SSL certificate จาก Let's Encrypt อัตโนมัติ ต่ออายุเองทุก 90 วัน ไม่ต้องทำอะไรเพิ่ม
 
 ทุก container อยู่ใน Docker network เดียวกัน คุยกันได้ด้วยชื่อ container โดยตรง เช่น `postgresql://db:5432/myapp` แทนที่จะใช้ IP address
 
@@ -115,8 +115,6 @@ docker compose -f docker-compose.prod.yml ps
 
 Build ครั้งแรกใช้เวลา 3-5 นาทีขึ้นกับขนาดโปรเจกต์ ครั้งต่อไปเร็วกว่าเดิมมากเพราะ Docker cache layer ที่ไม่เปลี่ยน
 
-ผมไม่ได้เขียน docker-compose.yml หรือ nginx config จากศูนย์เอง — บอก AI ว่าต้องการ Next.js + PostgreSQL + Nginx reverse proxy with SSL แล้วมันสร้าง config ให้ทั้งชุด รวมถึง init-ssl.sh ด้วย ผมแค่ review แก้บางจุดให้ตรงกับ domain และ path ของโปรเจกต์จริง งานที่เคยใช้เวลาเป็นวันย่นเหลือไม่กี่ชั่วโมง
-
 Deploy ใหม่เมื่อมี update ก็แค่:
 
 ```bash
@@ -141,24 +139,24 @@ Cron job รันทุกตี 2 — dump PostgreSQL ทั้งหมด co
 **Pre-deploy Snapshot**
 ก่อน deploy ทุกครั้ง script สร้าง database snapshot อัตโนมัติ ถ้า deploy แล้วพัง — rollback กลับไปก่อน deploy ได้ใน 5 นาที
 
-script ทั้งหมดนี้ผม vibecoding ออกมา — บอก AI ว่าต้องการ cron ที่ dump PostgreSQL ทุกตี 2 compress แล้วส่งขึ้น S3 compatible storage พร้อม Telegram แจ้งเตือน ได้ script มาพร้อมใช้ ตรวจสอบแก้ path กับ credential แล้วทำงานได้เลย ความสงบใจมีราคา แต่ราคานี้คือเวลา review script ครั้งเดียว ไม่ใช่เวลาเขียนทั้งหมดจากศูนย์
+ความสงบใจมีราคา แต่ราคานี้คือเวลาเขียน script ครั้งเดียว
 
 ---
 
 ## Vibecoding + Docker = จบครบในคนเดียว
 
-ทุกอย่างที่เล่ามาในบทความนี้ — docker-compose.yml, nginx config, init-ssl.sh, backup script, cron job, multi-stage Dockerfile — ผม vibecoding ออกมาทั้งหมด บอก AI ว่าต้องการอะไร แล้ว review สิ่งที่ได้กลับมา แก้ให้ตรงกับ domain จริง credential จริง แล้วใช้งาน
+แนวคิด vibecoding ที่ผมพูดถึงบ่อยคือการที่ AI ช่วยเขียนโค้ดได้เร็วขึ้นมาก developer คนเดียวทำงานได้เท่าทีมเล็กๆ
 
-vibecoding ไม่ได้แปลว่าไม่ต้องรู้อะไรเลย แต่แปลว่าไม่ต้องจำ syntax ทั้งหมด — แค่รู้ว่าต้องการอะไร และตรวจสอบสิ่งที่ AI สร้างให้ได้ว่ามันถูกและปลอดภัยจริงหรือเปล่า ทักษะจริงคือความเข้าใจ architecture ไม่ใช่การจำ nginx directive ได้ขึ้นใจ
+แต่ถ้า deploy ยากก็หักล้างข้อดีนั้นไป Docker คือส่วนที่ทำให้วงจรนี้สมบูรณ์
 
 ```
-Vibecoding → เขียนฟีเจอร์ใหม่เร็ว + สร้าง infra config ได้โดยไม่ต้องจำ syntax
+Vibecoding → เขียนฟีเจอร์ใหม่เร็ว
 Docker     → deploy ง่าย ไม่ต้องมีทีม DevOps
 ```
 
 SME ที่มี developer 1-2 คนสามารถจัดการได้ทั้ง dev และ deploy โดยไม่ต้องจ้าง DevOps engineer แยก
 
-**multi-stage Dockerfile** ก็เป็นอีกตัวอย่าง — build image ใน 2 stage: stage แรก compile/build (ใช้ image ใหญ่), stage สองคือ production runtime (ใช้เฉพาะสิ่งจำเป็น) ผลคือ image สุดท้ายเล็กลง 3-5 เท่า boot เร็วขึ้น ประหยัด bandwidth เวลา pull AI เขียน Dockerfile แบบนี้ให้ได้ทันที ผมแค่ตรวจว่า base image version ถูกต้องและ build args ครบ
+อีกเรื่องที่ช่วยได้มากคือ **multi-stage Dockerfile** — build image ใน 2 stage: stage แรก compile/build (ใช้ image ใหญ่), stage สองคือ production runtime (ใช้เฉพาะสิ่งจำเป็น) ผลคือ image สุดท้ายเล็กลง 3-5 เท่า boot เร็วขึ้น ประหยัด bandwidth เวลา pull
 
 ---
 

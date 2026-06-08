@@ -1,0 +1,293 @@
+---
+title: "Docker Build Cache 53GB ทำ Server ล่ม: บทเรียนจาก VPS 4GB"
+slug: "docker-build-cache-vps-crash"
+category: "Infrastructure"
+date: "2026-06-11"
+excerpt: "เรื่องจริงจากการ deploy Next.js บน VPS แล้ว build cache สะสมจนทำ server freeze 30 นาที — สาเหตุ วิธีแก้ และกฎ 5 ข้อที่ต้องจำ"
+readTime: 8
+featured: true
+author: "Akkraphol"
+authorTitle: "VIBAGEN"
+keywords: ["Docker", "build cache", "VPS", "OOM", "deploy", "production", "server crash"]
+ogImage: "/images/og-default.png"
+---
+
+บทความที่แล้วผมบอกว่า [Docker + VPS ง่ายกว่าที่คิด](/knowledge/docker-vps-for-sme) — วันนี้จะเล่าให้ฟังว่า ถ้าไม่ระวัง มันพังได้ยังไง
+
+## Server หายไป
+
+วันนั้นเป็น deploy ปกติ ไม่มีอะไรพิเศษ pull code ใหม่ รันคำสั่งที่รันมาหลายสิบครั้งแล้ว:
+
+```bash
+git pull origin main
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Build เริ่มต้น layer ต่อ layer ผ่านไปประมาณ 40 วินาที แล้ว terminal ก็ค้าง
+
+ไม่มี error ไม่มี output ใหม่ แค่หยุด
+
+รอ 2 นาที ยังค้างอยู่ ลอง Ctrl+C แล้ว SSH เข้าใหม่ — connection timeout
+
+```bash
+$ ssh user@server
+ssh: connect to host xx.xx.xx.xx port 22: Connection timed out
+```
+
+ลอง ping:
+
+```bash
+$ ping xx.xx.xx.xx
+Request timeout for icmp_seq 0
+Request timeout for icmp_seq 1
+```
+
+Server หายไปจากโลก 30 นาที กว่าจะ reboot กลับมาได้
+
+---
+
+## ทำไม Build Cache เป็นระเบิดเวลา
+
+ทุกครั้งที่รัน `docker compose build` Docker จะสร้าง layer cache เพื่อให้ build ครั้งต่อไปเร็วขึ้น — นั่นคือฟีเจอร์ที่ดี แต่ cache เหล่านี้สะสมอยู่บน disk และ Docker ไม่ลบออกเอง
+
+deploy ครั้งที่ 1 → cache 2GB
+deploy ครั้งที่ 5 → cache 8GB
+deploy ครั้งที่ 10 → cache 18GB
+deploy ครั้งที่ 30 → cache 53GB
+
+บน MacBook Pro ที่มี SSD 512GB เรื่องนี้ไม่เป็นปัญหา เราไม่รู้สึกอะไร แต่บน VPS 4GB RAM / 75GB SSD ที่รัน production — นี่คือระเบิดเวลา
+
+สถานะ disk ก่อน crash:
+
+```text
+OS + System       5 GB
+Docker Images     1.2 GB   ← app + postgres + nginx
+Docker Cache     53 GB     ← ตัวร้าย สะสมมา 30 deploys
+App Data          1 GB
+Logs + misc       1 GB
+--------------------------
+รวมใช้          61.2 GB / 75 GB
+เหลือ           13.8 GB
+```
+
+สถานะ RAM ณ เวลาปกติ:
+
+| Component | RAM ที่ใช้ |
+|---|---|
+| OS + system processes | 0.8 GB |
+| Next.js app (prod) | 1.2 GB |
+| PostgreSQL | 0.3 GB |
+| Nginx | 0.1 GB |
+| Buffer/overhead | 0.1 GB |
+| **รวมใช้** | **2.5 GB** |
+| **เหลือ** | **1.5 GB** |
+
+เหลือ RAM แค่ 1.5GB — และ Docker build ใช้มากกว่านั้น
+
+---
+
+## ทำไมถึง Crash
+
+ปัญหาไม่ได้มาจาก disk เต็ม — แต่มาจาก RAM ไม่พอตอน build
+
+เมื่อรัน `docker compose build` ขณะที่ app กำลังรันอยู่ Docker จะโหลด build context เข้า memory, compile TypeScript, รัน Next.js build process — ทั้งหมดนี้ต้องการ RAM เพิ่มอีก 1.5GB ขึ้นไป
+
+Timeline ของ crash:
+
+```text
+T+0s    — docker compose build เริ่ม
+T+10s   — Build context load, RAM เพิ่มขึ้นช้าๆ
+T+40s   — Next.js compilation เริ่ม, RAM spike
+T+50s   — Total RAM ≈ 3.9GB (เกิน 3.7GB available)
+T+52s   — Linux OOM Killer ตัดสินใจ
+T+53s   — Kill docker build process (ตัวที่กิน RAM สูงสุด)
+T+55s   — Kernel ยังไม่ stable — RAM ยังไม่พอ recover
+T+60s   — Kernel freeze — server ไม่ตอบสนอง
+```
+
+OOM Killer (Out-of-Memory Killer) คือกลไกป้องกันตัวของ Linux kernel — เมื่อ RAM ทั้งระบบเหลือใกล้ศูนย์ kernel จะเลือก process ที่ใช้ memory มากที่สุดแล้วบังคับปิด (kill) ทันทีเพื่อเอา RAM คืนให้ระบบทำงานต่อได้ ปัญหาคือ kernel ไม่รู้ว่า process ไหนสำคัญกว่ากัน — มันอาจ kill database แทน build process ก็ได้ ผลคือ app ที่ต่อ DB อยู่พังตาม และถ้า kernel เองก็ไม่เหลือ RAM พอจัดการ ระบบทั้งหมดก็ freeze
+
+---
+
+## วิธีแก้: 3 ทางเลือกสำหรับ Push Schema
+
+หนึ่งในสาเหตุที่ build ใช้ RAM มากคือ pattern การ migrate database — หลายคนทำ `docker compose build` เพื่อสร้าง image ใหม่แล้วรัน migration ใน container นั้น วิธีนี้กิน RAM มากกว่าจำเป็น
+
+| วิธี | RAM ที่ใช้ | ความเสี่ยง | เหมาะกับ |
+|---|---|---|---|
+| Build Migrate Image | ~1.5 GB | สูง — OOM บน VPS เล็ก | ไม่แนะนำบน VPS 4GB |
+| Docker Exec (แนะนำ) | ~100 MB | ต่ำมาก | VPS ทุกขนาด |
+| Local Push via SSH Tunnel | ~50 MB local | กลาง — ต้องตั้งค่า | Emergency / rollback |
+
+**วิธีที่ดีที่สุด — Docker Exec:**
+
+```bash
+# ไม่ดี: build image ใหม่แค่เพื่อ migrate
+docker compose run --rm migrate
+
+# ดี: exec เข้า container ที่รันอยู่แล้ว — ไม่กิน RAM เพิ่ม
+docker compose exec app npx prisma migrate deploy
+```
+
+ความต่างคือ `exec` ใช้ container ที่มีอยู่แล้ว ไม่ต้อง build ใหม่ ไม่ต้อง load image ใหม่ ใช้ RAM แค่สำหรับ command นั้นจริงๆ
+
+---
+
+## Safe Deploy Workflow — 6 Phases
+
+หลังจากเหตุการณ์นั้น ผมเขียน deploy workflow ใหม่ที่มี cleanup เป็น phase บังคับ:
+
+```text
+Phase 1 — PRE-FLIGHT
+  ├─ ตรวจ disk: df -h (ต้องเหลือ > 15GB)
+  ├─ ตรวจ RAM: free -h (ต้องเหลือ > 1.5GB)
+  └─ ตรวจ services: docker compose ps
+
+Phase 2 — CLEAN (บังคับทุก deploy)
+  ├─ docker builder prune -af
+  └─ ตรวจ disk อีกครั้ง
+
+Phase 3 — PULL + BUILD
+  ├─ git pull origin main
+  └─ docker compose build app
+
+Phase 4 — RESTART
+  └─ docker compose up -d
+
+Phase 5 — SCHEMA
+  └─ docker compose exec app npx prisma migrate deploy
+
+Phase 6 — VERIFY
+  ├─ docker compose ps (ทุก service "Up")
+  ├─ curl -s https://domain.com/api/health
+  └─ docker stats --no-stream (ดู RAM usage)
+```
+
+Phase 2 สำคัญมาก — ไม่ใช่แค่ทำตอน disk เกือบเต็ม แต่ต้องทำ **ทุก deploy** เพราะ cache สะสมทีละน้อยและเราจะไม่รู้สึกตัวจนถึงจุดที่ระเบิด
+
+---
+
+## Docker Cleanup — อะไรลบได้ อะไรห้ามแตะ
+
+| คำสั่ง | ลบอะไร | ระดับความเสี่ยง |
+|---|---|---|
+| `docker builder prune -af` | Build cache ทั้งหมด | ปลอดภัย ✅ |
+| `docker image prune -f` | Images ที่ไม่มี tag (dangling) | ปลอดภัย ✅ |
+| `docker container prune -f` | Containers ที่หยุดแล้ว | ปลอดภัย ✅ |
+| `docker system prune -f` | รวม 3 อย่างข้างบน | ปลอดภัย ✅ ถ้า services รันอยู่ |
+| `docker system prune --volumes -f` | รวมทุกอย่าง + volumes | **อันตราย ❌ ห้ามบน production** |
+
+`--volumes` จะลบ database data, upload files, persistent storage ทั้งหมด — ถ้ายังไม่มี backup ที่ verified แล้วรันคำสั่งนี้บน production คือ data loss ทันที
+
+สำหรับ routine cleanup ที่ปลอดภัย:
+
+```bash
+# รันก่อน deploy ทุกครั้ง
+docker builder prune -af
+
+# รันสัปดาห์ละครั้ง หรือเมื่อ disk > 60%
+docker system prune -f
+```
+
+---
+
+## Resource Budget — คิดเหมือนงบบ้าน
+
+VPS 4GB RAM / 75GB SSD ต้องวางแผนการใช้ resources เหมือนงบก่อสร้าง — รู้ว่าแต่ละส่วนใช้เท่าไหร่ และเหลือ headroom เท่าไหร่สำหรับ spike
+
+**RAM Budget:**
+
+```text
+OS + system         0.8 GB  (fixed)
+Next.js prod        1.2 GB  (fixed)
+PostgreSQL          0.3 GB  (fixed)
+Nginx               0.1 GB  (fixed)
+Overhead            0.1 GB
+---------------------------------
+Normal usage        2.5 GB
+Available           1.5 GB
+---------------------------------
+Docker build (ชั่วคราว)  1.5 GB
+Safety margin            0 GB    ← ปัญหาอยู่ตรงนี้
+```
+
+ถ้า RAM ที่ build ใช้ชั่วคราวเกิน RAM ที่เหลืออยู่ แม้แค่ครั้งเดียว — OOM Killer ก็ถูก trigger
+
+วิธีแก้มี 2 ทาง:
+1. ลด RAM ที่ build ใช้ (ใช้ docker exec แทน build สำหรับ migration)
+2. เพิ่ม swap (สำรอง 2GB บน disk เป็น virtual RAM) — ช้ากว่า RAM จริงแต่ป้องกัน crash
+
+**Disk Budget:**
+
+```text
+OS + system         5 GB   (fixed)
+Docker images       2 GB   (สำหรับ app + db + nginx)
+App data + DB       2 GB   (เพิ่มตาม usage)
+Logs                1 GB   (ต้องมี rotation)
+Build cache         -      ← ต้องล้างสม่ำเสมอ
+Safety margin      10 GB   (ต้องเหลืออย่างน้อยนี้)
+---------------------------------
+Total budget       20 GB  จาก 75 GB
+```
+
+เหลือ 55GB สำหรับ growth — แต่ถ้าไม่ล้าง build cache มันจะกินส่วนนี้ทั้งหมดใน 30 deploys
+
+---
+
+## สรุป — กฎ 5 ข้อที่ต้องจำ
+
+**1. Prune ก่อน Build เสมอ**
+
+```bash
+docker builder prune -af && docker compose build
+```
+
+ทำเป็น habit ทุกครั้งก่อน deploy ไม่ว่า disk จะเหลือเท่าไหร่
+
+**2. ใช้ docker exec แทน build สำหรับ migration**
+
+```bash
+# แทนที่จะ: docker compose run --rm migrate
+docker compose exec app npx prisma migrate deploy
+```
+
+ประหยัด RAM 1.4GB ต่อครั้ง บน VPS 4GB นี่คือความต่างระหว่างรอดกับพัง
+
+**3. รู้ขีดจำกัด server ของตัวเอง**
+
+```bash
+# ดู RAM ก่อน deploy ทุกครั้ง
+free -h
+# ดู disk
+df -h
+```
+
+ถ้า RAM เหลือน้อยกว่า 1.5GB หรือ disk เหลือน้อยกว่า 15GB — cleanup ก่อน แล้วค่อย deploy
+
+**4. ห้ามใช้ --volumes บน production**
+
+```bash
+# ห้ามทำบน production
+docker system prune --volumes -f   # ❌
+
+# ปลอดภัย
+docker system prune -f              # ✅
+```
+
+`--volumes` ลบข้อมูลจริง ถ้ารันผิด machine หรือผิดเวลา — data หาย ไม่มีทางกลับ
+
+**5. มี recovery plan ก่อน deploy ทุกครั้ง**
+
+ก่อน deploy ต้องตอบได้ว่า: *"ถ้า deploy แล้วพัง rollback ยังไง?"*
+
+- Database snapshot ล่าสุดอยู่ที่ไหน
+- ใช้เวลา restore นานแค่ไหน
+- มี direct access เข้า server ถ้า SSH ไม่ได้ (hosting provider ส่วนใหญ่มี rescue console หรือ VNC)
+
+---
+
+ทุกอย่างที่เล่ามาเกิดจาก deploy ปกติที่ทำมาหลายสิบครั้งแล้ว — ต่างกันแค่ว่าครั้งนี้ cache สะสมมากพอที่จะทำให้ระบบไม่มีที่หายใจเวลา build
+
+Docker ยังเป็นเครื่องมือที่ดีที่สุดสำหรับ deploy บน VPS แต่ต้องเข้าใจว่ามันทำงานยังไงและมีขีดจำกัดที่ไหน
+
+ถ้าสนใจ deploy workflow แบบเต็ม หรืออยากคุยเรื่อง resource planning สำหรับ VPS ขนาดเล็ก — ทักมาได้เลยครับ
