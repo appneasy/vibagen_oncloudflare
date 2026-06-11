@@ -33,15 +33,25 @@ export default function ContactForm() {
     problem: '',
     budget: '',
   })
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
-    setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }))
+    const { name, value } = e.target
+    setForm((prev) => ({ ...prev, [name]: value }))
+    if (fieldErrors[name]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev }
+        delete next[name]
+        return next
+      })
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setFieldErrors({})
     setStatus('loading')
     try {
       const res = await fetch('/api/contact', {
@@ -49,6 +59,14 @@ export default function ContactForm() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(form),
       })
+      if (res.status === 422) {
+        const data = await res.json() as { details?: Record<string, string[]> }
+        if (data.details) {
+          setFieldErrors(data.details)
+        }
+        setStatus('error')
+        return
+      }
       if (!res.ok) throw new Error('Server error')
       setStatus('success')
       setForm({ name: '', email: '', company: '', industry: '', problem: '', budget: '' })
@@ -57,9 +75,18 @@ export default function ContactForm() {
     }
   }
 
-  const inputClass = [
+  const FieldError = ({ field }: { field: string }) => {
+    const errors = fieldErrors[field]
+    if (!errors?.length) return null
+    return (
+      <p className="text-red-400 text-xs mt-1">{errors[0]}</p>
+    )
+  }
+
+  const inputClass = (field?: string) => [
     'w-full px-4 py-3 rounded-xl text-[#0d2749] text-sm',
-    'bg-[#f8f9fc] border border-[#0d2749]/12',
+    'bg-[#f8f9fc] border',
+    field && fieldErrors[field] ? 'border-red-400' : 'border-[#0d2749]/12',
     'focus:outline-none focus:border-[#ff6c01] focus:bg-white',
     'placeholder:text-gray-400',
     'transition-all duration-200',
@@ -138,8 +165,9 @@ export default function ContactForm() {
                       placeholder="คุณ..."
                       value={form.name}
                       onChange={handleChange}
-                      className={inputClass}
+                      className={inputClass('name')}
                     />
+                    <FieldError field="name" />
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-gray-500 text-xs mb-1.5">
@@ -153,8 +181,9 @@ export default function ContactForm() {
                       placeholder="you@company.com"
                       value={form.email}
                       onChange={handleChange}
-                      className={inputClass}
+                      className={inputClass('email')}
                     />
+                    <FieldError field="email" />
                   </div>
                 </div>
 
@@ -171,7 +200,7 @@ export default function ContactForm() {
                       placeholder="ชื่อธุรกิจ"
                       value={form.company}
                       onChange={handleChange}
-                      className={inputClass}
+                      className={inputClass('company')}
                     />
                   </div>
                   <div>
@@ -183,7 +212,7 @@ export default function ContactForm() {
                       name="industry"
                       value={form.industry}
                       onChange={handleChange}
-                      className={inputClass + ' cursor-pointer'}
+                      className={inputClass('industry') + ' cursor-pointer'}
                     >
                       <option value="" className="bg-white">-- เลือก --</option>
                       {industryOptions.map((opt) => (
@@ -208,8 +237,9 @@ export default function ContactForm() {
                     placeholder="เล่าให้ฟังได้เลย — ปัญหาที่เจออยู่, ระบบที่ใช้อยู่ตอนนี้, สิ่งที่อยากได้..."
                     value={form.problem}
                     onChange={handleChange}
-                    className={inputClass + ' resize-none'}
+                    className={inputClass('problem') + ' resize-none'}
                   />
+                  <FieldError field="problem" />
                 </div>
 
                 {/* Budget */}
@@ -222,7 +252,7 @@ export default function ContactForm() {
                     name="budget"
                     value={form.budget}
                     onChange={handleChange}
-                    className={inputClass + ' cursor-pointer'}
+                    className={inputClass('budget') + ' cursor-pointer'}
                   >
                     <option value="" className="bg-white">-- เลือก (ไม่บังคับ) --</option>
                     {budgetOptions.map((opt) => (

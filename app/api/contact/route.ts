@@ -14,13 +14,15 @@ async function getCfEnv(): Promise<Env | undefined> {
 }
 
 // ─── Validation Schema ────────────────────────────────────
+const emptyToUndefined = z.literal('').transform(() => undefined)
+
 const contactSchema = z.object({
   name:     z.string().min(2, 'ชื่อต้องมีอย่างน้อย 2 ตัวอักษร').max(100),
   email:    z.string().email('รูปแบบอีเมลไม่ถูกต้อง'),
-  company:  z.string().max(200).optional(),
-  industry: z.string().max(100).optional(),
-  problem:  z.string().min(10, 'กรุณาอธิบายปัญหาให้มากกว่านี้').max(2000),
-  budget:   z.string().max(100).optional(),
+  company:  z.string().max(200).optional().or(emptyToUndefined),
+  industry: z.string().max(100).optional().or(emptyToUndefined),
+  problem:  z.string().min(10, 'กรุณาอธิบายปัญหาให้มากกว่านี้ (อย่างน้อย 10 ตัวอักษร)').max(2000),
+  budget:   z.string().max(100).optional().or(emptyToUndefined),
 })
 
 // ─── POST /api/contact ────────────────────────────────────
