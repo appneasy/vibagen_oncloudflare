@@ -97,7 +97,7 @@ export async function POST(req: Request) {
           parse_mode: 'HTML',
         }),
       })
-      const tgBody = await tgRes.json()
+      const tgBody = await tgRes.json() as { ok: boolean; description?: string }
       debug.telegramStatus = tgRes.status
       debug.telegramOk = tgBody.ok
       if (!tgBody.ok) {
