@@ -82,7 +82,7 @@ export async function POST(req: Request) {
         escapeHtml(data.problem),
       ].join('\n')
 
-      await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+      const tgRes = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -91,9 +91,14 @@ export async function POST(req: Request) {
           parse_mode: 'HTML',
         }),
       })
+      if (!tgRes.ok) {
+        const tgBody = await tgRes.text()
+        console.error('[Contact] Telegram API error:', tgRes.status, tgBody)
+      }
+    } else {
+      console.error('[Contact] Telegram skipped — missing token or chatId')
     }
   } catch (err) {
-    // Telegram failure should NOT fail the request — data is already saved
     console.error('[Contact] Telegram send failed:', err)
   }
 
