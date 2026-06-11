@@ -65,6 +65,12 @@ export async function POST(req: Request) {
   }
 
   // 3. Send to Telegram
+  const debug: Record<string, unknown> = {
+    hasEnv: !!env,
+    hasToken: !!(env?.TELEGRAM_BOT_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN),
+    hasChatId: !!(env?.TELEGRAM_CHAT_ID ?? process.env.TELEGRAM_CHAT_ID),
+  }
+
   try {
     const token = env?.TELEGRAM_BOT_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN
     const chatId = env?.TELEGRAM_CHAT_ID ?? process.env.TELEGRAM_CHAT_ID
@@ -91,18 +97,20 @@ export async function POST(req: Request) {
           parse_mode: 'HTML',
         }),
       })
-      if (!tgRes.ok) {
-        const tgBody = await tgRes.text()
-        console.error('[Contact] Telegram API error:', tgRes.status, tgBody)
+      const tgBody = await tgRes.json()
+      debug.telegramStatus = tgRes.status
+      debug.telegramOk = tgBody.ok
+      if (!tgBody.ok) {
+        debug.telegramError = tgBody.description
       }
     } else {
-      console.error('[Contact] Telegram skipped — missing token or chatId')
+      debug.telegramSkipped = 'missing token or chatId'
     }
   } catch (err) {
-    console.error('[Contact] Telegram send failed:', err)
+    debug.telegramException = String(err)
   }
 
-  return Response.json({ success: true })
+  return Response.json({ success: true, _debug: debug })
 }
 
 /** Escape HTML special chars for Telegram HTML parse mode */
