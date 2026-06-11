@@ -67,6 +67,7 @@ export async function POST(req: Request) {
   // 3. Send to Telegram
   const debug: Record<string, unknown> = {
     hasEnv: !!env,
+    envKeys: env ? Object.keys(env) : [],
     hasToken: !!(env?.TELEGRAM_BOT_TOKEN ?? process.env.TELEGRAM_BOT_TOKEN),
     hasChatId: !!(env?.TELEGRAM_CHAT_ID ?? process.env.TELEGRAM_CHAT_ID),
   }
