@@ -1,0 +1,175 @@
+---
+title: "Vibecoding LINE OA: สั่ง AI สร้างระบบ LINE ทั้งหมดใน 8 ขั้นตอน"
+slug: "vibecoding-line-integration"
+category: "Vibecoding"
+date: "2026-06-15"
+excerpt: "จาก POST-10 ที่บอกว่าส่งข้อความฟรีได้ยังไง — POST-11 บอกว่าสั่ง AI สร้างระบบทั้งหมดนี้ให้ยังไง ด้วย Vibecoding 8 phases"
+readTime: 12
+featured: true
+author: "Akkraphol"
+authorTitle: "VIBAGEN"
+keywords: ["Vibecoding", "LINE OA", "LIFF", "Rich Menu", "Flex Message", "Webhook", "AI coding", "SME"]
+ogImage: "/images/og-default.png"
+---
+
+## ต่อจาก POST-10
+
+[บทความที่แล้ว](/knowledge/line-oa-free-messaging) ผมพูดถึงว่า LINE OA ส่งข้อความฟรีได้ยังไง — Reply Message, LIFF sendMessages, Postback, Quick Reply ทั้งหมดนี้ทำให้ระบบ LINE ของร้านบริการรถยนต์เหลือ quota Push ไม่ถึง 120 ข้อความต่อเดือน และใช้แผน Free ได้พอดี
+
+แต่มีคำถามที่ได้รับบ่อยมากหลังจากนั้นคือ: **"ระบบแบบนี้สร้างยังไง? ต้องจ้าง developer ไหม? แพงแค่ไหน?"**
+
+บทความนี้คือคำตอบ
+
+ระบบ LINE OA ทั้งหมดที่ผมสร้าง — Rich Menu, LIFF, Webhook, Flex Message, Role-Based Menu, LINE Login — ทุกอย่างเกือบ 3,300 บรรทัด เขียนด้วย Vibecoding ทั้งนั้น ผมไม่ได้พิมพ์โค้ดเองทุกบรรทัด แต่ผมออกแบบ flow เขียน spec บอก AI ว่าต้องการอะไร แล้วตรวจผลลัพธ์ทุกขั้น
+
+ขั้นตอนที่ใช้มี 8 phases ตามลำดับที่ต้องทำ — เรียงผิดไม่ได้ เพราะแต่ละอย่างต่อกัน
+
+---
+
+## สิ่งที่ต้องมีก่อน ข้ามไม่ได้
+
+ก่อนที่จะ Vibecode ได้ ต้องเตรียม infrastructure พื้นฐานให้ครบก่อน ไม่งั้น AI จะสร้างโค้ดที่ถูกต้องแต่ใช้ไม่ได้จริง
+
+สิ่งแรกคือ LINE Developers Console ต้องมี **2 Channel ภายใต้ Provider เดียวกัน**: Channel แรกคือ LINE Login Channel สำหรับ OAuth และ LIFF, Channel ที่สองคือ Messaging API Channel สำหรับ Rich Menu, Push Message, และ Webhook เหตุที่ต้องแยกกันเพราะ LIFF กับ Messaging API ใช้ token คนละชุด และมีสิทธิ์คนละอย่าง ถ้าใส่ปนกันระบบจะพัง
+
+สิ่งที่สองคือ **Domain พร้อม HTTPS** — LINE ไม่รับ HTTP เลยในทุกกรณี ไม่ว่าจะเป็น LIFF URL, Webhook URL, หรือ image ที่ใช้ใน Flex Message ถ้าเป็น HTTP ระบบจะ silent fail โดยไม่มี error message ที่ชัดเจน
+
+สิ่งที่สามคือ **ฐานข้อมูลและ Admin LINE User ID** — User ID ของ admin ต้องใส่เป็น hardcode ไว้ในระบบเพื่อรับ error notification และจัดการ role ของผู้ใช้
+
+เมื่อสิ่งเหล่านี้พร้อม ก็เริ่ม Vibecoding ได้ครบ 8 phases
+
+---
+
+## Phase 1 — Authentication
+
+หัวใจของระบบทั้งหมดคือการยืนยันตัวตน ถ้า auth พังทุกอย่างพัง
+
+ระบบนี้มี flow การ login 2 แบบที่ทำงานต่างกัน: **LIFF auto-login** สำหรับคนที่เปิด LIFF ภายใน LINE app โดยระบบจะดึง profile มาได้อัตโนมัติโดยไม่ต้องให้ user กดอะไรเพิ่ม และ **LINE OAuth** สำหรับคนที่เปิดจาก browser ภายนอก ซึ่งต้องผ่าน redirect และ callback URL
+
+สิ่งที่ต้องบอก AI ชัดๆ คือทั้งสอง flow ต้องจบที่การสร้าง session เดียวกันในฝั่ง backend และ userId ที่ได้มาจาก LINE ต้องตรงกันทั้งสอง path
+
+---
+
+## Phase 2 — LIFF Utility
+
+LIFF คือ mini app ที่รันอยู่ภายใน LINE และมี SDK ที่ใช้งานได้เฉพาะในบริบทนั้น
+
+Phase นี้คือการ setup ฟังก์ชันพื้นฐานที่ทุก feature จะใช้ต่อ: init (เริ่มต้น LIFF โดยต้องระบุ LIFF size — Full, Tall, หรือ Compact ตอน register), getProfile (ดึงข้อมูล user), sendMessages (ส่งข้อความเข้าแชทฟรี), shareTargetPicker (แชร์ให้เพื่อน), และสำคัญมากคือ **fallback สำหรับ browser** เพราะ sendMessages ใช้ได้เฉพาะใน LINE app เท่านั้น ถ้า user เปิดจาก browser ฟังก์ชันนี้จะ throw error ทันที
+
+สิ่งที่ต้องบอก AI คือทุกฟังก์ชันต้องมี check ว่า inClient หรือเปล่าก่อนเรียก LINE-specific API เสมอ
+
+---
+
+## Phase 3 — Rich Menu
+
+Rich Menu คือเมนูที่ติดอยู่ด้านล่างของหน้าแชท — สิ่งที่ลูกค้าเห็นและกดทุกวัน
+
+ลำดับที่ต้องทำมีความสำคัญมาก ถ้าทำผิดลำดับ API จะ reject: สร้าง Rich Menu object ก่อน → upload รูปภาพ → สร้าง alias (ชื่อที่ใช้อ้างอิง) → ตั้งเป็น default → link กับ user แต่ละคนตามบทบาท
+
+ผมต้องบอก AI ทั้งขนาดรูปตาม layout ที่เลือก (เช่น 2500×1686 สำหรับ full 6 ช่อง, 2500×843 สำหรับ half), bounds ของทุกปุ่ม (x, y, width, height) เพื่อกำหนดพื้นที่กด, และ action type ของแต่ละปุ่มว่าเป็น Postback หรือเปิด LIFF ลำดับ API ที่ถูกต้องและ bounds ที่ครบคือสิ่งที่ต้องระบุให้ AI ชัดเจน เพราะถ้า prompt ไม่ครบ AI มักจะสับลำดับหรือข้าม bounds แล้วโค้ดที่ได้จะ error ตอน deploy
+
+---
+
+## Phase 4 — Flex Message Templates
+
+Flex Message คือหัวใจของ UX ใน LINE — ข้อความที่ดูดี มีปุ่ม มีสีสัน มีรูปภาพ
+
+Phase นี้คือการสร้าง builder functions สำหรับ Flex Message แต่ละแบบที่ระบบต้องใช้: ยืนยันการจอง, สถานะบริการ, รถพร้อมรับ, โปรโมชั่น Carousel
+
+สิ่งที่ต้องเน้นบอก AI ทุกครั้งคือ **altText ต้องมีความหมาย** ไม่ใช่แค่ "Flex Message" เพราะ altText คือสิ่งที่คนเห็นใน notification และบน device ที่ไม่รองรับ Flex และ **ขนาดต้องไม่เกิน 50KB** ถ้า Flex ใหญ่เกินไป LINE จะ reject แบบ silent fail อีกเช่นกัน
+
+รูปภาพที่ใช้ใน Flex ต้องเป็น HTTPS URL สาธารณะ ขนาดไม่เกิน 1MB ไม่รองรับ font custom ดังนั้นต้องออกแบบ visual ให้อยู่ใน constraint เหล่านี้ตั้งแต่แรก
+
+---
+
+## Phase 5 — Webhook Handler
+
+Webhook คือหัวใจของ backend — ทุก event ที่เกิดขึ้นใน LINE ไม่ว่าจะเป็นข้อความ, การกดปุ่ม, การเพิ่มเพื่อน จะส่งมาที่นี่
+
+Phase นี้คือ phase ที่ใหญ่ที่สุดในทั้งหมด Webhook handler ของระบบนี้มีราว 1,670 บรรทัด เพราะมันต้องจัดการทุก event type และทุก scenario
+
+สิ่งที่ต้องบอก AI ชัดๆ คือ **ต้อง verify webhook signature ทุกครั้ง** ก่อนประมวลผล event ใดๆ เพราะถ้าไม่ verify ใครก็ส่ง fake event มาหลอกระบบได้ signature มาใน header `x-line-signature` และต้อง HMAC-SHA256 กับ channel secret
+
+อีกเรื่องคือ **replyToken มีอายุจำกัด — ต้องใช้ทันที** LINE ไม่ได้ระบุเวลาชัดเจน แต่จากการใช้งานจริงควรตอบภายในไม่กี่วินาที นอกจากนี้ **endpoint ต้อง return 200 ให้เร็วที่สุด** ไม่งั้น LINE จะ retry request ซ้ำ ดังนั้นให้ return 200 ก่อน แล้วค่อยทำงานหนักแบบ async ทีหลัง
+
+---
+
+## Phase 6 — Reply + Push Message
+
+Phase นี้ดูเหมือนง่าย แต่มีหลุมพรางที่ต้องระวัง
+
+**Reply** ใช้ replyToken ที่ได้จาก Webhook — ฟรี ใช้ได้ครั้งเดียว มีอายุจำกัด (ต้องใช้ทันที) ส่งได้สูงสุด 5 ข้อความพร้อมกัน
+
+**Push** ใช้ userId ส่งได้ทุกเวลา แต่นับ quota และถ้าเกินต้องจ่าย
+
+สิ่งที่ต้องระวังคือต้อง log ทุก Push ที่ส่งออกไป เพื่อ monitor quota ได้ ต้องมี retry logic ที่ดีพอสำหรับ network error — แต่ไม่ double send เพราะ user จะได้รับข้อความซ้ำ และต้องระวัง **rate limit** ของ LINE API ที่จำกัดจำนวน request ต่อวินาที ถ้าส่ง Push พร้อมกันหลายร้อย request ต้องทำ queue หรือ batch
+
+---
+
+## Phase 7 — Quick Reply
+
+Quick Reply คือปุ่มเล็กๆ ที่ติดมากับข้อความ ให้ user กดเลือกได้เลยโดยไม่ต้องพิมพ์
+
+ข้อจำกัดที่ต้องบอก AI: ใส่ได้สูงสุด **13 ปุ่ม** รองรับหลาย action type ได้แก่ message, postback, uri, location, camera, cameraRoll, datetimepicker, richmenuswitch, clipboard
+
+สิ่งที่ดีของ Quick Reply คือเมื่อ user กดปุ่ม message หรือ postback ระบบจะได้ replyToken ใหม่ทันที ทำให้ dialog ยาวต่อได้โดยไม่เสีย Push แม้สักครั้ง (แต่ถ้ากดปุ่ม uri จะเปิด URL อย่างเดียว ไม่มี replyToken กลับมา) ผมใช้ Quick Reply สำหรับขั้นตอนที่ต้องการ confirmation เช่น ยืนยันเวลานัด, เลือกบริการ, ยืนยันใบเสนอราคา
+
+---
+
+## Phase 8 — Role-Based Menu Linking
+
+Phase สุดท้ายคือการทำให้ Rich Menu แสดงต่างกันตามบทบาทของ user
+
+ลูกค้าทั่วไปเห็น menu หนึ่ง, ลูกค้า VIP เห็น menu ที่มีปุ่มเพิ่ม, admin เห็น menu ที่มีปุ่มจัดการระบบ
+
+วิธีทำคือเมื่อ user เพิ่ม LINE OA เป็นเพื่อน หรือ login ครั้งแรก ระบบจะดู role ในฐานข้อมูลแล้วเรียก API เพื่อ link userId กับ Rich Menu alias ที่ถูกต้อง และถ้า admin เปลี่ยน role ระบบจะ relink menu ทันที
+
+ลำดับ API ยังคือสิ่งที่สำคัญเหมือน Phase 3: ต้อง create → upload → alias → link ไม่สามารถ link กับ menuId โดยตรงได้ ต้องผ่าน alias เสมอ
+
+---
+
+## สิ่งที่ต้องบอก AI ทุกครั้งที่ Vibecoding ระบบ LINE
+
+จากประสบการณ์สร้างระบบนี้จริง มี checklist ที่ต้องใส่ใน prompt ทุกครั้ง ไม่ใช่เพราะ AI ไม่ฉลาด แต่เพราะถ้าไม่บอก AI จะเลือก default ที่ไม่ใช่ของ LINE เสมอ
+
+**ทดสอบทั้ง Android และ iOS** — LINE บน Android กับ iOS มี behavior ต่างกันบางจุด โดยเฉพาะ LIFF orientation และ shareTargetPicker UI ถ้าเทสแค่แพลตฟอร์มเดียวจะหาไม่เจอ bug พวกนี้
+
+**Fallback สำหรับ browser** — sendMessages, shareTargetPicker ใช้ได้เฉพาะใน LINE app เมื่อ user เปิดจาก browser ต้องแสดง message ที่เข้าใจได้ว่าให้ทำอะไรต่อ ไม่ใช่แสดง error ดิบๆ
+
+**altText ต้องมีความหมาย** — ไม่ใช่ "Flex Message" แต่ควรเป็นสิ่งที่ user อ่านแล้วรู้ว่าข้อความนี้คืออะไร เช่น "ยืนยันการจองวันที่ 15 มิ.ย. เวลา 10:00"
+
+**Security** — verify webhook signature ทุกครั้ง, secrets ต้องอยู่ server-side ห้ามส่งไปฝั่ง client เด็ดขาด, LIFF ต้องไม่ expose token ใน URL parameter
+
+**Size limits** — Flex Message 50KB, รูปภาพใน Flex ต้อง HTTPS และไม่เกิน 1MB, รูป Rich Menu ต้องตรงตาม spec ของ LINE (เช่น 2500×1686 สำหรับ full, 2500×843 สำหรับ half) และต้องกำหนด bounds ทุกปุ่ม ถ้า size หรือ bounds ผิดจะ reject แบบ silent
+
+---
+
+## ขนาดงานจริงที่ได้
+
+เมื่อสร้างครบทั้ง 8 phases ระบบทั้งหมดมีขนาดประมาณนี้:
+
+โค้ดทั้งหมดประมาณ **3,300 บรรทัด** — ส่วนที่ใหญ่ที่สุดคือ Webhook handler ราว 1,670 บรรทัด เพราะมันจัดการทุก event type, ทุก message type, และทุก business logic ที่ต้องเกิดขึ้นเมื่อ user ทำรายการต่างๆ
+
+ส่วนที่เหลือแบ่งเป็น Authentication และ LIFF utilities, Rich Menu management script, Flex Message builders, และ role management ตามลำดับ
+
+ทั้งหมดนี้ Vibecoded ด้วย AI — ผมออกแบบ flow เขียน spec บอกว่าต้องการอะไร และตรวจผลลัพธ์ทุก phase ก่อนไปต่อ ไม่มีบรรทัดไหนที่ผมนั่งพิมพ์เองทีละ character
+
+และระบบนี้ทำงานจริง: free messaging loop ทำให้เหลือ Push quota เยอะ, role-based menu ทำให้ UX ต่างกันตาม user, LINE Login เชื่อมกับ CRM ได้
+
+---
+
+## สรุป
+
+Vibecoding ระบบ LINE OA ไม่ใช่เรื่องยาก แต่มีลำดับที่ต้องทำให้ถูก
+
+Phase 1-2 คือรากฐาน: Auth กับ LIFF utility ต้องแข็งแรงก่อน ไม่งั้น phase ต่อไปพังหมด Phase 3-4 คือ UX ที่ user เห็น: Rich Menu กับ Flex Message ที่ดูดีและทำงานถูกต้อง Phase 5-6 คือ engine ของระบบ: Webhook handler กับ message sending ที่ secure Phase 7-8 คือ polish: Quick Reply และ role-based menu ที่ทำให้ระบบรู้สึก professional
+
+สิ่งที่แตกต่าง Vibecoding ที่ได้ผลกับที่ไม่ได้ผลคือ **spec ที่ครบ** — บอก AI ว่าต้องการอะไร, constraint มีอะไร, ลำดับที่ถูกต้องเป็นยังไง แล้ว AI จะสร้างได้ตรง
+
+ถ้าไม่บอก AI จะเดา และการเดาใน LINE API มักจะ silent fail
+
+---
+
+ถ้าสนใจว่า VIBAGEN จะ Vibecode ระบบ LINE OA ให้ธุรกิจหรือร้านค้าของคุณได้ยังไง หรืออยากได้ระบบที่ทำงานฟรีได้เหมือนที่อธิบายใน [บทความก่อนหน้า](/knowledge/line-oa-free-messaging) — ทักมาคุยได้เลยครับ
+
+> ดูตัวอย่าง prompt ที่ใช้สั่ง AI สร้างระบบแต่ละ phase ได้ใน [comment ของ post Facebook](https://www.facebook.com/reel/1005244232222678)
