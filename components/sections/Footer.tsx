@@ -90,9 +90,18 @@ export default function Footer() {
 
         {/* Divider */}
         <div className="border-t border-white/[0.06] pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-white/25 text-xs">
-            © {year} VIBAGEN. All rights reserved.
-          </p>
+          <div className="flex items-center gap-3">
+            <p className="text-white/25 text-xs">
+              © {year} VIBAGEN. All rights reserved.
+            </p>
+            <span className="text-white/10">|</span>
+            <Link
+              href="/privacy-policy"
+              className="text-white/25 text-xs hover:text-white/60 transition-colors"
+            >
+              นโยบายความเป็นส่วนตัว
+            </Link>
+          </div>
           <div className="flex items-center gap-4">
             <a
               href="https://facebook.com/vibagen"
