@@ -33,11 +33,12 @@ const previewArticles = [
 ]
 
 const categoryColors: Record<string, string> = {
-  'Agentic AI':      'text-[#ff6c01] bg-[#ff6c01]/10',
-  'Vibecoding':      'text-blue-400 bg-blue-400/10',
-  'Business Digital':'text-emerald-400 bg-emerald-400/10',
-  'Case Study':      'text-amber-400 bg-amber-400/10',
-  'Maintenance':     'text-purple-400 bg-purple-400/10',
+  'Agentic AI':        'text-[#ff6c01] bg-[#ff6c01]/10',
+  'Vibecoding':        'text-blue-400 bg-blue-400/10',
+  'Business Systems':  'text-emerald-400 bg-emerald-400/10',
+  'Maintenance':       'text-purple-400 bg-purple-400/10',
+  'Infrastructure':    'text-cyan-400 bg-cyan-400/10',
+  'Case Study':        'text-amber-400 bg-amber-400/10',
 }
 
 export default function KnowledgeHub() {

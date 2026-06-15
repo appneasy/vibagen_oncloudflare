@@ -243,6 +243,10 @@ function simpleMarkdownToHtml(md: string): string {
     .replace(/^\*\*(\d+)\. (.+)\*\*$/gm, '<p class="font-semibold text-[#0d2749] mt-4">$1. $2</p>')
     .replace(/^- (.+)$/gm, '<li class="ml-4 text-[#4a5568]">$1</li>')
     .replace(/(<li.*<\/li>\n?)+/g, '<ul class="list-disc list-inside space-y-1 my-4">$&</ul>')
+    // Images: ![alt](src)
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" class="rounded-xl my-8 mx-auto max-w-full" style="display:block" />')
+    // Links: [text](url)
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" class="text-[#ff6c01] underline hover:text-[#0d2749] font-medium">$1</a>')
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-[#1a202c] font-semibold">$1</strong>')
     .replace(/\*(.+?)\*/g, '<em class="italic">$1</em>')
     .replace(/^(?!<[h|b|u|l|p|i|d|hr]|<!--).+$/gm, (line) =>

@@ -6,14 +6,15 @@ import Badge from '@/components/ui/Badge'
 import type { ArticleMeta } from '@/lib/mdx'
 
 const categoryColors: Record<string, string> = {
-  'Agentic AI':       'text-[#ff6c01] bg-[#ff6c01]/10 border-[#ff6c01]/20',
-  'Vibecoding':       'text-blue-400 bg-blue-400/10 border-blue-400/20',
-  'Business Digital': 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
-  'Maintenance':      'text-purple-400 bg-purple-400/10 border-purple-400/20',
-  'Case Study':       'text-amber-400 bg-amber-400/10 border-amber-400/20',
+  'Agentic AI':        'text-[#ff6c01] bg-[#ff6c01]/10 border-[#ff6c01]/20',
+  'Vibecoding':        'text-blue-400 bg-blue-400/10 border-blue-400/20',
+  'Business Systems':  'text-emerald-400 bg-emerald-400/10 border-emerald-400/20',
+  'Maintenance':       'text-purple-400 bg-purple-400/10 border-purple-400/20',
+  'Infrastructure':    'text-cyan-400 bg-cyan-400/10 border-cyan-400/20',
+  'Case Study':        'text-amber-400 bg-amber-400/10 border-amber-400/20',
 }
 
-const categories = ['ทั้งหมด', 'Agentic AI', 'Vibecoding', 'Business Digital', 'Maintenance', 'Case Study']
+const categories = ['ทั้งหมด', 'Agentic AI', 'Vibecoding', 'Business Systems', 'Maintenance', 'Infrastructure', 'Case Study']
 
 interface KnowledgeContentProps {
   articles: ArticleMeta[]

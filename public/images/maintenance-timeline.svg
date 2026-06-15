@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 420" width="800" height="420">
+  <!-- Background -->
+  <rect width="800" height="420" fill="#fefcf9" rx="16"/>
+
+  <!-- Title -->
+  <text x="40" y="44" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="20" font-weight="700" fill="#0d2749">ระยะเวลาพัฒนาแต่ละระบบ</text>
+  <text x="40" y="68" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="14" fill="#6a7a8a">ยิ่งสะสม workflow มากขึ้น ยิ่งพัฒนาเร็วขึ้น</text>
+
+  <!-- Bar 1: ยุค 1: CMMS — 12 เดือน (100%) -->
+  <!-- Label -->
+  <text x="40" y="122" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="13" font-weight="600" fill="#0d2749">ยุค 1: CMMS</text>
+  <!-- Bar -->
+  <rect x="170" y="100" width="610" height="44" rx="8" fill="#b0bec5"/>
+  <!-- Duration label -->
+  <text x="760" y="127" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="13" font-weight="600" fill="#ffffff" text-anchor="end">12 เดือน</text>
+
+  <!-- Bar 2: ยุค 2: AppSheet — 6 เดือน (50%) -->
+  <!-- Label -->
+  <text x="40" y="186" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="13" font-weight="600" fill="#0d2749">ยุค 2: AppSheet</text>
+  <!-- Bar -->
+  <rect x="170" y="164" width="305" height="44" rx="8" fill="#ff6c01"/>
+  <!-- Duration label -->
+  <text x="485" y="191" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="13" font-weight="600" fill="#d54e01" text-anchor="start" dx="8">6 เดือน</text>
+
+  <!-- Bar 3: ยุค 3: SAP B1 — 8 เดือน (67%) -->
+  <!-- Label -->
+  <text x="40" y="250" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="13" font-weight="600" fill="#0d2749">ยุค 3: SAP B1</text>
+  <!-- Bar -->
+  <rect x="170" y="228" width="409" height="44" rx="8" fill="#0d2749"/>
+  <!-- Duration label -->
+  <text x="589" y="255" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="13" font-weight="600" fill="#0d2749" text-anchor="start" dx="8">8 เดือน</text>
+
+  <!-- Bar 4: ยุค 4: Materialized View — 2 เดือน (17%) -->
+  <!-- Label -->
+  <text x="40" y="314" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="13" font-weight="600" fill="#0d2749">ยุค 4: Mat. View</text>
+  <!-- Bar -->
+  <rect x="170" y="292" width="104" height="44" rx="8" fill="#2d8a4e"/>
+  <!-- Duration label -->
+  <text x="282" y="319" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="13" font-weight="600" fill="#2d8a4e" text-anchor="start" dx="8">2 เดือน</text>
+  <!-- AI-assisted badge -->
+  <rect x="370" y="298" width="96" height="28" rx="6" fill="#e8f5ee"/>
+  <text x="418" y="317" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="11" font-weight="600" fill="#2d8a4e" text-anchor="middle">AI-assisted</text>
+
+  <!-- Annotation box at bottom-right -->
+  <rect x="390" y="358" width="380" height="44" rx="8" fill="#fff7f0" stroke="#ff6c01" stroke-width="1"/>
+  <text x="580" y="376" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="11" fill="#ff6c01" text-anchor="middle">AI เข้ามาช่วย 4-5 เดือนล่าสุด ทำให้ต่อยอดระบบ</text>
+  <text x="580" y="392" font-family="'Sarabun', 'Noto Sans Thai', system-ui, sans-serif" font-size="11" fill="#ff6c01" text-anchor="middle">ได้เร็วกว่าเดิมหลายเท่า</text>
+</svg>
