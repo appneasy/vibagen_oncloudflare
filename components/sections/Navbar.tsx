@@ -9,6 +9,7 @@ const navLinks = [
   { label: 'ผลงาน', href: '/showcase' },
   { label: 'ความเชี่ยวชาญ', href: '/expertise' },
   { label: 'Knowledge Hub', href: '/knowledge' },
+  { label: 'AI Lab', href: '/lab' },
 ]
 
 export default function Navbar() {

@@ -262,6 +262,16 @@ Color variables must match brand system exactly.
 - Check OG image at /og?title=Test
 - Mobile responsive test (375px, 768px, 1280px)
 
+### Phase 9 — AI Lab
+- สร้าง `/lab` route + list page (dark theme, intro section, pattern explainer)
+- สร้าง `/lab/[slug]` renderer (dark theme, custom block support)
+- สร้าง Lab components: PromptBox, InsightCard, LessonBox, PatternBadge
+- สร้าง `lib/lab.ts` content loader
+- สร้าง `content/lab/` directory + convert P1, P2 from HTML
+- เพิ่ม "AI Lab" ใน Navbar
+- Metadata, sitemap, OG, JSON-LD
+- Impeccable lint pass
+
 ---
 
 ## Page Creation Standard — Checklist
@@ -365,6 +375,150 @@ All copy is ready in:
 - Key message: ทักษะจริงคือเข้าใจ architecture ไม่ใช่จำ syntax
 - ไม่ระบุราคาตรงๆ — ใช้คำกว้างๆ เช่น "ไม่กี่ร้อยบาท"
 - ลิงก์กลับบทความก่อนหน้าเมื่อเกี่ยวข้อง (cross-reference)
+
+## AI Lab — `/lab` (New Section)
+
+### Concept
+"คุยกับ AI แบบไหน → ได้อะไรออกมา"
+
+AI Lab เป็น section ใหม่บน vibagen.com ที่แสดง **ผลลัพธ์จริงจากการพูดคุยกับ AI** อย่างมีทิศทาง
+ไม่ใช่บทความ blog ธรรมดา — แต่เป็น curated content ที่สกัดจาก AI conversation จริง
+พร้อม prompt ที่ copy ไปใช้ได้ และ interactive tools ที่ทดลองได้
+
+### Background
+ก่อน vibecoding ผู้ก่อตั้ง VIBAGEN สร้างระบบเล็กๆ มากว่า 7 ปี ผ่าน Google Sheets, AppSheet, Apps Script
+(9 ระบบในโรงงานปาล์มน้ำมัน — Production Control, PdM, LAB Control, etc.)
+เมื่อเริ่มใช้ AI เป็น vibecoding partner — พบว่าการพูดคุยกับ AI อย่างมีโครงสร้าง
+ได้ผลลัพธ์ที่สกัดแล้วแชร์ต่อได้ → จึงเกิดเป็น AI Lab
+
+### Content Patterns (P = Pattern, ไม่ใช่ Part)
+
+แต่ละ pattern เป็น **template ที่ซ้ำได้** กับเรื่องอะไรก็ได้ — อิสระจากกัน
+
+| Pattern | ชื่อ | จุดประสงค์ | องค์ประกอบหลัก |
+|---------|------|-----------|---------------|
+| **P1** | Decode → Deploy | สกัด **การตัดสินใจ** จาก AI conversation | AI quote, Insight cards, Copy-ready prompt, Interactive tool/wizard |
+| **P2** | Engineer's Field Note | บันทึก **งานที่ทำจริง** ในสนาม | Data model, Technical extract, Lesson box, Demo/download |
+
+ตัวอย่าง:
+```
+P1 — Decode → Deploy (หลายเรื่อง)
+  ├── Stack Decision (NewScale weighbridge)
+  ├── Database Decision (อนาคต)
+  └── Auth Strategy (อนาคต)
+
+P2 — Engineer's Field Note (หลายเรื่อง)
+  ├── PdM Dashboard (TMK palm oil)
+  ├── Production Control (อนาคต)
+  └── LAB Control (อนาคต)
+```
+
+### Content Source
+Raw materials: `D:\My Data\Article Social\สร้างบทความจากการคุยกับ AI\`
+- `P1_stack_decision.html` — Curated P1 ต้นฉบับ
+- `P2_pdm_field_note.html` — Curated P2 ต้นฉบับ
+- `P2_pdm_dashboard_app.html` — Working dashboard demo
+- `Article1.html` — Raw AI conversation export (reference)
+
+### Brand — Lab Visual System
+- **Font**: ใช้ Prompt + Sarabun เหมือนทั้ง site (ไม่ใช้ IBM Plex Mono)
+- **Monospace**: `font-family: 'Fira Code', Consolas, monospace` (ใช้ใน code/prompt blocks)
+- **สี dark theme**: ใช้ navy palette ที่มีอยู่ ไม่ใช่ #0f0f13 จาก HTML ต้นฉบับ
+
+```
+Lab Colors (derived from brand):
+  Background   : #011937  (navy-dark — เดียวกับ hero/footer)
+  Surface      : #0d2749  (navy — card bg)
+  Surface2     : #1a3a5c  (navy-light — elevated elements)
+  Border       : rgba(255,255,255,0.08)
+  Accent       : #ff6c01  (orange — เดียวกับทั้ง site)
+  Text         : #e2e8f0  (light text on dark bg)
+  Muted        : rgba(255,255,255,0.4)
+  Tag colors   : green #4ade80, blue #38bdf8, amber #f59e0b (for tech tags)
+```
+
+### Impeccable Compliance
+HTML ต้นฉบับมี anti-patterns ที่ต้องปรับ:
+- `border-left: 3px solid` (side-tab) → ใช้ `border-top` หรือ subtle bg tint แทน
+- Badge grid (pill-grid) → ใช้ inline tags หรือ comma-separated text
+- ถ้า design ของ lab ต้องการ border-left accent เป็น intentional → document เป็น exempt ใน impeccable config
+
+### Architecture
+
+```
+app/lab/
+  ├── page.tsx                  # List page + intro section
+  └── [slug]/page.tsx           # Single lab note (dark theme renderer)
+
+content/lab/                    # Content files
+  ├── p1-stack-decision.mdx     # P1: Stack Decision
+  └── p2-pdm-field-note.mdx     # P2: PdM Dashboard
+
+lib/lab.ts                      # Lab content loader (parallel to lib/mdx.ts)
+components/lab/                 # Lab-specific components
+  ├── LabCard.tsx               # Card for list page
+  ├── PatternBadge.tsx          # P1/P2 badge
+  ├── PromptBox.tsx             # Copy-ready prompt with copy button
+  ├── InsightCard.tsx           # Numbered insight cards
+  └── LessonBox.tsx             # Lesson/takeaway box
+```
+
+### Frontmatter Schema
+```yaml
+---
+title: "เลือก Stack ผิด = เสียเวลา 2 เดือน"
+excerpt: "3 กฎจากการคุยกับ AI ที่ทำให้ตัดสินใจ stack ง่ายขึ้น 10 เท่า"
+date: "2026-06-10"
+pattern: "P1"                   # P1 | P2
+patternName: "Decode → Deploy"  # ชื่อ pattern
+project: "NewScale"             # ชื่อ project ที่เกี่ยวข้อง
+tags: ["Rust", "Tauri", "Next.js", "Stack Decision"]
+promptCount: 1                  # จำนวน copy-ready prompts
+hasInteractive: true            # มี interactive tool/wizard
+author: "Akkraphol"
+authorTitle: "Engineering & IT Manager | Founder, VIBAGEN"
+keywords: ["tech stack SME", "เลือก stack", "Rust vs Next.js"]
+ogImage: "/images/og-default.png"
+---
+```
+
+### Landing Page (`/lab`) — Intro Content
+1. **Hero**: dark bg, "AI Lab — สิ่งที่ได้จากการคุยกับ AI"
+2. **Intro paragraph**: เล่าที่มา — background (AppSheet/Google Sheets 7 ปี) → vibecoding → สกัด conversation มาแชร์
+3. **Pattern explainer**: อธิบาย P1 vs P2 ด้วย visual cards
+4. **Content grid**: แสดง lab notes ทั้งหมด, filter by pattern
+
+### Rendering Strategy
+- Content เก็บเป็น `.mdx` ใน `content/lab/`
+- Custom renderer (ไม่ใช้ `simpleMarkdownToHtml` ของ Knowledge Hub)
+- รองรับ custom blocks: `:::prompt`, `:::insight`, `:::lesson`, `:::ai-quote`
+- Interactive elements (wizard) = React client components embed ใน page
+- Static text fallback สำหรับ SEO crawler
+
+### Navbar Update
+```typescript
+const navLinks = [
+  { label: 'บริการ', href: '/services' },
+  { label: 'ผลงาน', href: '/showcase' },
+  { label: 'ความเชี่ยวชาญ', href: '/expertise' },
+  { label: 'Knowledge Hub', href: '/knowledge' },
+  { label: 'AI Lab', href: '/lab' },              // ← เพิ่ม
+]
+```
+
+### Curation Rules (ก่อน publish)
+- [ ] ลบ Google Sheets ID / internal links / credentials จาก content
+- [ ] ลบ domain-specific data ที่ไม่ควร public (internal process details)
+- [ ] ตรวจว่า prompt ที่ให้ copy ไปใช้ได้จริง (test กับ AI)
+- [ ] ปรับ font/color ตาม Lab Visual System (ไม่ใช่ IBM Plex ต้นฉบับ)
+- [ ] รัน impeccable detect หลัง implement UI
+
+### SEO Keywords — Lab
+- Primary: `AI prompt สำหรับ developer`, `vibecoding ตัวอย่าง`, `ใช้ AI สร้างระบบ`
+- Secondary: `เลือก tech stack`, `AppSheet to real app`, `PdM dashboard`
+- Long-tail: `prompt เลือก stack สำหรับ SME`, `สร้าง dashboard จาก Google Sheets`
+
+---
 
 ## Contact
 - Email destination: akkraphol@gmail.com

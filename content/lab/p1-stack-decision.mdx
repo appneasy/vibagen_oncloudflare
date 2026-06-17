@@ -1,0 +1,97 @@
+---
+title: "เลือก Stack ผิด = เสียเวลา 2 เดือน"
+slug: "p1-stack-decision"
+pattern: "P1"
+patternName: "Decode → Deploy"
+project: "NewScale"
+date: "2026-06-10"
+excerpt: "3 กฎที่ได้จากการคุยกับ AI เรื่อง tech stack สำหรับระบบชั่งน้ำหนักรถบรรทุก — offline, hardware, multi-user แต่ละ case มีคำตอบที่ต่างกัน"
+readTime: 6
+tags: ["Rust", "Tauri", "Next.js", "Stack Decision", "SME"]
+promptCount: 1
+hasInteractive: true
+author: "Akkraphol"
+authorTitle: "VIBAGEN"
+keywords: ["tech stack", "Tauri", "Rust", "Next.js", "Flutter", "SME", "offline app", "hardware integration"]
+ogImage: "/images/og-default.png"
+---
+
+## เลือก Stack ผิดครั้งเดียว = restart ทั้งโปรเจกต์
+
+ผมกำลังสร้างระบบชั่งน้ำหนักรถบรรทุกสำหรับลานเทปาล์ม ฟังดูเหมือน web app ธรรมดา — จนกว่าจะรู้ว่าต้องทำงาน offline 100% ต้องต่อกับ serial port ตาชั่ง และต้องพิมพ์ใบเสร็จผ่าน dot matrix printer
+
+เลือก Stack ผิดครั้งเดียว = restart ทั้งโปรเจกต์
+
+แต่หลังจากคุยกับ AI อยู่นาน มี 3 กฎที่ทำให้ตัดสินใจง่ายขึ้น 10 เท่า
+
+---
+
+## สิ่งที่ AI บอกเรื่อง Stack สำหรับ SME
+
+> "Stack ที่ดีในบริบท SME ไม่ใช่ stack ที่ทันสมัยที่สุด แต่คือ stack ที่ **ตรงกับข้อจำกัดจริงของพื้นที่** — offline, hardware integration, single-user, zero-maintenance deployment. Tauri + Rust + React ตอบโจทย์นี้ได้ครบโดยไม่ต้องประนีประนอม"
+>
+> — Stack Decision Principle, NewScale Phase 1 / คุยกับ Claude (Rust/Tauri Engineer mode)
+
+---
+
+## 3 Insights ที่ได้จาก AI Conversation
+
+:::insight{number=1 title="ต้องการ Hardware? มีคำตอบเดียว"}
+ถ้า app ต้องต่อกับ serial port, COM port, หรือ printer ใดๆ — **Tauri + Rust** คือตัวเลือกเดียวที่ทำได้ "สะอาด" จริงๆ
+
+ไม่มีทางลัด: Electron หนักเกิน, Web ทำไม่ได้
+
+ได้ `.exe` ไฟล์เดียว ขนาด 8–15 MB รันบน Windows ไม่ต้องติดตั้ง runtime Business logic อยู่ใน Rust — ปลอดภัย เร็ว ไม่มี race condition
+:::
+
+:::insight{number=2 title="ต้องการ Mobile Native? แยกตาม internet"}
+ถ้า offline สำคัญมาก → **Flutter + Rust bridge** (SQLite local)
+
+ถ้า internet มีเสมอ → **Next.js PWA** เร็วกว่า ship ได้เร็วกว่า ไม่ต้อง App Store
+
+| Case | Stack | เหตุผล |
+|---|---|---|
+| Offline critical | Flutter + Rust bridge | SQLite local, Rust logic ใช้ข้าม platform ได้ 90% |
+| Internet มีเสมอ | Next.js PWA | Ship เร็ว, ไม่ต้อง App Store, AI ช่วยได้มาก |
+:::
+
+:::insight{number=3 title="Multi-user + Internet? Next.js คือ default ที่ถูก"}
+Dashboard, CRUD, approval workflow สำหรับหลาย user — **Next.js + PostgreSQL** ชนะเสมอ
+
+Vibecoding ได้ดีที่สุด — AI ช่วย generate หน้า form ได้ในชั่วโมง
+
+Deploy ง่าย: git push → Vercel auto deploy ไม่ต้องดูแล server
+:::
+
+---
+
+## Copy-ready Prompt
+
+:::prompt
+ฉันต้องการสร้าง [อธิบาย app ในประโยคเดียว] สำหรับ [กลุ่มผู้ใช้ + จำนวนคน]
+
+ข้อจำกัดของระบบ:
+- ต้องการ offline (ไม่มี internet): [ใช่ / ไม่ใช่]
+- ต้องต่อกับ hardware (serial port, COM, printer): [ใช่ / ไม่ใช่]
+- ใช้บน mobile (Android/iOS) เป็นหลัก: [ใช่ / ไม่ใช่]
+- มี user หลายคน + ต้องการ sync: [ใช่ / ไม่ใช่]
+- timeline และทีม: [X สัปดาห์, X คน]
+
+ช่วย:
+1. แนะนำ tech stack ที่เหมาะสมที่สุด (1 ตัวเลือกหลัก + 1 ทางเลือก)
+2. อธิบาย trade-off ของแต่ละ stack ในบริบทของฉัน
+3. บอก gotcha ที่มักเจอใน production สำหรับ stack ที่แนะนำ
+4. ถ้าต้องเลือก vibecoding partner (AI model) — แนะนำอะไรสำหรับ stack นี้
+:::
+
+---
+
+:::lesson{title="บทเรียนจาก NewScale"}
+ก่อนเขียนโค้ดแม้แต่บรรทัดเดียว ตั้งคำถาม 3 ข้อนี้ก่อน:
+
+1. มี hardware ที่ต้องต่อไหม?
+2. ต้อง offline ได้ไหม?
+3. กี่ user และอยู่ที่ไหน?
+
+คำตอบ 3 ข้อนี้กำหนด stack ให้คุณ — ไม่ต้องเดา ไม่ต้องทดลองผิดพลาด
+:::

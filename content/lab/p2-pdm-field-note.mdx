@@ -1,0 +1,146 @@
+---
+title: "จาก AppSheet สู่ HTML Dashboard — ไม่ต้อง Backend"
+slug: "p2-pdm-field-note"
+pattern: "P2"
+patternName: "Engineer's Field Note"
+project: "PdM Dashboard"
+date: "2026-06-10"
+excerpt: "โรงงานแห่งหนึ่งมีเครื่องจักร 36 ตัว ทีมบริหารอยากเห็น dashboard แต่ไม่มี AppSheet license — วิธีแก้คือ HTML ไฟล์เดียวที่ดึงข้อมูลจาก Google Sheets โดยตรง"
+readTime: 7
+tags: ["AppSheet", "Google Sheets", "PdM", "Dashboard", "gviz API"]
+promptCount: 1
+hasInteractive: false
+author: "Akkraphol"
+authorTitle: "VIBAGEN"
+keywords: ["AppSheet", "Google Sheets", "gviz API", "PdM", "Predictive Maintenance", "dashboard", "no backend", "factory"]
+ogImage: "/images/og-default.png"
+---
+
+## AppSheet PdM app ที่สร้างเอง → Dashboard ที่แจกให้ใครก็ได้ฟรี
+
+โรงงานแห่งหนึ่งมีเครื่องจักร 36 ตัว ใน 8 สถานี ทีม maintenance ต้องตรวจสอบ vibration, temperature, current draw ตามรอบ 1–30 วัน
+
+ทำ AppSheet app ขึ้นมาจัดการ — ใช้งานได้ดีมาก ทีมภาคสนามชอบ
+
+**ปัญหา:** ผู้จัดการอยากเห็น dashboard overview แบบ real-time แต่ไม่มี AppSheet license และไม่รู้จะ share view ยังไงให้คนข้างนอกดูได้โดยไม่ต้อง login
+
+---
+
+## คำถามที่ถาม AI
+
+> "ผมมี AppSheet app PdM อยู่แล้ว ข้อมูลอยู่ใน Google Sheets จะสร้าง HTML dashboard ที่ดึงข้อมูลจาก Sheets โดยตรงได้ไหม ไม่ต้องใช้ backend ไม่ต้องติด Google API ขอแค่เปิด browser แล้วเห็นข้อมูลจริง"
+>
+> — ถาม Claude พร้อม share sheet link และ graph spec
+
+---
+
+## Data Model: ENIHour_PdM
+
+ระบบมี 10 tables, 49 parameters, 36 machines
+
+```text
+Equipment ─has many──► Measurement ─has many──► Measurementdetail
+    │                       │                        └──► ParameterID ──► Parameter
+    │                       └──► GroupID ─────────────────────────────► Groupphase
+    │
+    └──has many──► Machine ─has many──► Meter_log      // hour meter บันทึก
+                       └──has many──► Part_usage ──► Part_master
+
+Telegramsetup   // standalone · alert config
+```
+
+Virtual Columns (AppSheet expressions):
+
+| Column | Expression |
+|---|---|
+| `Lastest_10_measurementdetail` | SELECT top 10 by date |
+| `Latest_part_usage` | MAXROW by timestamp |
+| `Part_usage_over_lastest` | SUM usage since last service |
+| `Part_master_active` | FILTER where Active = TRUE |
+
+---
+
+## 4 Insights จาก Technical Extract
+
+:::insight{number=1 title="gviz CSV API — ไม่ต้อง auth ถ้า sheet เป็น public"}
+Google Sheets มี endpoint ที่ fetch ได้โดยตรงจาก JavaScript:
+
+`https://docs.google.com/spreadsheets/d/[SHEET_ID]/gviz/tq?tqx=out:csv&sheet=SHEET_NAME`
+
+ไม่ต้อง API key ไม่ต้อง OAuth — แค่ Sheet เป็น public ก็ดึงได้ทันที
+:::
+
+:::insight{number=2 title="ข้อมูล real-time ทุกครั้งที่ refresh"}
+HTML dashboard fetch CSV ใหม่ทุก load
+
+ทีมภาคสนามบันทึกใน AppSheet → ผู้จัดการ refresh browser → เห็นข้อมูลล่าสุดทันที
+
+ไม่ต้องมี webhook ไม่ต้องมี polling service
+:::
+
+:::insight{number=3 title="ไฟล์เดียว แจกได้ทันที"}
+HTML file ขนาด ~15KB ส่งผ่าน Line/Email ได้เลย
+
+เปิดใน Chrome/Edge โดยไม่ต้องติดตั้งอะไร ทำงานบน PC, tablet, mobile
+
+ไม่มี hosting ไม่มี domain ไม่มี maintenance
+:::
+
+:::insight{number=4 title="ข้อมูลจริง: 36 machines, 11 equipment"}
+DigesMC, ScrewPress, เครื่องกระเทาะ, Purify, Separator, Engine GAS — ครบทุก platform ของโรงงาน
+
+ดึงมาแสดงโดยตรงจาก Sheets ที่ทีมภาคสนามอัพเดทอยู่แล้วทุกวัน
+:::
+
+---
+
+:::lesson{title="AppSheet สำหรับ field capture → vibecoded HTML สำหรับ management"}
+AppSheet เก่งเรื่อง **เก็บข้อมูลภาคสนาม** — ทีมสนามรัก form และ offline sync
+
+แต่ถ้าอยากให้ management ดู overview ได้ทุกที่ทุกเวลา vibecoded HTML dashboard ที่ดึง Google Sheets โดยตรง **เร็วกว่า ถูกกว่า และ share ได้กว่า**
+
+ไม่ต้องเลือก — ใช้ทั้งสองอย่างตามจุดแข็งของแต่ละเครื่องมือ
+:::
+
+---
+
+## Copy-ready Prompt
+
+:::prompt
+ฉันมี Google Sheets ที่ใช้เป็น data source ของ AppSheet app
+Sheet ID: [ใส่ Spreadsheet ID]
+Sheet names: [ชื่อ tab ที่ต้องการ เช่น Equipment, Measurement, Machine]
+
+ช่วยสร้าง HTML dashboard (ไฟล์เดียว, vanilla JS ไม่มี framework) ที่:
+1. ดึงข้อมูลจาก Google Sheets ผ่าน gviz CSV API โดยไม่ต้อง auth
+2. แสดง summary cards: จำนวน record แต่ละ table + status alert
+3. แสดง data table พร้อม highlight row ที่มีสถานะผิดปกติ
+4. มี refresh button และแสดงเวลาอัพเดทล่าสุด
+5. Dark theme, responsive, รันได้จาก file:// โดยตรง
+:::
+
+---
+
+:::download{title="📥 P2_pdm_dashboard_app.html" link="/lab/P2_pdm_dashboard_app.html" subtitle="ไม่ต้องติดตั้ง · ไม่ต้อง login · แจกได้ฟรี" features="✅ Real data,🔁 Auto-refresh,📱 Responsive,📦 Single file,🆓 Free to share"}
+Dashboard จริงที่ดึงข้อมูลจาก ENIHour_PdM Google Sheets — เปิดใน browser → เห็น equipment status, inspection schedule, machines by station
+:::
+
+---
+
+:::cta{title="สนใจ AppSheet template ENIHour_PdM?" accent="green"}
+comment ไว้ด้านล่าง → จะส่ง link ให้ copy app ไปใช้ได้เลย
+
+ปรับ Equipment / Parameter / Machine ให้ตรงกับโรงงานของคุณได้ทันที
+
+ฟรี · ไม่มีเงื่อนไข · ใช้กับ AppSheet free plan ได้
+:::
+
+---
+
+:::teaser{title="Vibecode Tauri PdM Desktop App — จาก AppSheet data model → Production-ready offline app" label="Part 2 · P1 Decode → Deploy"}
+Data model ของ ENIHour_PdM (Equipment → Measurement → Detail + Machine → Meter_log) แปลงเป็น SQLite schema ได้ตรงๆ
+
+ใช้ Rust + Tauri 2.0 + React สร้าง desktop app ที่ทำงาน offline 100% ไม่ต้อง AppSheet license ไม่ต้อง internet
+
+**จะได้:** Prompt สำเร็จรูปที่ copy → ได้ app ทันที · SQLite migration จากตาราง AppSheet · วิธี vibecode กับ Claude ให้ได้ production code
+:::

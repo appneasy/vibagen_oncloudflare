@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ENIHour PdM — Dashboard</title>
+<style>
+:root {
+  --bg:#0d1117; --surface:#161b22; --surface2:#21262d;
+  --border:#30363d; --amber:#f0b429; --red:#f85149;
+  --green:#3fb950; --blue:#58a6ff; --purple:#bc8cff;
+  --text:#e6edf3; --muted:#8b949e; --faint:#30363d;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:'Segoe UI',system-ui,sans-serif;font-size:14px;min-height:100vh;}
+
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100;}
+.topbar-logo{font-weight:700;font-size:16px;color:var(--amber);}
+.topbar-sub{font-size:11px;color:var(--muted);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:8px;}
+.data-badge{font-family:monospace;font-size:10px;background:rgba(63,185,80,.1);border:1px solid rgba(63,185,80,.25);color:var(--green);padding:3px 8px;border-radius:4px;}
+.ts{font-size:11px;color:var(--muted);font-family:monospace;}
+
+.main{max-width:1100px;margin:0 auto;padding:20px;}
+
+/* Summary cards */
+.summary-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+@media(max-width:700px){.summary-row{grid-template-columns:1fr 1fr;}}
+.sum-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px 16px;}
+.sum-card .val{font-size:28px;font-weight:700;line-height:1.1;margin-bottom:3px;}
+.sum-card .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;}
+.c-amber{border-top:2px solid var(--amber);} .c-amber .val{color:var(--amber);}
+.c-red{border-top:2px solid var(--red);} .c-red .val{color:var(--red);}
+.c-green{border-top:2px solid var(--green);} .c-green .val{color:var(--green);}
+.c-blue{border-top:2px solid var(--blue);} .c-blue .val{color:var(--blue);}
+
+/* Section */
+.section{background:var(--surface);border:1px solid var(--border);border-radius:8px;margin-bottom:16px;overflow:hidden;}
+.sec-head{padding:11px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
+.sec-title{font-weight:700;font-size:13px;}
+.sec-count{background:var(--surface2);border-radius:3px;padding:1px 7px;font-size:10px;color:var(--muted);font-family:monospace;}
+.sec-alert{background:rgba(248,81,73,.1);border-radius:3px;padding:1px 7px;font-size:10px;color:var(--red);font-family:monospace;}
+
+/* Equipment grid */
+.eq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:1px;background:var(--border);}
+.eq-card{background:var(--surface);padding:12px 14px;transition:background .15s;}
+.eq-card:hover{background:var(--surface2);}
+.eq-type{font-family:monospace;font-size:10px;font-weight:600;padding:2px 6px;border-radius:3px;display:inline-block;margin-bottom:6px;}
+.tm{background:rgba(88,166,255,.15);color:var(--blue);}
+.tg{background:rgba(240,180,41,.15);color:var(--amber);}
+.tgb{background:rgba(63,185,80,.15);color:var(--green);}
+.tc{background:rgba(188,140,255,.15);color:var(--purple);}
+.td{background:rgba(248,81,73,.15);color:var(--red);}
+.tmh{background:rgba(125,211,252,.1);color:#7dd3fc;}
+.eq-name{font-size:12px;font-weight:600;margin-bottom:3px;}
+.eq-loc{font-size:11px;color:var(--muted);}
+
+/* Inspection table */
+.ins-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
+th{padding:8px 12px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.5px;color:var(--muted);font-weight:600;border-bottom:1px solid var(--border);background:var(--surface);white-space:nowrap;}
+td{padding:8px 12px;border-bottom:1px solid var(--faint);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tr:hover td{background:rgba(255,255,255,.02);}
+.st-over{color:var(--red);font-size:11px;font-weight:600;}
+.freq{background:var(--surface2);border-radius:3px;padding:1px 6px;font-family:monospace;font-size:10px;color:var(--amber);}
+.mono{font-family:monospace;font-size:11px;color:var(--muted);}
+
+/* Station grid */
+.sta-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1px;background:var(--border);}
+.sta-card{background:var(--surface);padding:12px 14px;}
+.sta-name{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;}
+.m-list{display:flex;flex-direction:column;gap:3px;}
+.m-item{font-size:11px;display:flex;align-items:center;gap:5px;}
+.m-item::before{content:'';width:5px;height:5px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.sta-cnt{font-size:10px;color:var(--muted);margin-top:6px;font-family:monospace;}
+
+/* Footer */
+.app-footer{text-align:center;padding:24px;font-size:11px;color:var(--faint);font-family:monospace;border-top:1px solid var(--border);margin-top:8px;}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div>
+    <div class="topbar-logo">⚙️ ENIHour PdM Dashboard</div>
+    <div class="topbar-sub">Factory — Predictive Maintenance</div>
+  </div>
+  <div class="topbar-right">
+    <span class="data-badge">● Sample Data</span>
+    <span class="ts" id="ts"></span>
+  </div>
+</div>
+
+<div class="main" id="app"></div>
+
+<script>
+// ─── STATIC DATA (จาก Google Sheets จริง) ───────────────────────────────
+
+const EQUIPMENT = [
+  {id:"EQ0001", name:"Motor-01",              type:"Motor",     loc:"Line A"},
+  {id:"EQ0002", name:"Gear-01",               type:"Gear",      loc:"Line A"},
+  {id:"EQ0003", name:"Tubine",                type:"Motor",     loc:"Line B"},
+  {id:"EQ0004", name:"LP-Motor-01",           type:"Motor",     loc:"Line A"},
+  {id:"EQ0005", name:"Gear02",                type:"GenBox",    loc:"Line B"},
+  {id:"EQ0006", name:"Machine Press motor",    type:"Motor",     loc:"Line B"},
+  {id:"EQ0007", name:"Screwpress-Motor-Heavy",type:"MotorHeavy",loc:"Line C"},
+  {id:"EQ0008", name:"CAP BANK Boiler",       type:"CAP BANK",  loc:"Boiler"},
+  {id:"EQ0009", name:"Generator 4000A",       type:"MDB",       loc:"Control Room1"},
+  {id:"EQ0010", name:"MDB BioGas",            type:"MDB",       loc:"Control Room3"},
+  {id:"EQ0011", name:"CAP BANK BioGas",       type:"CAP BANK",  loc:"Biogas"},
+];
+
+const INSPECTION = [
+  {name:"Motor-01 — Vibration",          freq:7,  endDate:"07/04/2025", status:"เกินกำหนดแผนแล้ว"},
+  {name:"Gear-01 — VibGear",             freq:7,  endDate:"05/04/2025", status:"เกินกำหนดแผนแล้ว"},
+  {name:"Motor-01 — Current-01",         freq:7,  endDate:"29/03/2025", status:"เกินกำหนดแผนแล้ว"},
+  {name:"LP-Motor-01 — Vibration-22",    freq:7,  endDate:"23/03/2025", status:"เกินกำหนดแผนแล้ว"},
+  {name:"Screwpress-Motor — Vib & Temp", freq:6,  endDate:"25/03/2025", status:"เกินกำหนดแผนแล้ว"},
+  {name:"Machine Press motor — Vibration & Temp",freq:4,  endDate:"02/04/2025", status:"เกินกำหนดแผนแล้ว"},
+  {name:"Machine Press motor — Current",  freq:1,  endDate:"04/04/2025", status:"เกินกำหนดแผนแล้ว"},
+  {name:"CAP BANK Boiler — CAP BANK",    freq:30, endDate:"29/04/2025", status:"เกินกำหนดแผนแล้ว"},
+  {name:"Generator 4000A — Power Meter", freq:30, endDate:"30/11/2025", status:"เกินกำหนดแผนแล้ว"},
+  {name:"MDB BioGas — Power Meter",      freq:30, endDate:"29/04/2025", status:"เกินกำหนดแผนแล้ว"},
+  {name:"CAP BANK BioGas — CAP BANK",    freq:30, endDate:"29/04/2025", status:"เกินกำหนดแผนแล้ว"},
+];
+
+const STATIONS = {
+  "THRESHING & PRESSING": ["DigesMC 1","DigesMC 2","DigesMC 3","DigesMC 4","DigesMC 5","ScrewPress 1","ScrewPress 2","ScrewPress 3","ScrewPress 4","ScrewPress 5"],
+  "KERNEL PLATFORM":      ["เครื่องกระเทาะ 1","เครื่องกระเทาะ 2","เครื่องกระเทาะ 3"],
+  "Machine Press Platform":["Machine Press 1","Machine Press 2","Machine Press 3","Machine Press 4","Machine Press 5","Machine Press 6"],
+  "Oil Room":             ["Purify 1","Purify 2","Purify 3","Seperator 1","Seperator 2","Seperator 3","Vibration Screen 1","Vibration Screen 2","Vibration Screen 3","Vibration Screen 4"],
+  "Engine GAS":           ["Engine GAS 1","Engine GAS 2"],
+  "ยานยนต์":              ["รถตัก 101","รถตัก 102","รถตัก 103","รถตัก 104"],
+  "Loading Ramp":         ["Chain Conveyor No.1"],
+  "Boiler":               ["Boiler Feed Pump No.2"],
+};
+
+// ─── TYPE → CSS CLASS ──────────────────────────────────────────────────
+
+function typeClass(t) {
+  const m = {Motor:"tm",Gear:"tg",GenBox:"tgb","CAP BANK":"tc",MDB:"td",MotorHeavy:"tmh"};
+  return m[t] || "tm";
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────
+
+function render() {
+  const totalMachines = Object.values(STATIONS).reduce((s,a)=>s+a.length,0);
+  const overdueCount  = INSPECTION.filter(i=>i.status.includes("เกิน")).length;
+
+  const html = `
+    <div class="summary-row">
+      <div class="sum-card c-amber"><div class="val">${EQUIPMENT.length}</div><div class="lbl">⚡ Equipment</div></div>
+      <div class="sum-card c-red"><div class="val">${overdueCount}</div><div class="lbl">⚠️ Overdue Inspections</div></div>
+      <div class="sum-card c-green"><div class="val">${totalMachines}</div><div class="lbl">🔧 Machines Active</div></div>
+      <div class="sum-card c-blue"><div class="val">${Object.keys(STATIONS).length}</div><div class="lbl">🏭 Platforms</div></div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-title">⚡ Equipment</div>
+        <span class="sec-count">${EQUIPMENT.length} items</span>
+      </div>
+      <div class="eq-grid">
+        ${EQUIPMENT.map(e=>`
+          <div class="eq-card">
+            <span class="eq-type ${typeClass(e.type)}">${e.type}</span>
+            <div class="eq-name">${e.name}</div>
+            <div class="eq-loc">📍 ${e.loc}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-title">📋 Inspection Schedule</div>
+        <span class="sec-alert">⚠️ ${overdueCount} overdue</span>
+      </div>
+      <div class="ins-wrap">
+        <table>
+          <thead><tr><th>จุดตรวจ</th><th>รอบ (วัน)</th><th>End Date</th><th>Status</th></tr></thead>
+          <tbody>
+            ${INSPECTION.map(i=>`
+              <tr>
+                <td>${i.name}</td>
+                <td><span class="freq">🔁 ${i.freq} วัน</span></td>
+                <td class="mono">${i.endDate}</td>
+                <td class="st-over">⚠️ ${i.status}</td>
+              </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-head">
+        <div class="sec-title">🏭 Machines by Platform</div>
+        <span class="sec-count">${totalMachines} total</span>
+      </div>
+      <div class="sta-grid">
+        ${Object.entries(STATIONS).map(([loc,machines])=>`
+          <div class="sta-card">
+            <div class="sta-name">${loc}</div>
+            <div class="m-list">
+              ${machines.slice(0,5).map(n=>`<div class="m-item">${n}</div>`).join('')}
+              ${machines.length>5?`<div class="m-item" style="color:var(--muted)">+${machines.length-5} more</div>`:''}
+            </div>
+            <div class="sta-cnt">${machines.length} machines</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('app').innerHTML = html;
+  document.getElementById('ts').textContent = new Date().toLocaleString('th-TH',{dateStyle:'short',timeStyle:'short'});
+}
+
+render();
+</script>
+
+<div class="app-footer">ENIHour PdM · Factory · Vibecoded with Claude · Sample Data from Google Sheets</div>
+</body>
+</html>
