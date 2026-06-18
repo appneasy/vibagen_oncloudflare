@@ -152,7 +152,7 @@ export default function StackQuizPage() {
             </div>
           </div>
 
-          {/* ── Bottom CTA ─────────────────────────────────── */}
+          {/* ── Bottom — Follow & Share ─────────────────────── */}
           <div style={{
             borderRadius: '20px',
             padding: '36px 32px',
@@ -166,7 +166,7 @@ export default function StackQuizPage() {
               color: '#ffffff',
               marginBottom: '10px',
             }}>
-              เลือก stack ได้แล้ว แต่ไม่รู้จะเริ่มยังไง?
+              ชอบ Quiz นี้ไหม?
             </p>
             <p style={{
               fontSize: '15px',
@@ -174,24 +174,49 @@ export default function StackQuizPage() {
               lineHeight: 1.7,
               marginBottom: '24px',
             }}>
-              VIBAGEN ช่วยวาง architecture จนถึง build ให้ — ปรึกษาฟรี ไม่ขาย
+              Share ให้เพื่อนลองเล่นด้วย — แล้วมาดูว่าได้ Stack เดียวกันไหม
             </p>
-            <Link
-              href="/hire-us"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                padding: '14px 32px',
-                borderRadius: '12px',
-                background: '#ff6c01',
-                color: '#ffffff',
-                fontWeight: 700,
-                fontSize: '15px',
-                textDecoration: 'none',
-              }}
-            >
-              ปรึกษาฟรี →
-            </Link>
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <a
+                href="https://www.facebook.com/vibagen"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '14px 28px',
+                  borderRadius: '12px',
+                  background: '#ff6c01',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '15px',
+                  textDecoration: 'none',
+                }}
+              >
+                ติดตาม VIBAGEN
+              </a>
+              <a
+                href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fvibagen.com%2Flab%2Fstack-quiz"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '14px 28px',
+                  borderRadius: '12px',
+                  background: 'rgba(255,255,255,0.10)',
+                  color: '#ffffff',
+                  fontWeight: 700,
+                  fontSize: '15px',
+                  textDecoration: 'none',
+                  border: '1px solid rgba(255,255,255,0.20)',
+                }}
+              >
+                Share Facebook
+              </a>
+            </div>
           </div>
         </div>
       </main>

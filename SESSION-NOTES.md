@@ -1,7 +1,7 @@
 # VIBAGEN Website — Session Notes
 
 > สรุปความคืบหน้าจาก Claude Code sessions เพื่อให้ทีมอ่านเข้าใจสถานะปัจจุบัน
-> Last updated: 2026-06-17
+> Last updated: 2026-06-17 (session 2)
 
 ---
 
@@ -24,7 +24,8 @@
 | Uptime Monitor (Worker) | Done | Cron worker + D1 checks + Telegram alerts |
 | Privacy Policy | Done | /privacy-policy (Facebook App compliance) |
 | Tracking param strip | Done | middleware 301 redirect ลบ fbclid, utm_* |
-| AI Lab | **WIP** | files สร้างแล้ว (untracked), 2 content pieces (P1 + P2), ยังไม่ commit |
+| AI Lab | **Done** | committed + pushed (84050f36), /lab, /lab/[slug], /lab/stack-quiz |
+| Stack Personality Quiz | **Done** | 8-question quiz + custom text input (35 categories) + skill level time estimates |
 
 ---
 
@@ -88,18 +89,14 @@
 
 ---
 
-## AI Lab (WIP — ยังไม่ commit)
+## AI Lab (Done — committed 84050f36)
 
-### สถานะปัจจุบัน
-- **Untracked files**: `app/lab/`, `components/lab/`, `content/lab/`, `lib/lab.ts`, `public/lab/`
-- **Navbar**: AI Lab link เพิ่มแล้ว (modified, unstaged)
-- **CLAUDE.md**: updated with Lab spec (modified, unstaged)
-
-### Files สร้างแล้ว
+### Files
 ```
 app/lab/
-  page.tsx                    # List page + intro
+  page.tsx                    # List page + intro (dark theme)
   [slug]/page.tsx             # Single lab note renderer
+  stack-quiz/page.tsx         # Standalone Stack Personality Quiz (cream theme)
 
 components/lab/
   InsightCard.tsx             # Numbered insight cards
@@ -107,22 +104,34 @@ components/lab/
   LessonBox.tsx               # Lesson/takeaway box
   PatternBadge.tsx            # P1/P2 badge
   PromptBox.tsx               # Copy-ready prompt + copy button
-  StackWizard.tsx             # Interactive stack decision tool
+  StackWizard.tsx             # Interactive stack decision tool (in P1 article) + CTA to /lab/stack-quiz
+  StackQuiz.tsx               # 8-question personality quiz (6 results, 3 phases, easter eggs)
+  StackQuizCustom.tsx         # Custom text input with retro→modern lookup + category browser + skill time estimates
 
 content/lab/
   p1-stack-decision.mdx       # P1: Decode → Deploy (NewScale stack)
   p2-pdm-field-note.mdx       # P2: Engineer's Field Note (PdM Dashboard)
 
 lib/lab.ts                    # Lab content loader
+lib/tech-stack-quiz.ts        # 35 categories, 498 keywords, skill levels, time estimates
 public/lab/                   # Lab static assets
 ```
 
+### Stack Personality Quiz (`/lab/stack-quiz`)
+- **8-question quiz**: 3 phases (คุณเป็นใคร / โปรเจกต์เป็นแบบไหน / ข้อจำกัดจริง)
+- **6 stack results**: Tauri, Next.js, Supabase, Flutter, Go+HTMX, AppSheet — with personality labels + easter eggs
+- **Custom text input**: 35 categories × 498 keywords, retro tech jokes → modern stack recommendations
+- **Category browser**: 5 groups (ธุรกิจ/บริการ/เทคโนโลยี/สร้างสรรค์/อุตสาหกรรม) with emoji chips, auto-search on click
+- **Skill level picker**: 5 levels (ไม่เคยเขียน → Senior/Architect) → traditional vs vibecoding time estimates
+- **Time estimate matrix**: 4 complexity tiers × 5 skill levels = 20 combos with Thai-language tips
+- **Cream theme**: #faf7f2 bg, shareable for social media (FB/IG)
+- **Subdomain**: ไม่ใช้ — ใช้ `vibagen.com/lab/stack-quiz` ตรงๆ
+
 ### สิ่งที่ยังเหลือ
-- [ ] Review UI + impeccable lint
 - [ ] เพิ่มใน sitemap.ts
-- [ ] Metadata + JSON-LD
-- [ ] ทดสอบ responsive
-- [ ] Commit + deploy
+- [ ] Impeccable lint pass
+- [ ] ทดสอบ responsive (mobile)
+- [ ] FB Comments Plugin (Phase B — deferred)
 
 ---
 
@@ -167,12 +176,19 @@ public/lab/                   # Lab static assets
 - Privacy policy page (Facebook compliance)
 - Tracking param strip middleware (fbclid, utm_*)
 
-### 2026-06-15 ~ 06-17 — AI Lab (WIP)
+### 2026-06-15 ~ 06-17 — AI Lab (Done)
 - Lab architecture + content spec ใน CLAUDE.md
 - Lab components: PromptBox, InsightCard, LessonBox, PatternBadge, StackWizard
 - Lab content: P1 (Stack Decision) + P2 (PdM Field Note) as MDX
 - Lab list page + [slug] renderer (dark theme)
 - Navbar: เพิ่ม AI Lab link
+- **Stack Personality Quiz** (`/lab/stack-quiz`):
+  - 8-question quiz → 6 stack results with easter eggs
+  - Custom text input: 35 categories, 498 keywords, retro→modern mapping
+  - Category browser: 5 groups with emoji chips (auto-search on click)
+  - Skill level picker: 5 levels → traditional vs vibecoding time estimates (4 tiers × 5 levels)
+  - Cream theme for social sharing
+- Committed + pushed: `84050f36` (20 files, 4191 insertions)
 
 ---
 
@@ -257,6 +273,7 @@ curl -X POST http://localhost:3002/api/contact \
 
 - [ ] พิจารณา migrate จาก `@cloudflare/next-on-pages` (deprecated) ไป OpenNext adapter
 - [ ] ลบ `resend` package จาก dependencies (ไม่ได้ใช้แล้ว)
-- [ ] AI Lab — review, lint, sitemap, commit, deploy
+- [ ] AI Lab — sitemap.ts entry, impeccable lint, responsive test
+- [ ] Stack Quiz — FB Comments Plugin (deferred to Phase B)
 - [ ] Dashboard due-soon alert ปรับปรุง (subscription ใกล้ครบ 7 วัน)
 - [ ] Contract file upload จาก UI โดยตรง (ปัจจุบันใช้ R2 path reference)

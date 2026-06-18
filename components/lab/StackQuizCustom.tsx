@@ -65,17 +65,6 @@ const categoryGroups: { label: string; emoji: string; ids: { id: string; emoji: 
   },
 ]
 
-// Article cross-links (category id → slug)
-const articleLinks: Record<string, string> = {
-  mobile: '/knowledge/from-appsheet-to-real-app',
-  ecommerce: '/knowledge/nocode-to-ai-assisted-development',
-  erp: '/knowledge/from-appsheet-to-real-app',
-  website: '/knowledge/nocode-to-ai-assisted-development',
-  ai: '/knowledge/real-barrier-agentic-ai-is-not-technology',
-  iot: '/knowledge/docker-vps-for-sme',
-  dashboard: '/knowledge/docker-vps-for-sme',
-  desktop: '/knowledge/real-barrier-agentic-ai-is-not-technology',
-}
 
 export default function StackQuizCustom() {
   const [query, setQuery] = useState('')
@@ -423,17 +412,6 @@ export default function StackQuizCustom() {
 
                 {/* Footer row */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
-                  {articleLinks[mapping.id] && (
-                    <a
-                      href={articleLinks[mapping.id]}
-                      style={{
-                        fontSize: '13px', fontWeight: 600,
-                        color: '#ff6c01', textDecoration: 'none',
-                      }}
-                    >
-                      อ่านเพิ่มเติม →
-                    </a>
-                  )}
                   <button
                     onClick={handleReset}
                     style={{
