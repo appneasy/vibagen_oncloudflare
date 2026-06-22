@@ -32,6 +32,9 @@ export function getAllLabMeta(): LabNoteMeta[] {
 
   const files = fs.readdirSync(LAB_DIR).filter((f) => f.endsWith('.mdx'))
 
+  // ซ่อน P2 ไว้ก่อน — เนื้อหายังไม่สมบูรณ์
+  const hiddenSlugs = ['p2-pdm-field-note']
+
   return files
     .map((filename) => {
       const filePath = path.join(LAB_DIR, filename)
@@ -40,6 +43,7 @@ export function getAllLabMeta(): LabNoteMeta[] {
       const slug = filename.replace(/\.mdx$/, '')
       return { slug, ...data } as LabNoteMeta
     })
+    .filter((note) => !hiddenSlugs.includes(note.slug))
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
 }
 
