@@ -1,0 +1,232 @@
+---
+title: "GLM 5.2 — ใช้ AI Coding Model ระดับโลกฟรีผ่าน Cloudflare + OpenCode"
+slug: "glm-5-2-free-cloudflare-opencode"
+category: "Vibecoding"
+date: "2026-06-29"
+excerpt: "วิธีเชื่อมต่อ GLM 5.2 (753B MoE, 1M context) ผ่าน Cloudflare Workers AI ฟรี 10,000 neurons/วัน — setup ทั้ง CLI และ VS Code พร้อมข้อจำกัดที่ต้องรู้"
+readTime: 10
+featured: false
+author: "Akkraphol"
+authorTitle: "VIBAGEN"
+keywords: ["GLM 5.2", "Cloudflare Workers AI", "OpenCode", "AI coding", "vibecoding", "free AI", "open weights", "VS Code"]
+ogImage: "/images/og-default.png"
+---
+
+GLM 5.2 คือ open-weights model จาก Z.ai (เดิมชื่อ Zhipu AI) ที่มี 753B parameters แบบ Mixture-of-Experts architecture — ออกแบบมาสำหรับงาน coding โดยเฉพาะ ด้วย MIT license ทำให้ใช้ได้ฟรีทั้งส่วนตัวและเชิงพาณิชย์ และยังเชื่อมต่อผ่าน Cloudflare Workers AI ได้ฟรี 10,000 neurons ต่อวัน บทความนี้แสดง 2 วิธีที่ใช้ได้จริงในปัจจุบัน พร้อมตัวเลข benchmark และข้อจำกัดที่ต้องรู้ก่อนเริ่ม เพื่อให้ตัดสินใจได้ว่า GLM 5.2 เหมาะกับงานของคุณหรือไม่
+
+---
+
+## GLM 5.2 คืออะไร — ข้อมูลจริงไม่เกินจริง
+
+GLM 5.2 พัฒนาโดย Z.ai (Beijing) ที่ rebrand จาก Zhipu AI ในปี 2025 ตัวโมเดลเป็น Mixture-of-Experts (MoE) 753B parameters ซึ่งหมายความว่าในการ inference หนึ่งครั้งจะเปิดใช้งานเพียงส่วนหนึ่งของพารามิเตอร์ทั้งหมด ทำให้ cost ต่ำกว่า dense model ขนาดเท่ากัน
+
+**ข้อมูลจำเพาะหลัก:**
+
+- 753B parameters (MoE architecture)
+- Context window: 1,048,576 tokens (1M) — แต่บน Cloudflare Workers AI ปัจจุบัน cap ไว้ที่ 262,144 tokens
+- Output สูงสุด 131,072 tokens ต่อ response
+- MIT license (open weights — ดาวน์โหลดและ deploy เองได้)
+- รองรับ function calling, reasoning modes, multi-step planning
+
+จุดที่ต้องระวัง: context window 1M ที่โฆษณาไว้นั้นใช้ได้เต็มที่เฉพาะบน API ของ Z.ai โดยตรง ถ้าใช้ผ่าน Cloudflare Workers AI จะถูก cap ไว้ที่ 262K tokens ซึ่งก็ยังมากพอสำหรับงานโค้ดทั่วไป แต่ถ้าต้องการ ingest codebase ขนาดใหญ่ทั้งก้อนอาจไม่พอ
+
+---
+
+## Benchmark — ดีแค่ไหนเมื่อเทียบกับ Claude และ GPT
+
+| Benchmark | GLM-5.2 | Claude Opus 4.8 | GPT-5.5 |
+|---|---|---|---|
+| SWE-bench Pro | 62.1% | ~62% | 58.6% |
+| FrontierSWE | 74.4% | 75.1% | 72.6% |
+| SWE-bench Verified | ~62% | 88.6% | — |
+| Terminal-Bench 2.1 | 81.0 | 85.0 | — |
+
+**วิเคราะห์ตรงๆ:**
+
+- SWE-bench Pro: GLM-5.2 ทำได้ 62.1% เทียบเท่ากับ Claude Opus 4.8 และชนะ GPT-5.5 (58.6%)
+- FrontierSWE: แพ้ Claude เพียง 0.7% (74.4% vs 75.1%) แต่ชนะ GPT-5.5 (72.6%)
+- SWE-bench Verified: แพ้ Claude ค่อนข้างชัดเจน — 62% เทียบกับ 88.6%
+- Terminal-Bench 2.1: แพ้ Claude 4 คะแนน (81 vs 85)
+
+**สรุปที่ไม่ over-promise:** GLM 5.2 ไม่ได้ชนะ Claude ทุกด้าน ใน benchmark ที่วัดการแก้ bug จริง (SWE-bench Verified) ยังตามหลังค่อนข้างชัด แต่ใน coding agent task ที่ใช้ terminal (Terminal-Bench) และ frontier tasks ตามหลังน้อยมาก และสำหรับราคาที่ต่ำกว่า 6 เท่า ถือว่าคุ้มค่าสำหรับ use case ที่เหมาะสม
+
+---
+
+## ราคาเท่าไหร่ — เปรียบเทียบจริง
+
+| Model | Input/M tokens | Output/M tokens | เทียบกับ GLM |
+|---|---|---|---|
+| GLM-5.2 | $1.40 | $4.40 | — (baseline) |
+| Claude Opus 4.8 | $5.00 | $25.00 | 6x แพงกว่า |
+| GPT-5.5 | $5.00 | $30.00 | 5.56x แพงกว่า |
+| Gemini 3.1 Pro | $2.50 | $15.00 | 2.4x แพงกว่า |
+
+**ตัวอย่างค่าใช้จ่ายที่ 50M tokens ต่อเดือน:**
+
+- GLM-5.2: $145/เดือน
+- Claude Opus 4.8: $500/เดือน
+- GPT-5.5: $875/เดือน
+
+ช่องว่างด้านราคาชัดเจนมาก สำหรับ SME หรือ solo developer ที่มี budget จำกัด ความต่างนี้สำคัญกว่าการแพ้ benchmark บางรายการ
+
+---
+
+## วิธีที่ 1 — z.ai Web Interface (เร็วที่สุด)
+
+วิธีที่เร็วที่สุดในการลองใช้ GLM 5.2 คือผ่านหน้าเว็บ z.ai โดยตรง
+
+**ขั้นตอน:**
+
+**1.** เข้า z.ai และ login ด้วย Google account
+
+**2.** เลือกโมเดล GLM-5.2 จากรายการ
+
+**3.** ใช้งานได้ทันทีในหน้าเว็บ — ไม่ต้องติดตั้งอะไรเพิ่ม
+
+**ข้อจำกัดที่ต้องรู้:** ช่วง peak hours อาจถูก load balancer สลับไปใช้ GLM5 Turbo แทน GLM-5.2 โดยไม่แจ้งชัดเจน ถ้าต้องการควบคุมว่าใช้โมเดลไหนแน่นอน ให้ใช้ API
+
+**เหมาะกับ:** ทดลองใช้งานเร็วๆ, ถามคำถาม, เขียนโค้ดชิ้นเล็กที่ไม่ต้องการ file context จาก codebase
+
+---
+
+## วิธีที่ 2 — Cloudflare Workers AI + OpenCode (สำหรับ Dev จริงจัง)
+
+วิธีนี้เชื่อมต่อ GLM 5.2 เข้ากับ OpenCode CLI ซึ่งทำงานร่วมกับ VS Code ได้ เหมาะกับ developer ที่ต้องการ AI ช่วยเขียนโค้ดใน workflow จริง
+
+### Step 1: สร้าง API Credentials จาก Cloudflare
+
+**1.** สมัคร/login ที่ Cloudflare dashboard (dash.cloudflare.com)
+
+**2.** ไปที่เมนู Workers AI ในแถบด้านข้าง
+
+**3.** คัดลอก Account ID ที่แสดงทางขวาของหน้าจอ
+
+**4.** กด "Create a Workers AI API token" — สร้าง token แล้วคัดลอกเก็บไว้
+
+**สิ่งที่ต้องระวัง:**
+
+- API Token ต้องมี permission: Workers AI - Read + Edit
+- เก็บ token ในที่ปลอดภัย — ไม่ commit ลง git repository ในทุกกรณี
+
+### Step 2: ติดตั้ง OpenCode CLI
+
+```bash
+npm install -g opencode-ai
+```
+
+ตรวจสอบว่าติดตั้งสำเร็จ:
+
+```bash
+opencode --version
+```
+
+ทางเลือกอื่นสำหรับ macOS/Linux:
+
+```bash
+# Homebrew
+brew install opencode
+
+# curl script
+curl -fsSL https://opencode.ai/install | bash
+```
+
+### Step 3: เชื่อมต่อ Cloudflare
+
+เปิด OpenCode:
+
+```bash
+opencode
+```
+
+พิมพ์คำสั่งใน prompt:
+
+```
+/connect
+```
+
+- เลือก Cloudflare Workers AI จากรายการ provider
+- กรอก Account ID ที่คัดลอกจาก Step 1
+- กรอก API Token ที่สร้างจาก Step 1
+- เลือกโมเดล GLM 5.2 จากรายการ
+
+### Step 4: ใช้งานใน VS Code
+
+**1.** เปิด VS Code ไปที่ Extensions แล้วค้นหา "OpenCode" (publisher: sst-dev) กด Install
+
+**2.** เปิด Terminal ใน VS Code แล้วพิมพ์ `opencode`
+
+**3.** ใช้ Ctrl+Esc (Windows/Linux) หรือ Cmd+Esc (macOS) เพื่อเปิด OpenCode panel
+
+**4.** พิมพ์ prompt — AI จะอ่าน file context จาก project ปัจจุบันได้เลย
+
+---
+
+## Free Tier ได้แค่ไหนจริง — ตัวเลขที่ต้องรู้
+
+Cloudflare ใช้หน่วย "Neurons" แทน "Tokens" ซึ่งทำให้คำนวณยากขึ้นเล็กน้อย
+
+```
+Neurons = (input tokens + output tokens) x model coefficient
+```
+
+**สิ่งที่ต้องรู้:**
+
+- Free tier: **10,000 Neurons ต่อวัน** (reset ทุกวันเวลา 00:00 UTC)
+- Neurons ไม่เท่ากับ Tokens — แต่ละ model มี coefficient ต่างกัน
+- GLM 5.2 เป็น model ขนาดใหญ่ จึงใช้ neurons ต่อ token มากกว่า model เล็ก
+- **ประมาณการ:** 10K neurons สำหรับ GLM 5.2 เพียงพอสำหรับ generate/review code ประมาณ 2-5 feature ขนาดเล็กต่อวัน ขึ้นอยู่กับ complexity และความยาว context
+
+**เมื่อใช้ครบโควตาแล้ว:**
+
+- รอ reset วันถัดไป (00:00 UTC หรือ 07:00 น. เวลาไทย)
+- สลับไปใช้ z.ai web interface ในระหว่างรอ
+- ใช้โมเดลที่เล็กกว่า เช่น GLM-4.7-Flash ที่ใช้ neurons ต่อ token น้อยกว่า
+
+---
+
+## เมื่อไหร่ควรจ่ายเงิน
+
+Free tier เหมาะกับการทดลองและ side project แต่ถ้า workflow เติบโตขึ้น มีตัวเลือกที่ชัดเจน:
+
+**ผ่าน Cloudflare Workers AI (paid):**
+
+- $0.011 ต่อ 1,000 Neurons สำหรับส่วนที่เกินจาก 10K ฟรี
+- ยังคงใช้งานผ่าน OpenCode และ VS Code ได้เหมือนเดิม
+
+**ผ่าน Z.ai API โดยตรง:**
+
+- Input: $1.40 / M tokens
+- Output: $4.40 / M tokens
+- Prompt caching: $0.26 / M tokens (ลดราคาได้ 81% สำหรับ context ที่ซ้ำกัน)
+- Context window เต็ม 1M tokens (ไม่ถูก cap แบบ Cloudflare)
+
+**ควรจ่ายเมื่อ:**
+
+- ใช้ทุกวันจน 10K neurons หมดก่อนเที่ยง
+- ต้องการ throughput สูง หรือทำงานเป็นทีมหลายคนใช้พร้อมกัน
+- ต้องการ context window เต็ม 1M tokens สำหรับ ingest codebase ขนาดใหญ่
+
+---
+
+## สรุป — เหมาะกับใคร
+
+**เหมาะกับ:**
+
+- Developer ที่อยากลอง AI coding model ระดับ frontier โดยไม่เสียเงิน
+- โปรเจกต์ส่วนตัวและ side project ที่ไม่ต้องการ throughput สูง
+- SME ที่มี budget จำกัดแต่ต้องการ AI ช่วยเขียนโค้ด — ราคาถูกกว่า Claude 6 เท่า
+- คนที่สนใจ open-weights model และต้องการเปรียบเทียบกับ proprietary models
+
+**ไม่เหมาะกับ:**
+
+- งาน production ที่ต้องการ uptime guarantee และ SLA — free tier ไม่มีการรับประกัน
+- โปรเจกต์ที่ต้องการ context เกิน 262K tokens ผ่าน Cloudflare Workers AI
+- ทีมที่ใช้ AI ตลอดทั้งวัน — 10K neurons ต่อวันจะไม่พอสำหรับการใช้งานหนัก ควรพิจารณา paid plan หรือ self-host บน hardware ของตัวเอง
+
+---
+
+## ต่อยอด
+
+ถ้าสนใจแนวคิด vibecoding ที่ใช้ AI เป็นส่วนหนึ่งของ development workflow จริงๆ อ่านต่อที่ → /knowledge/vibecoding-explained ซึ่งอธิบาย mindset และ toolchain ที่ใช้งานได้จริงในปัจจุบัน
+
+สำหรับ infrastructure ฟรีจาก Cloudflare ที่ใช้ได้มากกว่าแค่ Workers AI — อ่านที่ → /knowledge/cloudflare-free-infrastructure-for-sme ซึ่งรวม Pages, R2, D1 และ service อื่นที่ SME ใช้ได้โดยไม่มีค่าใช้จ่ายรายเดือนในระดับ starter

@@ -1,0 +1,204 @@
+---
+title: "AI Coding ฟรี 2569 — เปรียบเทียบทุกตัวเลือกที่ใช้ได้จริง"
+slug: "free-ai-coding-models-2569"
+category: "Vibecoding"
+date: "2026-06-29"
+excerpt: "เปรียบเทียบ 8 ตัวเลือก AI coding ที่ใช้ฟรีได้ในกลางปี 2569 — Gemini, GLM 5.2, DeepSeek, Ollama, Copilot, Claude, ChatGPT และ Cline พร้อมตัวเลขจริง"
+readTime: 12
+featured: false
+author: "Akkraphol"
+authorTitle: "VIBAGEN"
+keywords: ["AI coding", "free AI", "vibecoding", "Gemini", "GLM 5.2", "DeepSeek", "Ollama", "GitHub Copilot", "Claude", "ChatGPT", "Cline", "เปรียบเทียบ"]
+ogImage: "/images/og-default.png"
+---
+
+กลางปี 2569 มี AI coding tools ให้ใช้ฟรีมากกว่าที่เคย — ทั้งจาก Google, Microsoft, Meta และ startup จากจีนที่แข่งกัน open-weights model แจกฟรี แต่ "ฟรี" แต่ละตัวมีข้อจำกัดต่างกันอย่างชัดเจน บางตัวจำกัด tokens ต่อวัน บางตัวจำกัด requests ต่อเดือน บางตัวต้องการ hardware ของตัวเอง บทความนี้เปรียบเทียบ 8 ตัวเลือกหลักที่ใช้ได้จริง ณ มิถุนายน 2569 พร้อมตัวเลขที่ต้องรู้ก่อนเลือก เพื่อให้ตัดสินใจได้ว่าตัวไหนเหมาะกับ workflow ของคุณ
+
+---
+
+## ตารางเปรียบเทียบรวม
+
+| ตัวเลือก | Free Limit | Context | เข้าถึงผ่าน | เหมาะกับ |
+|---|---|---|---|---|
+| Google Gemini 3.5 Flash | 1,500 req/วัน, 250K TPM | 1M | Web, API | API ฟรีที่ดีที่สุด |
+| GLM 5.2 (Cloudflare) | 10,000 neurons/วัน | 262K (cap) | API, CLI, VS Code | open-weights + Cloudflare |
+| DeepSeek V3 | Chat ฟรีถาวร, API 5M tokens (30 วัน) | 131K | Web, API | chat ฟรีไม่จำกัด |
+| Ollama (local) | ไม่จำกัด | 256K (Qwen3) | CLI, API local | offline, privacy, ไม่จำกัด |
+| GitHub Copilot Free | 2,000 completions/เดือน, 50 chats | 128K+ | VS Code | inline completion |
+| Claude (web) | ~40 msgs / 5 ชม. | 1M | Web, App | คุณภาพสูง แต่จำกัดมาก |
+| ChatGPT Free | 10-40 msgs / 3-5 ชม. | 128K | Web, App | เริ่มต้นง่าย |
+| Cline + M2.5/K2.5 | ไม่จำกัด (ชั่วคราว) | ขึ้นกับ model | VS Code, CLI | agentic coding ฟรี (ไม่รู้หมดเมื่อไหร่) |
+
+---
+
+## รายละเอียดแต่ละตัวเลือก
+
+### Google Gemini 3.5 Flash — API ฟรีที่ดีที่สุด
+
+Gemini 3.5 Flash เป็นตัวเลือกที่ดีที่สุดในกลุ่ม API ฟรีตอนนี้ ทั้งในแง่ quota และ context window ที่กว้าง
+
+- Free tier: 1,500 requests/วัน, 10 requests/นาที, 250,000 tokens/นาที
+- Context window: 1M tokens
+- เข้าถึง: Google AI Studio (web) หรือ Gemini API โดยตรง ไม่ต้องกรอก credit card
+- Benchmark: SWE-bench Verified 78%
+
+ใช้ผ่าน API ได้ตรงๆ โดยไม่ต้องติดตั้งอะไรเพิ่ม แค่สร้าง API key จาก Google AI Studio แล้วส่ง request ได้เลย
+
+**ข้อควรระวังสำคัญ:** ถ้าเปิด billing บน Google Cloud account เดียวกัน free tier จะหายไปทันที — ต้องใช้ Google account ที่ยังไม่ได้ผูก billing เพื่อรักษา free tier ไว้ นอกจากนี้ data ที่ส่งผ่าน free tier อาจถูกนำไปใช้ในการ train model ของ Google ตามนโยบาย ห้ามส่ง code ที่มี secret หรือข้อมูลลับผ่านช่องทางนี้
+
+---
+
+### GLM 5.2 (Cloudflare Workers AI) — open-weights ราคาถูก
+
+GLM 5.2 จาก Z.ai เป็น open-weights model ที่มี 753B parameters แบบ Mixture-of-Experts และเชื่อมต่อผ่าน Cloudflare Workers AI ได้ฟรี
+
+- Free tier: 10,000 Neurons/วัน (reset 07:00 น. เวลาไทย)
+- Context window: 262,144 tokens บน Cloudflare (model รองรับ 1M โดยตรง)
+- เข้าถึง: Cloudflare Workers AI API, OpenCode CLI, VS Code extension
+- Benchmark: SWE-bench Pro 62.1%
+- MIT license — self-host ได้ ใช้เชิงพาณิชย์ได้
+
+**ข้อควรระวัง:** หน่วย Neurons ของ Cloudflare ไม่เท่ากับ tokens — 10,000 neurons/วันสำหรับ model ขนาดใหญ่อย่าง GLM 5.2 เพียงพอสำหรับ generate/review code ประมาณ 2-5 feature ขนาดเล็กต่อวัน และ context window ถูก cap ที่ 262K ไม่ใช่ 1M ที่โฆษณาไว้
+
+รายละเอียด setup ทั้ง CLI และ VS Code อ่านเพิ่มที่ → /knowledge/glm-5-2-free-cloudflare-opencode
+
+---
+
+### DeepSeek V3 — chat ฟรีถาวร API ถูกที่สุด
+
+DeepSeek มีนโยบาย free tier ที่แตกต่างจากคนอื่น — web chat ฟรีถาวรโดยไม่ต้องสมัคร
+
+- Web chat: ฟรีถาวร ไม่จำกัด ไม่ต้องสมัครสมาชิก
+- API: 5M tokens ฟรีเมื่อ signup (credit หมดอายุภายใน 30 วัน)
+- ราคาหลังจากนั้น: $0.14/M tokens input, $0.28/M tokens output (ถูกที่สุดในตลาด)
+- Context window: 131,072 tokens
+
+เหมาะสำหรับ developer ที่ต้องการ chat AI ฟรีไม่จำกัดโดยไม่ผ่าน account สำหรับ use case แบบ chat interface ทั่วไป DeepSeek ทำได้ดีและราคาถูกที่สุดเมื่อต้องใช้ API จริงจัง
+
+**ข้อควรระวัง:** API free credit 5M tokens หมดอายุใน 30 วันหลัง signup ไม่ใช่ rolling credit web chat มีข้อจำกัดด้าน features มากกว่า API — ไม่มี function calling และ system prompt ที่ยืดหยุ่น
+
+---
+
+### Ollama (Local) — ฟรี 100% ไม่จำกัด
+
+Ollama เป็นทางเลือกที่แตกต่างจากทุกตัว — run model บนเครื่องของตัวเองไม่มีเงื่อนไข ไม่มี rate limit ไม่มี data leak
+
+- ฟรีแท้: unlimited requests, unlimited tokens, ไม่มี API key ไม่มี account
+- ทำงาน offline ได้ 100%
+- Model แนะนำสำหรับ coding: Qwen3-Coder:30b (ขนาดไฟล์ ~19GB, context 256K tokens)
+- ทางเลือกอื่น: Qwen2.5-Coder:32b (HumanEval 92.7%), Devstral:24b
+
+```bash
+# ติดตั้ง Ollama
+curl -fsSL https://ollama.com/install.sh | sh
+
+# ดาวน์โหลด model (ใช้เวลานานครั้งแรก)
+ollama pull qwen3-coder:30b
+
+# เริ่มใช้งาน
+ollama run qwen3-coder:30b
+```
+
+Ollama ยังมี API endpoint local ที่ compatible กับ OpenAI API format ทำให้ใช้กับ tool อื่นอย่าง Cline, OpenCode หรือ Continue ได้ทันที
+
+**ข้อจำกัดที่ต้องตระหนัก:** ต้องมี hardware พอ — RAM อย่างน้อย 16GB สำหรับ model 30B ขึ้นไป GPU ช่วยเรื่อง inference speed อย่างมีนัยสำคัญ ถ้ามีแค่ CPU จะช้ามาก model เล็กกว่าเช่น 7B-14B ทำงานบน RAM 8GB ได้ แต่คุณภาพ coding จะต่ำกว่า 30B อย่างชัดเจน
+
+---
+
+### GitHub Copilot Free — inline completion ใน VS Code
+
+GitHub Copilot เป็นตัวเลือกที่เจาะจงที่สุด — ออกแบบมาสำหรับ inline code completion ใน VS Code โดยเฉพาะ
+
+- Free tier: 2,000 code completions + 50 chat requests ต่อเดือน
+- เข้าถึง: VS Code extension เท่านั้นสำหรับ free tier
+- Context window: 128K tokens ขึ้นไปขึ้นกับ model ที่เลือก
+
+จุดแข็งของ Copilot คือ integration ลึกกับ VS Code — autocomplete แบบ real-time ขณะพิมพ์ ที่ทำงานได้ดีกว่าการ copy-paste จาก chat interface
+
+**ข้อจำกัดชัดเจน:** Free tier จำกัดแค่ completions พื้นฐาน ไม่มี agent mode, ไม่มี Copilot Edits (multi-file editing), ไม่มี code review features ฟีเจอร์เหล่านี้ต้องใช้ Copilot Individual ($10/เดือน) 2,000 completions ต่อเดือนฟังดูมาก แต่ developer ที่ใช้งานจริงจะหมดภายใน 1-2 สัปดาห์
+
+---
+
+### Claude (Web Chat) — คุณภาพสูงสุด แต่ free tier จำกัดมาก
+
+Claude จาก Anthropic มี benchmark coding สูงที่สุดในตลาด แต่ free tier ของ Claude web chat จำกัดมากที่สุดในกลุ่มเช่นกัน
+
+- Free tier: ประมาณ 40 short messages ต่อ rolling window 5 ชั่วโมง
+- Context window: 1M tokens
+- Benchmark: Claude Opus 4.8 ทำ SWE-bench Verified 88.6% (สูงสุดในตลาด)
+
+Claude Code ซึ่งเป็น terminal-based AI coding agent ที่ทรงพลังที่สุดจาก Anthropic — ไม่มีใน free tier ต้องใช้ Claude Pro ($20/เดือน) หรือ API credits ทำให้ free tier ของ Claude จำกัดแค่ web chat ธรรมดา ไม่มี IDE integration ไม่มีความสามารถ agentic ใดๆ
+
+**ข้อจำกัดที่ต้องระวัง:** Rate limit ปรับตาม server load โดยไม่แจ้ง ช่วง peak อาจน้อยกว่า 40 messages ต่อ 5 ชั่วโมง ไม่มีทาง verify จำนวนที่แน่นอน
+
+---
+
+### ChatGPT Free — เริ่มต้นง่าย
+
+ChatGPT เป็น entry point ที่ดีที่สุดสำหรับคนที่เพิ่งเริ่มใช้ AI — ใช้งานได้ทันที ไม่ต้องตั้งค่าอะไร
+
+- Free tier: 10-40 messages ต่อ rolling window 3-5 ชั่วโมง (ไม่แน่นอน ขึ้นกับ server load)
+- Model default: GPT-5.3 Instant สำหรับ free tier, fallback เป็น GPT-4o Mini เมื่อ limit ถูกกด
+- Code Interpreter: มีใน free tier แต่จำกัด session time
+- Context window: 128K tokens
+
+**ข้อควรระวัง:** Rate limit ของ ChatGPT ไม่คงที่ที่สุดในกลุ่ม — ปรับตาม load ของ server และจำนวน user ที่ใช้งานพร้อมกัน เมื่อถึง limit ระบบจะ fallback ไปใช้ GPT-4o Mini ซึ่งอ่อนกว่าอย่างชัดเจนสำหรับงาน coding ที่ซับซ้อน โดยไม่แจ้งชัดเจน Agent mode และ Advanced Data Analysis แบบเต็มรูปแบบต้องใช้ ChatGPT Plus ($20/เดือน)
+
+---
+
+### Cline + M2.5/K2.5 — agentic coding ฟรี (ชั่วคราว)
+
+Cline เป็น open-source AI coding agent (Apache 2.0 license) ที่ทำงานใน VS Code และ CLI สามารถเชื่อมต่อกับ model ใดก็ได้ที่มี API
+
+- Cline ตัว tool: ฟรีถาวร (open-source)
+- VS Code extension: ฟรี มากกว่า 5M installs
+- MiniMax M2.5 และ Kimi K2.5: ใช้ผ่าน Cline ได้ฟรีในช่วงที่ผ่านมา (เริ่ม ก.พ. 2569)
+- ใช้กับ provider อื่น: ได้ แต่ต้องมี API key ของ provider นั้นเอง (Claude, GPT, Gemini, Ollama)
+
+จุดแข็งของ Cline คือเป็น agentic framework ที่ทำงานได้หลาย step — อ่านไฟล์, เขียนโค้ด, รัน command, ดูผลลัพธ์ แล้ว iterate ได้โดยไม่ต้อง copy-paste ทีละขั้น
+
+**ข้อจำกัดสำคัญที่ต้องรู้:** Free access ของ M2.5 และ K2.5 ผ่าน Cline เป็นนโยบายชั่วคราว ไม่มีการประกาศวันสิ้นสุดชัดเจน และไม่รู้ราคาหลังจากที่ free access หมดอายุ ไม่ควรวาง production workflow พึ่งพา free access นี้เป็นหลัก
+
+---
+
+## เลือกตัวไหนดี — แยกตาม use case
+
+| Use Case | ตัวเลือกแนะนำ | เหตุผล |
+|---|---|---|
+| ลองเล่น AI coding ครั้งแรก | ChatGPT Free หรือ DeepSeek chat | เริ่มได้ทันที ไม่ต้องติดตั้ง |
+| ใช้ API เขียนโค้ดจริงจัง (ฟรี) | Google Gemini 3.5 Flash | 1,500 req/วัน + 1M context ดีที่สุดในกลุ่มฟรี |
+| open-weights + ราคาถูกเมื่อ scale | GLM 5.2 (Cloudflare) | MIT license, ถูกกว่า Claude 6x |
+| privacy สำคัญ / offline | Ollama + Qwen3-Coder | ฟรี 100%, offline, ไม่มี data leak |
+| inline completion ใน VS Code | GitHub Copilot Free | 2,000 completions/เดือน |
+| ต้องการคุณภาพสูงสุด (ยอมจ่าย) | Claude Code ($20/เดือน) | SWE-bench 88.6% สูงที่สุด |
+| agentic coding ฟรี (เสี่ยง) | Cline + M2.5 | ฟรีแต่ชั่วคราว |
+
+---
+
+## สิ่งที่ "ฟรี" ไม่ได้บอกคุณ
+
+**Data privacy ที่มองข้ามไม่ได้:** Gemini, ChatGPT free tier มีนโยบายที่อาจนำ data ที่คุณส่งไปใช้ใน training ของ model รุ่นถัดไป ห้ามส่ง proprietary code, API keys, credentials หรือข้อมูลลูกค้าผ่าน free tier ของ service เหล่านี้ ถ้าต้องการ privacy แท้จริงต้องใช้ Ollama (local) หรือ paid tier ที่มีนโยบาย no-training ชัดเจน
+
+**Rate limit ไม่แน่นอน:** ChatGPT และ Claude free tier ปรับ rate limit ตาม server load และ traffic โดยไม่แจ้งล่วงหน้า ตัวเลขที่ระบุในบทความนี้คือค่า typical ในช่วงที่ผ่านมา ไม่ใช่ guarantee ที่ใช้วาง workflow ได้
+
+**"ฟรีชั่วคราว" ไม่เท่ากับ "ฟรีถาวร":** Cline M2.5/K2.5 free access และ DeepSeek API 5M tokens เป็น credit ที่หมดได้ — อย่างแรกไม่มีวันหมดอายุประกาศ อย่างหลังหมดอายุใน 30 วัน วาง production workflow บน free credit ที่ชั่วคราวไม่ได้
+
+**คุณภาพต่างกันมากกว่าที่คิด:** Free model เช่น GPT-4o Mini, Gemini Flash ทำ complex coding tasks ได้แย่กว่า full model อย่างมีนัยสำคัญ โดยเฉพาะงานที่ต้องเข้าใจ codebase ขนาดใหญ่หรือแก้ bug ที่ซับซ้อน Free tier เหมาะสำหรับงานเล็กถึงกลาง — สำหรับงานสำคัญใน production ควรประเมิน paid option ที่ให้ ROI จริง
+
+---
+
+## สรุป
+
+กลางปี 2569 มีตัวเลือก AI coding ฟรีที่ใช้ได้จริงมากกว่าที่เคย แต่ทุกตัวมีเพดานที่ต่างกัน — ไม่มีตัวไหนที่ฟรีแท้ ไม่จำกัด และคุณภาพสูงพร้อมกันครบทุกด้าน
+
+สำหรับ developer ไทยที่เริ่มต้น combo ที่คุ้มที่สุดคือ Gemini 3.5 Flash API สำหรับงาน API ทั่วไป (1,500 req/วัน ฟรี) บวกกับ Ollama + Qwen3-Coder บนเครื่องสำหรับงานที่ต้องการ privacy หรือใช้งานหนักเกิน quota
+
+สำหรับ SME ที่ต้องการ scale และมีงบจำกัด GLM 5.2 ผ่าน Cloudflare Workers AI เป็นทางเลือกที่ถูกที่สุดเมื่อต้องเริ่มจ่ายจริง — ราคาต่ำกว่า Claude 6 เท่า และ benchmark coding ไม่ได้ต่างกันมากในงาน agent task ส่วนใหญ่
+
+---
+
+## ต่อยอด
+
+รายละเอียด setup GLM 5.2 ผ่าน Cloudflare + OpenCode ทั้ง CLI และ VS Code อ่านที่ → /knowledge/glm-5-2-free-cloudflare-opencode
+
+สำหรับแนวคิด vibecoding ที่ใช้ AI tools เหล่านี้เป็นส่วนหนึ่งของ development workflow จริงๆ อ่านที่ → /knowledge/vibecoding-explained
