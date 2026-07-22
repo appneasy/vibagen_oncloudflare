@@ -1,0 +1,172 @@
+---
+title: "เชื่อม SAP Business One ด้วย Service Layer API: ทำไม อย่างไร และต้องเรียนรู้อะไร (Step by Step)"
+slug: "connect-sap-business-one-service-layer"
+category: "Infrastructure"
+date: "2026-07-23"
+excerpt: "เล่าจากงานจริง — ทำเว็บแอปเปิดใบขอซื้อ (PR) เข้า SAP B1 ผ่าน Service Layer: เลือก API ตัวไหน, session/cookie, OData, เขียน business object และ gotcha ที่คู่มือไม่บอก"
+readTime: 10
+featured: true
+author: "Akkraphol"
+authorTitle: "VIBAGEN"
+keywords: ["SAP Business One", "Service Layer", "OData", "REST API", "ERP integration", "Purchase Request", "B1SESSION", "UDF"]
+ogImage: "/images/og-default.png"
+---
+
+SAP Business One เก็บ "ความจริง" ของธุรกิจไว้ — สต็อก, เอกสารซื้อ-ขาย, บัญชี — แต่หน้าจอมาตรฐานถูกออกแบบมาให้ครอบคลุมทุกงาน ไม่ได้ลื่นสำหรับ *งานเฉพาะทาง* เช่น ให้ช่างหน้างานเปิดใบขอซื้อ (PR) จากรายการ BOQ ที่ตีมาเป็น Excel
+
+บทความนี้เล่าจากประสบการณ์ทำระบบเปิด Purchase Request เข้า SAP B1 จริง (ทดสอบบน CompanyDB pre-prod) ว่าเชื่อมผ่าน **Service Layer API** อย่างไร ต้องระวังอะไร และต้องเรียนรู้อะไรบ้าง
+
+> _หมายเหตุ: ตัวเลข IP/credential ในบทความเป็นตัวอย่าง — ของจริงเก็บใน `.env` ที่ไม่ commit_
+
+## ทำไมต้องเชื่อม SAP B1 ผ่าน API
+
+การเชื่อมผ่าน API ทำให้เรา:
+
+- สร้าง UX เฉพาะงาน (มือถือ/แท็บเล็ต/ฟอร์มที่กรอกเร็ว) โดย **ยังให้ SAP เป็น system-of-record**
+- อัตโนมัติงานซ้ำ ๆ (นำเข้า BOQ → เปิด PR ทีละหลายสิบรายการ)
+- เพิ่ม audit/traceability ระดับแอปได้เอง
+- ทำทั้งหมดโดย **ไม่แตะ schema ของ SAP** (ปลอดภัยต่อการ upgrade)
+
+## เลือก API ตัวไหน — ภูมิทัศน์การเชื่อม SAP B1
+
+SAP B1 มีทางเชื่อมหลักหลายทาง เลือกตามบริบท:
+
+| ช่องทาง | รูปแบบ | เหมาะกับ | ข้อจำกัด |
+|---|---|---|---|
+| **Service Layer** | REST / OData v4, session cookie | เว็บ/บริการข้ามแพลตฟอร์ม (แนะนำเป็น default สมัยใหม่) | ต้องเข้าใจ OData + session |
+| **DI API** | COM component (in-process) | แอป .NET บน Windows ที่ต้องการ throughput สูง | Windows-only, ผูกเครื่อง |
+| **DI Server** | SOAP | เชื่อมแบบ service เก่า | verbose, legacy |
+| **B1if / Integration Framework** | scenario-based (B1i) | integration หลายระบบ/มี event | เรียนรู้สูง, ตั้งค่าเยอะ |
+
+บทความนี้เลือก **Service Layer** เพราะเป็น REST/OData ที่เว็บแอป (Next.js/Node) คุยได้ตรง ๆ ข้ามแพลตฟอร์ม และเป็นทิศทางที่ SAP ผลักดัน
+
+---
+
+## Step by Step: เชื่อม Service Layer
+
+### Step 0 — เตรียมความพร้อม (มักพลาดตรงนี้)
+
+- **Network:** เครื่องที่รันต้องอยู่ LAN/VPN เดียวกับ SAP server และเปิดถึง **port 50000** (Service Layer LB) — `ping` ผ่านอย่างเดียวไม่พอ ต้องเทสต์ TCP port ด้วย
+- **Certificate:** Service Layer มักใช้ self-signed cert → ตอน dev ต้องยอมข้าม TLS verify (production ควรติดตั้ง cert ที่ถูกต้อง)
+- **Credential:** CompanyDB + user + password (เก็บใน secret store อย่า hardcode)
+
+### Step 1 — Login แล้วเก็บ cookie
+
+Service Layer เป็น **session-based**: POST `/Login` แล้วเซิร์ฟเวอร์คืน **cookie 2 ตัว** ที่ต้องแนบไปทุก request:
+
+- `B1SESSION` — โทเคน session หลัก (แนบทุก request ไม่งั้นถือว่าไม่ได้ล็อกอิน)
+- `ROUTEID` — cookie ที่ **load balancer (Apache)** ของ Service Layer เติมมา บอกว่า session ผูกกับ **node ตัวไหน** (sticky session)
+
+```text
+POST https://<host>:50000/b1s/v1/Login
+{ "CompanyDB": "MYDB", "UserName": "svcuser", "Password": "***" }
+
+→ 200 OK  { "SessionId": "...", "Version": "...", "SessionTimeout": 30 }
+   Set-Cookie: B1SESSION=...; ROUTEID=...
+```
+
+session หมดอายุ (เช่น 30 นาที) → ต้อง login ใหม่ ควรทำ auto re-login เมื่อเจอ 401
+
+> **ทำไม `ROUTEID` ถึงพลาดไม่ได้ (sticky session):** Service Layer ระดับ production มักรัน **หลาย node หลัง load balancer** (port 50000 คือตัว LB) — สถานะของ session ถูกเก็บไว้ที่ node ที่สร้างมันขึ้นมา *node เดียว* ถ้า request ถัดไป **ไม่แนบ `ROUTEID`** ตัว LB อาจสุ่มส่งไป *node อื่นที่ไม่รู้จัก session นี้* → ได้ **401 / session error / 301 redirect เป็นพัก ๆ** อาการ "เพี้ยน" แบบนี้ debug ยากเพราะ _บางครั้งผ่าน บางครั้งไม่ผ่าน_ ขึ้นกับว่า LB สุ่มไป node ไหน
+>
+> **วิธีที่ถูก:** เก็บทั้ง `B1SESSION` + `ROUTEID` จาก `Set-Cookie` ตอน login แล้ว **ส่งกลับใน `Cookie` header ทุก request เสมอ** — ถ้า deploy แบบ single-node ก็ยังควรแนบ ROUTEID ไว้ เผื่ออนาคตขยายเป็นหลาย node
+
+### Step 2 — Query ข้อมูล (OData)
+
+GET พร้อม convention ของ OData:
+
+```text
+GET /b1s/v1/Items?$select=ItemCode,ItemName&$filter=PurchaseItem eq 'tYES'&$top=25
+Cookie: B1SESSION=...; ROUTEID=...
+```
+
+- `$select` — เอาเฉพาะ field ที่ใช้ (สำคัญมากต่อ performance/ต้นทุน)
+- `$filter` — เงื่อนไข (เช่น `startswith(ItemCode,'C000XXX')`)
+- **★ Pagination gotcha:** Service Layer default page size = 20 และ **`$top` ไม่ override เพดานนี้** — ต้องส่ง header `Prefer: odata.maxpagesize=N` ถึงจะได้เกิน 20 แถว (ไม่งั้น master list ยาว ๆ จะได้แค่ 20) หรือวน `@odata.nextLink`
+
+### Step 3 — เขียนเอกสาร (POST business object)
+
+ทุกอย่างใน SAP เป็น _business object_ ที่มีโครงตายตัว เช่น Purchase Request:
+
+```json
+POST /b1s/v1/PurchaseRequests
+{
+  "ReqType": 171,
+  "Requester": "5",
+  "RequiredDate": "2026-07-28",
+  "DocumentLines": [
+    { "ItemCode": "523503", "Quantity": 5, "RequiredDate": "2026-07-28",
+      "VatGroup": "P07C", "WarehouseCode": "BU0001" }
+  ]
+}
+→ 201 Created  { "DocEntry": 34, "DocNum": 260710014, ... }
+```
+
+SAP ออกเลขเอกสารให้อัตโนมัติ (atomic — ยิงพร้อมกันเลขไม่ซ้ำ)
+
+### Step 4 — แนบไฟล์ (Attachments2)
+
+เป็น 2 จังหวะ: (1) POST multipart อัปไฟล์ไปที่ `/Attachments2` ได้ `AbsoluteEntry` กลับมา (2) ใส่เลขนั้นใน field `AttachmentEntry` ของเอกสาร
+
+### Step 5 — จบงานอย่างสะอาด
+
+ทดสอบบน pre-prod ได้ แต่ให้ **Cancel เอกสารทดสอบทิ้งเสมอ** (`POST /PurchaseRequests(id)/Cancel`) อย่าทิ้ง test doc ค้าง
+
+---
+
+## ★ Gotchas จากสนามจริง (สิ่งที่คู่มือไม่ค่อยบอก)
+
+1. **สะกดผิดใน field name เป็นทางการ** — header ใช้ `RequiredDate` (ถูก); status คือ `DocumentStatus` ไม่ใช่ `DocStatus`
+2. **ค่า default ที่ SAP คืนมาอาจใช้ไม่ได้** — เช่น item ดึง tax code ที่ _inactive_ มา → ต้องส่ง VatGroup ที่ active เอง
+3. **มิติต้นทุน ≠ UDF** — Factory/Department/Machine เป็น Cost Dimensions (`CostingCode`/`CostingCode2`/`CostingCode4`) ไม่ใช่ user field
+4. **Series ผูก posting period** — เลขชุดเอกสารใช้ได้เฉพาะ _เดือนปัจจุบัน_ (ส่ง series เดือนอื่น → ปฏิเสธ "period does not match")
+5. **บาง action ทำผ่าน SL ไม่ได้** — เช่น "Reference Documents" (โยงใบ WR→WO) ไม่มี endpoint ต้องเก็บเลขอ้างอิงเป็น text (`Reference2`) หรือไปกดใน client
+6. **Framework caching** — ถ้าใช้ Next.js ระวัง global `fetch` ถูก patch ให้ force-cache → ต้องใส่ `cache: "no-store"` ทุก request ไม่งั้น session เพี้ยน
+
+---
+
+## Custom Field (User-Defined Field / UDF) — ขยาย SAP โดยไม่แตะ core
+
+จุดแข็งสำคัญอย่างหนึ่งของ SAP B1 คือ **เพิ่มช่องข้อมูลของเราเองได้** (User-Defined Field) โดย **ไม่แก้โครงสร้างมาตรฐานของ SAP** — จึงปลอดภัยต่อการ upgrade และยัง query ผ่าน Service Layer ได้เหมือน field ปกติ
+
+### สร้างอย่างไร
+
+ใน SAP B1 client: **Tools → Customization Tools → User-Defined Fields – Management** → เลือก _category_ ที่จะให้ field ไปเกาะ (Master Data เช่น Items = `OITM`, Marketing Documents → Title/Rows เช่น header/บรรทัดของเอกสารซื้อ-ขายรวม PR, Business Partners ฯลฯ)
+
+แล้วกำหนด: ชื่อ, ชนิด (Alphanumeric / Numeric / Date / Time / Amount), ขนาด (**EditSize**), และถ้าต้องการ — **Valid Values** (ทำเป็น dropdown) หรือ **Linked Table** (ผูกกับ master / User-Defined Table `@table`)
+
+### เข้าถึงผ่าน Service Layer
+
+- field ที่สร้างจะโผล่ในทุก object เป็น **`U_<ชื่อฟิลด์>`** — อ่าน/เขียน/`$filter` ได้เหมือน field มาตรฐาน
+- นิยามของ UDF อ่านได้จาก entity **`UserFieldsMD`** (ตาราง `CUFD`) — บอกชนิด, EditSize, Valid Values, Linked Table
+
+### Gotchas ของ UDF (จากงานจริง)
+
+- query `UserFieldsMD` **ต้องใส่ `$select`** ไม่งั้น response ใหญ่เกิน SL คืน error/ว่าง (เคยเข้าใจผิดว่า field ไม่มีจริง)
+- ถ้า UDF กำหนด **EditSize สั้น** แล้วแอปส่งค่ายาวเกิน → SAP **ตัดทิ้งเป็น `null` เงียบ ๆ** (เราเจอ `U_U_PR_MAC` ขนาด 15 ตัวอักษร — ส่งเกินหายทั้งค่า) → ฝั่งแอปควรใส่ `maxLength` ให้ตรงกับ EditSize
+
+---
+
+## ประโยชน์ที่ได้จริง
+
+- **เร็วขึ้น:** งานที่เดิมพิมพ์ทีละใบในหน้า SAP → นำเข้า BOQ ทีเดียวหลายสิบรายการ
+- **ยืดหยุ่น:** ฟอร์มเฉพาะงาน + ค่า default นำเข้า + ช่วยค้นหา item/เครื่องจักรด้วยชื่อไทย
+- **ตรวจสอบได้:** เก็บ audit log ระดับแอป (ใครกด/payload อะไร/สำเร็จไหม)
+- **ปลอดภัยต่อ upgrade:** ไม่แตะ schema SAP เลย
+
+## สิ่งที่ต้องเรียนรู้ (checklist)
+
+- OData v4 (query options, pagination, batch)
+- โมเดล business object ของ SAP (อ่าน `$metadata` / API Reference)
+- Session/cookie management + auto re-login
+- Licensing & concurrency — เจาะลึกใน [บทความ BOQ → PR: ยืดหยุ่นแต่ตรวจสอบได้](/knowledge/boq-excel-to-sap-purchase-request)
+- มิติต้นทุน, tax, UoM, series — "ภาษา" ของ SAP ในโดเมนนั้น ๆ
+- จัดการ secret (`.env`, ไม่ commit)
+
+---
+
+Service Layer ไม่ใช่ของยาก แต่มี "ภาษา" ของตัวเองที่ต้องเรียน — session ที่ต้องแนบให้ครบ, OData ที่ต้องรู้ทริค pagination, และ business object ที่มีกฎของมัน เมื่อเข้าใจแล้ว มันเปิดทางให้เราสร้างประสบการณ์เฉพาะงานได้อิสระ โดย SAP ยังเป็นความจริงเหมือนเดิม
+
+ตอนต่อไปเราจะเล่าว่า เอาการเชื่อมนี้ไปทำอะไรจริง — [เปลี่ยน BOQ บน Excel ให้ไหลเข้าเป็นใบขอซื้อใน SAP แบบยืดหยุ่นแต่ตรวจสอบได้](/knowledge/boq-excel-to-sap-purchase-request)
+
+สนใจเชื่อมระบบเข้า SAP B1 หรือ ERP อื่น — ทักมาคุยได้ครับ
