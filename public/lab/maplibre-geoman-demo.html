@@ -137,6 +137,13 @@ new maplibregl.Marker({ color: '#45C97C' }).setLngLat(CENTER).setPopup(
   new maplibregl.Popup({ offset: 18 }).setHTML('<b>จุดตั้งต้นแปลงตัวอย่าง</b><br/>' + CENTER[1].toFixed(5) + ', ' + CENTER[0].toFixed(5))
 ).addTo(map);
 
+// เปิด global reference ไว้ debug ผ่าน console ได้ (window.__mapRef, window.__loadFired)
+window.__mapRef = map;
+window.__loadFired = false;
+window.addEventListener('error', (ev) => {
+  console.error('[window.onerror]', ev.message, ev.filename, ev.lineno, ev.error);
+});
+
 map.on('mousemove', (e) => {
   document.getElementById('coordbar').textContent =
     `lng: ${e.lngLat.lng.toFixed(6)}  lat: ${e.lngLat.lat.toFixed(6)}  zoom: ${map.getZoom().toFixed(2)}`;
@@ -144,10 +151,13 @@ map.on('mousemove', (e) => {
 
 // ---- Geoman: เครื่องมือวาด/แก้ไข polygon ----
 map.on('load', () => {
+  window.__loadFired = true;
+  console.log('[debug] map "load" event fired');
   try {
     // UMD build เปิด global window.Geoman = { Geoman: <class>, ...helpers }
     const GeomanCtor = window.Geoman && window.Geoman.Geoman;
     if (!GeomanCtor) throw new Error('window.Geoman.Geoman ไม่พบ — CDN อาจโหลดไม่สำเร็จ');
+    console.log('[debug] constructing Geoman...');
     const gm = new GeomanCtor(map, {
       controls: {
         draw: { polygon: true, line: true, marker: false, circle: false, rectangle: true, text: false },
@@ -158,10 +168,11 @@ map.on('load', () => {
       }
     });
     window.__gmInstance = gm;
+    console.log('[debug] Geoman constructed OK', gm);
   } catch (err) {
-    console.warn('Geoman init warning:', err);
+    console.error('[debug] Geoman init FAILED:', err && err.message, err);
     document.getElementById('topbar').insertAdjacentHTML('beforeend',
-      '<p style="color:#FCA5A5;">⚠ Geoman โหลดไม่สำเร็จ (อาจเพราะ CDN/เวอร์ชัน) — แผนที่ MapLibre ยังใช้ zoom/pan ได้ปกติ</p>');
+      `<p style="color:#FCA5A5;">⚠ Geoman โหลดไม่สำเร็จ: ${err && err.message}</p>`);
   }
 
   // ---- คำนวณพื้นที่ polygon เองด้วย Turf.js (แทน helper "measurements" ที่เป็น Pro) ----
