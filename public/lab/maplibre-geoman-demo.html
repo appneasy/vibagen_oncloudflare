@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>MapLibre + Geoman Demo — RiceFarm Polygon Draw</title>
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.min.js"></script>
+
+<!-- Geoman Free (MapLibre build) — ใช้ UMD build ผ่าน <script src> ธรรมดา (ไม่ใช่ type="module")
+     เพราะถ้าเปิดไฟล์นี้ตรงๆ แบบ file:// (ดับเบิลคลิก) เบราว์เซอร์จะบล็อกการ import
+     ES module ข้าม origin ด้วย CORS แล้วโยน "Uncaught Error: Script error." แบบไม่บอกรายละเอียด
+     UMD script tag ธรรมดาโหลดได้ปกติทั้งบน file:// และ http(s):// -->
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/maplibre-geoman-free@0.8.4/dist/maplibre-geoman.css" />
+<script src="https://unpkg.com/@geoman-io/maplibre-geoman-free@0.8.4/dist/maplibre-geoman.umd.js"></script>
+
+<style>
+  html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
+  #map { position: absolute; top: 0; bottom: 0; width: 100%; }
+
+  #topbar {
+    position: absolute; top: 0; left: 0; right: 0; z-index: 5;
+    background: linear-gradient(180deg, rgba(20,30,25,0.85) 0%, rgba(20,30,25,0.0) 100%);
+    padding: 12px 14px 30px; pointer-events: none;
+  }
+  #topbar h1 { margin: 0; font-size: 15px; color: #fff; font-weight: 600; pointer-events: auto; }
+  #topbar p { margin: 2px 0 0; font-size: 11.5px; color: #d8ede2; pointer-events: auto; }
+
+  #panel {
+    position: absolute; right: 12px; top: 60px; z-index: 5;
+    background: rgba(255,255,255,0.96); border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.18);
+    padding: 12px 14px; width: 220px; font-size: 12.5px; color: #1c2e26;
+  }
+  #panel h2 { margin: 0 0 8px; font-size: 12px; color: #12261E; text-transform: uppercase; letter-spacing: .04em; }
+  #panel .row { display: flex; justify-content: space-between; margin: 4px 0; }
+  #panel .row span:first-child { color: #5a6b63; }
+  #panel .row span:last-child { font-weight: 600; }
+  #panel .badge { display:inline-block; padding: 2px 7px; border-radius: 999px; font-size: 10.5px; font-weight:600; }
+  .badge.good { background:#DCFCE7; color:#15803D; }
+  .badge.warn { background:#FEF3C7; color:#B45309; }
+  .badge.bad  { background:#FEE2E2; color:#B91C1C; }
+
+  #locateBtn {
+    position: absolute; right: 12px; bottom: 100px; z-index: 5;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: #ffffff; border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.22);
+    display: flex; align-items: center; justify-content: center; cursor: pointer;
+  }
+  #locateBtn svg { width: 22px; height: 22px; }
+  #locateBtn.active { background: #45C97C; }
+  #locateBtn.active svg path, #locateBtn.active svg circle { stroke: #fff; }
+
+  #coordbar {
+    position: absolute; left: 0; right: 0; bottom: 0; z-index: 5;
+    background: rgba(18,38,30,0.88); color: #eafff2;
+    font-size: 11px; padding: 8px 12px; text-align: center;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .maplibregl-ctrl-top-left { top: 60px !important; }
+</style>
+</head>
+<body>
+
+<div id="map"></div>
+
+<div id="topbar">
+  <h1>🌾 RiceFarm — Polygon Draw Demo</h1>
+  <p>MapLibre GL JS + Geoman (free) — ทดสอบ zoom เข้าพิกัดจริง + วาดขอบแปลง + ดู GPS accuracy</p>
+</div>
+
+<div id="panel">
+  <h2>GPS Status</h2>
+  <div class="row"><span>สถานะ</span><span id="gpsState">ยังไม่เปิด</span></div>
+  <div class="row"><span>Accuracy</span><span id="gpsAccuracy">—</span></div>
+  <div class="row"><span>ระดับ</span><span id="gpsBadge">—</span></div>
+  <div class="row"><span>Lat</span><span id="gpsLat">—</span></div>
+  <div class="row"><span>Lng</span><span id="gpsLng">—</span></div>
+  <div style="margin-top:8px; font-size:10.5px; color:#7a8a82; line-height:1.4;">
+    ≤5m = ดี (เขียว) · 5–15m = พอใช้ (เหลือง) · >15m = แม่นยำต่ำ (แดง) —
+    ตามเกณฑ์ GPS Accuracy Gate ของโครงการ
+  </div>
+</div>
+
+<button id="locateBtn" title="เปิด/ปิดตำแหน่งของฉัน">
+  <svg viewBox="0 0 24 24" fill="none" stroke="#12261E" stroke-width="2">
+    <circle cx="12" cy="12" r="3"></circle>
+    <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+  </svg>
+</button>
+
+<div id="coordbar">คลิกซ้ายค้าง/ลาก เพื่อเลื่อนแผนที่ · scroll เพื่อ zoom · ใช้เครื่องมือด้านซ้ายบนเพื่อวาด polygon</div>
+
+<script>
+// ตัวอย่างพิกัด: พื้นที่นาข้าวสมมติ จ.สุพรรณบุรี (ปรับพิกัดจริงของแปลงได้ที่ตัวแปร CENTER)
+const CENTER = [100.1147, 14.4745]; // [lng, lat]
+const START_ZOOM = 16;
+
+const map = new maplibregl.Map({
+  container: 'map',
+  // ใช้ demotiles สาธิต (raster/vector สาธารณะ) — โปรดักชันจริงให้สลับเป็น PMTiles offline ตาม dMRV §9.3.1
+  style: 'https://demotiles.maplibre.org/style.json',
+  center: CENTER,
+  zoom: START_ZOOM,
+  pitch: 0,
+  attributionControl: { compact: true }
+});
+
+map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
+map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+
+// เครื่องหมายจุดศูนย์กลางแปลงตัวอย่าง
+new maplibregl.Marker({ color: '#45C97C' }).setLngLat(CENTER).setPopup(
+  new maplibregl.Popup({ offset: 18 }).setHTML('<b>จุดตั้งต้นแปลงตัวอย่าง</b><br/>' + CENTER[1].toFixed(5) + ', ' + CENTER[0].toFixed(5))
+).addTo(map);
+
+map.on('mousemove', (e) => {
+  document.getElementById('coordbar').textContent =
+    `lng: ${e.lngLat.lng.toFixed(6)}  lat: ${e.lngLat.lat.toFixed(6)}  zoom: ${map.getZoom().toFixed(2)}`;
+});
+
+// ---- Geoman: เครื่องมือวาด/แก้ไข polygon ----
+map.on('load', () => {
+  try {
+    // UMD build เปิด global window.Geoman = { Geoman: <class>, ...helpers }
+    const GeomanCtor = window.Geoman && window.Geoman.Geoman;
+    if (!GeomanCtor) throw new Error('window.Geoman.Geoman ไม่พบ — CDN อาจโหลดไม่สำเร็จ');
+    const gm = new GeomanCtor(map, {
+      controls: {
+        draw: { polygon: true, line: true, marker: false, circle: false, rectangle: true, text: false },
+        edit: { drag: true, rotate: false, scale: false },
+        control: { helper: true }
+      }
+    });
+    window.__gmInstance = gm;
+  } catch (err) {
+    console.warn('Geoman init warning:', err);
+    document.getElementById('topbar').insertAdjacentHTML('beforeend',
+      '<p style="color:#FCA5A5;">⚠ Geoman โหลดไม่สำเร็จ (อาจเพราะ CDN/เวอร์ชัน) — แผนที่ MapLibre ยังใช้ zoom/pan ได้ปกติ</p>');
+  }
+
+  // เมื่อวาด polygon เสร็จ ให้ log พื้นที่คร่าวๆ ออกทาง console (ตัวอย่างการต่อยอดกับ Turf.js ฝั่ง client)
+  map.on('gm:create', (e) => {
+    console.log('Geoman feature created:', e);
+  });
+});
+
+// ---- GPS Accuracy (Geolocation API) ----
+let watchId = null;
+let accCircleAdded = false;
+
+function accuracyLevel(acc) {
+  if (acc <= 5) return { label: 'ดี', cls: 'good' };
+  if (acc <= 15) return { label: 'พอใช้', cls: 'warn' };
+  return { label: 'ต่ำ', cls: 'bad' };
+}
+
+function ensureAccuracySource() {
+  if (accCircleAdded) return;
+  map.addSource('gps-accuracy', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  map.addLayer({
+    id: 'gps-accuracy-fill', type: 'fill', source: 'gps-accuracy',
+    paint: { 'fill-color': '#45C97C', 'fill-opacity': 0.18 }
+  });
+  map.addLayer({
+    id: 'gps-accuracy-line', type: 'line', source: 'gps-accuracy',
+    paint: { 'line-color': '#1C7F54', 'line-width': 1.5 }
+  });
+  map.addSource('gps-point', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+  map.addLayer({
+    id: 'gps-point-dot', type: 'circle', source: 'gps-point',
+    paint: { 'circle-radius': 6, 'circle-color': '#12261E', 'circle-stroke-color': '#fff', 'circle-stroke-width': 2 }
+  });
+  accCircleAdded = true;
+}
+
+// สร้างวงกลม accuracy แบบ geodesic คร่าวๆ (64 จุด)
+function circlePolygon(centerLngLat, radiusMeters, points = 64) {
+  const coords = [];
+  const earthRadius = 6378137;
+  const [lng, lat] = centerLngLat;
+  const latRad = lat * Math.PI / 180;
+  for (let i = 0; i <= points; i++) {
+    const angle = (i / points) * 2 * Math.PI;
+    const dx = radiusMeters * Math.cos(angle);
+    const dy = radiusMeters * Math.sin(angle);
+    const dLat = dy / earthRadius;
+    const dLng = dx / (earthRadius * Math.cos(latRad));
+    coords.push([lng + dLng * 180 / Math.PI, lat + dLat * 180 / Math.PI]);
+  }
+  return { type: 'Feature', geometry: { type: 'Polygon', coordinates: [coords] }, properties: {} };
+}
+
+function updateGpsUI(pos) {
+  const { latitude, longitude, accuracy } = pos.coords;
+  const lvl = accuracyLevel(accuracy);
+
+  document.getElementById('gpsState').textContent = 'กำลังติดตาม';
+  document.getElementById('gpsAccuracy').textContent = accuracy.toFixed(1) + ' m';
+  document.getElementById('gpsLat').textContent = latitude.toFixed(6);
+  document.getElementById('gpsLng').textContent = longitude.toFixed(6);
+  document.getElementById('gpsBadge').innerHTML = `<span class="badge ${lvl.cls}">${lvl.label}</span>`;
+
+  ensureAccuracySource();
+  map.getSource('gps-accuracy').setData({
+    type: 'FeatureCollection',
+    features: [circlePolygon([longitude, latitude], accuracy)]
+  });
+  map.getSource('gps-point').setData({
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [longitude, latitude] }, properties: {} }]
+  });
+}
+
+const locateBtn = document.getElementById('locateBtn');
+locateBtn.addEventListener('click', () => {
+  if (watchId !== null) {
+    navigator.geolocation.clearWatch(watchId);
+    watchId = null;
+    locateBtn.classList.remove('active');
+    document.getElementById('gpsState').textContent = 'ปิดแล้ว';
+    return;
+  }
+  if (!('geolocation' in navigator)) {
+    document.getElementById('gpsState').textContent = 'อุปกรณ์นี้ไม่รองรับ';
+    return;
+  }
+  document.getElementById('gpsState').textContent = 'กำลังขอสิทธิ์...';
+  watchId = navigator.geolocation.watchPosition(
+    (pos) => {
+      locateBtn.classList.add('active');
+      updateGpsUI(pos);
+      map.flyTo({ center: [pos.coords.longitude, pos.coords.latitude], zoom: Math.max(map.getZoom(), 17), essential: true });
+    },
+    (err) => {
+      document.getElementById('gpsState').textContent = 'ผิดพลาด: ' + err.message;
+      locateBtn.classList.remove('active');
+    },
+    { enableHighAccuracy: true, maximumAge: 2000, timeout: 15000 }
+  );
+});
+</script>
+</body>
+</html>
