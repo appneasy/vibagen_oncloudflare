@@ -15,6 +15,10 @@
 <link rel="stylesheet" href="https://unpkg.com/@geoman-io/maplibre-geoman-free@0.8.4/dist/maplibre-geoman.css" />
 <script src="https://unpkg.com/@geoman-io/maplibre-geoman-free@0.8.4/dist/maplibre-geoman.umd.js"></script>
 
+<!-- Turf.js — คำนวณพื้นที่เอง เพราะ helper "measurements" ในตัว Geoman เป็นฟีเจอร์ Pro เท่านั้น
+     (ยืนยันจาก console log จริง: "Not available mode: helper:measurements" เมื่อรันบน free tier) -->
+<script src="https://unpkg.com/@turf/turf@7.3.5/turf.min.js"></script>
+
 <style>
   html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, "Segoe UI", Roboto, sans-serif; }
   #map { position: absolute; top: 0; bottom: 0; width: 100%; }
@@ -147,10 +151,10 @@ map.on('load', () => {
     const gm = new GeomanCtor(map, {
       controls: {
         draw: { polygon: true, line: true, marker: false, circle: false, rectangle: true, text: false },
-        edit: { drag: true, rotate: false, scale: false, delete: true },
-        // "measurements" คือ helper ที่ Geoman มีมาให้ในตัวอยู่แล้ว — เปิดใช้ให้ active ตั้งแต่โหลดหน้า
-        // จะโชว์พื้นที่/ความยาวเส้นสดๆ ระหว่างวาดและหลังวาด polygon เสร็จ (ไม่ต้องเขียน Turf.js เพิ่มเอง)
-        helper: { measurements: { active: true } }
+        edit: { drag: true, rotate: false, scale: false, delete: true }
+        // หมายเหตุ: ไม่เปิด helper "measurements" แล้ว เพราะเป็นฟีเจอร์ Pro เท่านั้น
+        // (ทดสอบจริงบน free tier แล้วเจอ log "Not available mode: helper:measurements" — ใช้ไม่ได้)
+        // คำนวณพื้นที่เองด้วย Turf.js ด้านล่างแทน
       }
     });
     window.__gmInstance = gm;
@@ -160,17 +164,70 @@ map.on('load', () => {
       '<p style="color:#FCA5A5;">⚠ Geoman โหลดไม่สำเร็จ (อาจเพราะ CDN/เวอร์ชัน) — แผนที่ MapLibre ยังใช้ zoom/pan ได้ปกติ</p>');
   }
 
-  // เมื่อวาด polygon เสร็จ ให้ log พื้นที่ออกทาง console โดยใช้ formatArea ที่ Geoman แถมมาให้
-  // (พื้นที่จริงคำนวณจาก Turf.js ภายในตัว Geoman เอง ผ่าน helper "measurements" ด้านบนอยู่แล้ว
-  //  ส่วนนี้เป็นแค่ตัวอย่างเสริมสำหรับดึงค่าไปใช้ต่อ เช่น ส่งเข้า backend)
-  map.on('gm:create', (e) => {
-    console.log('Geoman feature created:', e);
-    try {
-      const geo = e?.feature ?? e?.shapeGeoJson ?? e;
-      if (geo && window.Geoman && window.Geoman.formatArea && geo.geometry?.type?.includes('Polygon')) {
-        console.log('พื้นที่ (ประมาณ, ถ้าอ่านจาก event ได้ตรง schema):', geo);
+  // ---- คำนวณพื้นที่ polygon เองด้วย Turf.js (แทน helper "measurements" ที่เป็น Pro) ----
+  const areaLabels = new Map(); // featureId -> { lng, lat, label }
+
+  function ensureAreaLabelLayer() {
+    if (map.getSource('gm-area-labels')) return;
+    map.addSource('gm-area-labels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'gm-area-labels-layer', type: 'symbol', source: 'gm-area-labels',
+      layout: {
+        'text-field': ['get', 'label'],
+        'text-size': 13,
+        'text-anchor': 'center',
+        'text-allow-overlap': true,
+        'text-justify': 'center'
+      },
+      paint: {
+        'text-color': '#12261E',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 2
       }
-    } catch (_) { /* เอาไว้ดูใน console เฉยๆ ไม่กระทบการทำงานหลัก */ }
+    });
+  }
+
+  function refreshAreaLabelSource() {
+    const src = map.getSource('gm-area-labels');
+    if (!src) return;
+    const features = Array.from(areaLabels.values()).map(d => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [d.lng, d.lat] },
+      properties: { label: d.label }
+    }));
+    src.setData({ type: 'FeatureCollection', features });
+  }
+
+  function computeAndStoreArea(featureData) {
+    try {
+      if (!featureData || typeof featureData.getGeoJson !== 'function') return;
+      const geoJson = featureData.getGeoJson();
+      if (!geoJson?.geometry || !/Polygon/.test(geoJson.geometry.type)) return;
+
+      const areaM2 = window.turf.area(geoJson);
+      const rai = areaM2 / 1600; // 1 ไร่ = 1600 ตร.ม.
+      const center = window.turf.centroid(geoJson).geometry.coordinates;
+      const label = `${rai.toFixed(2)} ไร่\n${Math.round(areaM2).toLocaleString('th-TH')} ตร.ม.`;
+
+      ensureAreaLabelLayer();
+      areaLabels.set(featureData.id, { lng: center[0], lat: center[1], label });
+      refreshAreaLabelSource();
+      console.log(`พื้นที่ polygon: ${rai.toFixed(2)} ไร่ (${areaM2.toFixed(1)} ตร.ม.)`);
+    } catch (err) {
+      console.warn('Turf area calc error:', err);
+    }
+  }
+
+  map.on('gm:create', (e) => computeAndStoreArea(e?.feature));
+  // ครอบคลุมเคสแก้ไข polygon (ลาก vertex/ย้ายรูป) — ชื่อ event ขึ้นกับโหมด edit ที่ใช้จริง จึงฟังหลายชื่อไว้
+  ['gm:edit', 'gm:change', 'gm:drag'].forEach(evtName => {
+    map.on(evtName, (e) => { if (e?.feature) computeAndStoreArea(e.feature); });
+  });
+  map.on('gm:remove', (e) => {
+    if (e?.feature?.id != null) {
+      areaLabels.delete(e.feature.id);
+      refreshAreaLabelSource();
+    }
   });
 });
 
