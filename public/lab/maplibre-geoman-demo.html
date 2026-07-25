@@ -64,6 +64,20 @@
   }
 
   .maplibregl-ctrl-top-left { top: 60px !important; }
+
+  #resultPanel {
+    position: absolute; left: 12px; bottom: 46px; z-index: 6;
+    background: rgba(255,255,255,0.97); border-radius: 12px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.2);
+    padding: 10px 12px; max-width: 260px; max-height: 40vh; overflow-y: auto;
+    font-size: 12px; color: #1c2e26; display: none;
+  }
+  #resultPanel.show { display: block; }
+  #resultPanel h2 { margin: 0 0 6px; font-size: 12px; color: #12261E; text-transform: uppercase; letter-spacing: .04em; }
+  #resultPanel .area-line { font-weight: 700; color: #1C7F54; margin-bottom: 6px; }
+  #resultPanel ol { margin: 0; padding-left: 18px; }
+  #resultPanel li { font-variant-numeric: tabular-nums; margin: 2px 0; }
+  #resultPanel .err { color: #B91C1C; font-weight: 600; }
 </style>
 </head>
 <body>
@@ -96,6 +110,11 @@
 </button>
 
 <div id="coordbar">คลิกซ้ายค้าง/ลาก เพื่อเลื่อนแผนที่ · scroll เพื่อ zoom · ใช้เครื่องมือด้านซ้ายบนเพื่อวาด polygon</div>
+
+<div id="resultPanel">
+  <h2>ผลลัพธ์ Polygon</h2>
+  <div id="resultBody">ยังไม่มีการวาด</div>
+</div>
 
 <script>
 // พิกัดที่ขอ (ตีความเป็น [lng, lat] ตามที่ตัวแปรนี้ใช้ตลอดทั้งไฟล์)
@@ -251,11 +270,71 @@ map.on('load', () => {
     src.setData({ type: 'FeatureCollection', features });
   }
 
+  // ---- ป้ายพิกัดของแต่ละจุด (vertex) ที่มาร์คไว้ตอนวาด ----
+  function ensureVertexLabelLayer() {
+    if (map.getSource('gm-vertex-labels')) return;
+    map.addSource('gm-vertex-labels', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
+    map.addLayer({
+      id: 'gm-vertex-dots', type: 'circle', source: 'gm-vertex-labels',
+      paint: { 'circle-radius': 4, 'circle-color': '#1C7F54', 'circle-stroke-color': '#fff', 'circle-stroke-width': 1.5 }
+    });
+    map.addLayer({
+      id: 'gm-vertex-labels-layer', type: 'symbol', source: 'gm-vertex-labels',
+      layout: {
+        'text-field': ['get', 'label'],
+        'text-size': 10,
+        'text-offset': [0, 1],
+        'text-anchor': 'top',
+        'text-allow-overlap': true
+      },
+      paint: {
+        'text-color': '#12261E',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1.5
+      }
+    });
+  }
+
+  const vertexLabels = new Map(); // featureId -> array of {lng, lat}
+
+  function refreshVertexLabelSource() {
+    const src = map.getSource('gm-vertex-labels');
+    if (!src) return;
+    const features = [];
+    vertexLabels.forEach(points => {
+      points.forEach((p, i) => {
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [p.lng, p.lat] },
+          properties: { label: `#${i + 1}\n${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}` }
+        });
+      });
+    });
+    src.setData({ type: 'FeatureCollection', features });
+  }
+
+  function showResultPanel(html, isError) {
+    const panel = document.getElementById('resultPanel');
+    const body = document.getElementById('resultBody');
+    panel.classList.add('show');
+    body.innerHTML = isError ? `<span class="err">⚠ ${html}</span>` : html;
+  }
+
   function computeAndStoreArea(featureData) {
     try {
-      if (!featureData || typeof featureData.getGeoJson !== 'function') return;
+      if (!featureData || typeof featureData.getGeoJson !== 'function') {
+        showResultPanel('ไม่พบข้อมูล geometry จาก Geoman (featureData ผิดรูปแบบ)', true);
+        return;
+      }
       const geoJson = featureData.getGeoJson();
-      if (!geoJson?.geometry || !/Polygon/.test(geoJson.geometry.type)) return;
+      if (!geoJson?.geometry || !/Polygon/.test(geoJson.geometry.type)) {
+        showResultPanel(`geometry type ที่ได้คือ "${geoJson?.geometry?.type || 'ไม่ทราบ'}" (ต้องการ Polygon)`, true);
+        return;
+      }
+      if (typeof window.turf === 'undefined') {
+        showResultPanel('Turf.js ยังไม่โหลด (เช็คว่า script tag turf.min.js โหลดสำเร็จไหม)', true);
+        return;
+      }
 
       const areaM2 = window.turf.area(geoJson);
       const rai = areaM2 / 1600; // 1 ไร่ = 1600 ตร.ม.
@@ -265,13 +344,32 @@ map.on('load', () => {
       ensureAreaLabelLayer();
       areaLabels.set(featureData.id, { lng: center[0], lat: center[1], label });
       refreshAreaLabelSource();
-      console.log(`พื้นที่ polygon: ${rai.toFixed(2)} ไร่ (${areaM2.toFixed(1)} ตร.ม.)`);
+
+      // เก็บพิกัดทุกจุด (exterior ring) ไม่รวมจุดสุดท้ายที่ซ้ำกับจุดแรก (มาตรฐาน GeoJSON polygon)
+      ensureVertexLabelLayer();
+      const ring = geoJson.geometry.coordinates[0] || [];
+      const points = ring.slice(0, -1).map(c => ({ lng: c[0], lat: c[1] }));
+      vertexLabels.set(featureData.id, points);
+      refreshVertexLabelSource();
+
+      const listHtml = points.map((p, i) =>
+        `<li>${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}</li>`).join('');
+      showResultPanel(
+        `<div class="area-line">${rai.toFixed(2)} ไร่ (${Math.round(areaM2).toLocaleString('th-TH')} ตร.ม.)</div>
+         <div>พิกัดแต่ละจุด (${points.length} จุด):</div>
+         <ol>${listHtml}</ol>`
+      );
+      console.log(`พื้นที่ polygon: ${rai.toFixed(2)} ไร่ (${areaM2.toFixed(1)} ตร.ม.)`, points);
     } catch (err) {
       console.warn('Turf area calc error:', err);
+      showResultPanel(`คำนวณพื้นที่ไม่สำเร็จ: ${err && err.message}`, true);
     }
   }
 
-  map.on('gm:create', (e) => computeAndStoreArea(e?.feature));
+  map.on('gm:create', (e) => {
+    console.log('[debug] gm:create fired', e);
+    computeAndStoreArea(e?.feature);
+  });
   // ครอบคลุมเคสแก้ไข polygon (ลาก vertex/ย้ายรูป) — ชื่อ event ขึ้นกับโหมด edit ที่ใช้จริง จึงฟังหลายชื่อไว้
   ['gm:edit', 'gm:change', 'gm:drag'].forEach(evtName => {
     map.on(evtName, (e) => { if (e?.feature) computeAndStoreArea(e.feature); });
