@@ -111,6 +111,12 @@ const map = new maplibregl.Map({
   container: 'map',
   style: {
     version: 8,
+    // จำเป็นต้องมี glyphs แม้ basemap จะเป็น raster ล้วนก็ตาม เพราะ Geoman สร้าง internal
+    // symbol layer ของตัวเอง (เช่น text_marker) ที่ใช้ "text-field" เสมอตอน init
+    // ถ้าไม่มี glyphs, map.addLayer() จะ validate fail แบบเงียบๆ (fire เป็น map "error" event
+    // ไม่ throw ให้ try/catch ข้างนอกจับได้) ทำให้ Geoman หยุดกลางคันไม่สร้าง instance เลย
+    // นี่คือสาเหตุจริงที่ toolbar ไม่ขึ้นในรอบทดสอบก่อนหน้า — ยืนยันจาก console error บนเซิร์ฟเวอร์จริง
+    glyphs: 'https://fonts.openmaptiles.org/{fontstack}/{range}.pbf',
     sources: {
       'osm-tiles': {
         type: 'raster',
@@ -142,6 +148,10 @@ window.__mapRef = map;
 window.__loadFired = false;
 window.addEventListener('error', (ev) => {
   console.error('[window.onerror]', ev.message, ev.filename, ev.lineno, ev.error);
+});
+// MapLibre validation/tile errors (เช่น style ผิด, layer ผิด) จะ fire เป็น event นี้แทนการ throw
+map.on('error', (ev) => {
+  console.error('[map error event]', ev?.error?.message || ev);
 });
 
 map.on('mousemove', (e) => {
