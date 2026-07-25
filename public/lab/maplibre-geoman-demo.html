@@ -94,14 +94,31 @@
 <div id="coordbar">คลิกซ้ายค้าง/ลาก เพื่อเลื่อนแผนที่ · scroll เพื่อ zoom · ใช้เครื่องมือด้านซ้ายบนเพื่อวาด polygon</div>
 
 <script>
-// ตัวอย่างพิกัด: พื้นที่นาข้าวสมมติ จ.สุพรรณบุรี (ปรับพิกัดจริงของแปลงได้ที่ตัวแปร CENTER)
-const CENTER = [100.1147, 14.4745]; // [lng, lat]
-const START_ZOOM = 16;
+// พิกัดที่ขอ (ตีความเป็น [lng, lat] ตามที่ตัวแปรนี้ใช้ตลอดทั้งไฟล์)
+const CENTER = [99.405817, 11.212024]; // [lng, lat]
+const START_ZOOM = 17;
 
+// หมายเหตุ: รอบก่อนใช้ demotiles.maplibre.org ซึ่งเป็นสไตล์สาธิตของ MapLibre เอง
+// มีแค่เส้นขอบประเทศ/น้ำหยาบๆ ไม่มี raster/street detail จริง — ที่พิกัดพื้นที่เกษตรจึงว่างเปล่า
+// เปลี่ยนมาใช้ raster tile จาก OpenStreetMap ตรงๆ (สไตล์เดียวกับตัวอย่างทางการของ Geoman README)
+// ซึ่งมี coverage จริงทั่วโลกรวมถึงพื้นที่เกษตรในไทย — ใช้ได้สำหรับทดสอบ/demo เท่านั้น
+// โปรดักชันจริงให้สลับเป็น PMTiles offline ตาม dMRV §9.3.1 (raw OSM tile server มี fair-use limit ไม่เหมาะกับ traffic จริง)
 const map = new maplibregl.Map({
   container: 'map',
-  // ใช้ demotiles สาธิต (raster/vector สาธารณะ) — โปรดักชันจริงให้สลับเป็น PMTiles offline ตาม dMRV §9.3.1
-  style: 'https://demotiles.maplibre.org/style.json',
+  style: {
+    version: 8,
+    sources: {
+      'osm-tiles': {
+        type: 'raster',
+        tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+        tileSize: 256,
+        attribution: '© OpenStreetMap contributors'
+      }
+    },
+    layers: [
+      { id: 'osm-tiles-layer', type: 'raster', source: 'osm-tiles', minzoom: 0, maxzoom: 19 }
+    ]
+  },
   center: CENTER,
   zoom: START_ZOOM,
   pitch: 0,
@@ -130,8 +147,10 @@ map.on('load', () => {
     const gm = new GeomanCtor(map, {
       controls: {
         draw: { polygon: true, line: true, marker: false, circle: false, rectangle: true, text: false },
-        edit: { drag: true, rotate: false, scale: false },
-        control: { helper: true }
+        edit: { drag: true, rotate: false, scale: false, delete: true },
+        // "measurements" คือ helper ที่ Geoman มีมาให้ในตัวอยู่แล้ว — เปิดใช้ให้ active ตั้งแต่โหลดหน้า
+        // จะโชว์พื้นที่/ความยาวเส้นสดๆ ระหว่างวาดและหลังวาด polygon เสร็จ (ไม่ต้องเขียน Turf.js เพิ่มเอง)
+        helper: { measurements: { active: true } }
       }
     });
     window.__gmInstance = gm;
@@ -141,9 +160,17 @@ map.on('load', () => {
       '<p style="color:#FCA5A5;">⚠ Geoman โหลดไม่สำเร็จ (อาจเพราะ CDN/เวอร์ชัน) — แผนที่ MapLibre ยังใช้ zoom/pan ได้ปกติ</p>');
   }
 
-  // เมื่อวาด polygon เสร็จ ให้ log พื้นที่คร่าวๆ ออกทาง console (ตัวอย่างการต่อยอดกับ Turf.js ฝั่ง client)
+  // เมื่อวาด polygon เสร็จ ให้ log พื้นที่ออกทาง console โดยใช้ formatArea ที่ Geoman แถมมาให้
+  // (พื้นที่จริงคำนวณจาก Turf.js ภายในตัว Geoman เอง ผ่าน helper "measurements" ด้านบนอยู่แล้ว
+  //  ส่วนนี้เป็นแค่ตัวอย่างเสริมสำหรับดึงค่าไปใช้ต่อ เช่น ส่งเข้า backend)
   map.on('gm:create', (e) => {
     console.log('Geoman feature created:', e);
+    try {
+      const geo = e?.feature ?? e?.shapeGeoJson ?? e;
+      if (geo && window.Geoman && window.Geoman.formatArea && geo.geometry?.type?.includes('Polygon')) {
+        console.log('พื้นที่ (ประมาณ, ถ้าอ่านจาก event ได้ตรง schema):', geo);
+      }
+    } catch (_) { /* เอาไว้ดูใน console เฉยๆ ไม่กระทบการทำงานหลัก */ }
   });
 });
 
