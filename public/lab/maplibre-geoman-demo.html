@@ -170,9 +170,41 @@ map.on('load', () => {
     console.log('[debug] constructing Geoman...');
     const gm = new GeomanCtor(map, {
       controls: {
-        draw: { polygon: true, line: true, marker: false, circle: false, rectangle: true, text: false },
-        edit: { drag: true, rotate: false, scale: false, delete: true }
-        // หมายเหตุ: ไม่เปิด helper "measurements" แล้ว เพราะเป็นฟีเจอร์ Pro เท่านั้น
+        // แก้บั๊ก: ค่า boolean เฉยๆ (เช่น polygon: true) ใช้ไม่ได้กับไลบรารีนี้ — ถูกเมิน
+        // เงียบๆ โดยไม่ error เลย ทำให้ปุ่มที่ขึ้นจริงกลายเป็นชุด default ของ Geoman
+        // (circle_marker/text_marker/ellipse) แทนที่จะเป็น polygon/line/rectangle ที่ต้องการ
+        // ต้องส่งเป็น object { uiEnabled: true/false } ตาม ControlOptions ที่ไลบรารีกำหนดไว้จริง
+        draw: {
+          polygon: { uiEnabled: true },
+          line: { uiEnabled: true },
+          rectangle: { uiEnabled: true },
+          marker: { uiEnabled: false },
+          circle: { uiEnabled: false },
+          circle_marker: { uiEnabled: false },
+          ellipse: { uiEnabled: false },
+          text_marker: { uiEnabled: false },
+          freehand: { uiEnabled: false },
+          custom_shape: { uiEnabled: false }
+        },
+        edit: {
+          drag: { uiEnabled: true },
+          change: { uiEnabled: true },   // ต้องเปิดตัวนี้ด้วยถึงจะลากปรับ vertex ของ polygon ที่วาดแล้วได้
+          delete: { uiEnabled: true },
+          rotate: { uiEnabled: false },
+          scale: { uiEnabled: false },
+          copy: { uiEnabled: false },
+          cut: { uiEnabled: false },
+          split: { uiEnabled: false },
+          union: { uiEnabled: false },
+          difference: { uiEnabled: false },
+          line_simplification: { uiEnabled: false },
+          lasso: { uiEnabled: false }
+        },
+        helper: {
+          snapping: { uiEnabled: false },
+          zoom_to_features: { uiEnabled: false }
+        }
+        // หมายเหตุ: ไม่เปิด helper "measurements" เพราะเป็นฟีเจอร์ Pro เท่านั้น
         // (ทดสอบจริงบน free tier แล้วเจอ log "Not available mode: helper:measurements" — ใช้ไม่ได้)
         // คำนวณพื้นที่เองด้วย Turf.js ด้านล่างแทน
       }
