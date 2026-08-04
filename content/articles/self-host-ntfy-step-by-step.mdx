@@ -1,0 +1,271 @@
+---
+title: "Self-host ntfy บน VPS ทีละขั้น: Docker, TLS, ความปลอดภัย และ push เจาะจงรายคน"
+slug: "self-host-ntfy-step-by-step"
+category: "Infrastructure"
+date: "2026-08-04"
+excerpt: "ลงมือจริง — วางระบบแจ้งเตือนกลางด้วย ntfy บน VPS: docker-compose, nginx + Let's Encrypt, โมเดล security (deny-all + token ต่อ project), กฎห้ามใส่ข้อมูลลับในแจ้งเตือน และเทคนิค push เจาะจงรายคน"
+readTime: 11
+featured: false
+author: "Akkraphol"
+authorTitle: "VIBAGEN"
+keywords:
+  [
+    "ntfy",
+    "self-host",
+    "Docker",
+    "nginx",
+    "Let's Encrypt",
+    "notification server",
+    "SSE",
+    "WebSocket",
+    "security",
+    "push notification",
+  ]
+ogImage: "/images/og-default.png"
+---
+
+ใน[บทความก่อน](/knowledge/push-notification-options-why-ntfy) เราเล่าว่าทำไม **ntfy** ถึงคุ้มค่าจะ host เอง — ฟรี, ยิงไม่จำกัด, คุมข้อมูลเอง, เป็น service กลางให้หลาย project ใช้ร่วมกันบน VPS $5 ตัวเดียว
+
+บทความนี้ลงมือจริง — วาง ntfy บน VPS ตั้งแต่ต้นจนใช้งานได้ พร้อม gotcha ที่คู่มือไม่ค่อยบอก (โดยเฉพาะเรื่อง nginx buffering กับ push บนมือถือที่หลายคนติด)
+
+> _หมายเหตุ: IP/โดเมน/token ในบทความเป็นตัวอย่าง — ของจริงเก็บในไฟล์ที่ไม่ commit_
+
+## ภาพรวมสถาปัตยกรรม
+
+```
+publisher (server) ──▶ nginx (TLS, ด่านเดียว) ──▶ ntfy container
++ Bearer token          notify.บริษัท.com :443      127.0.0.1:2586
+                                                        ▲ subscribe
+                                          แอป ntfy บนมือถือ (login + subscribe topic)
+```
+
+หลักคิด 3 ข้อ:
+
+1. **ntfy bind แค่ `127.0.0.1`** — ไม่ expose ออกเน็ตตรง ๆ
+2. **nginx เป็นด่าน TLS เดียว** — จัดการ HTTPS + reverse proxy เข้า container
+3. **Cloudflare หน้าสุด** — DNS proxied ได้ WAF/DDoS ฟรี
+
+---
+
+## Step 1 — docker-compose
+
+ntfy มี official image (`binwiederhier/ntfy`) รันเป็น container ตัวเดียว วางไว้ที่ `/apps/ntfy/`:
+
+```yaml
+services:
+  ntfy:
+    image: binwiederhier/ntfy:latest
+    container_name: ntfy
+    command: serve
+    environment:
+      - TZ=Asia/Bangkok
+    volumes:
+      - ./etc:/etc/ntfy # config
+      - ./lib:/var/lib/ntfy # user.db (auth) — ต้อง backup
+      - ./cache:/var/cache/ntfy
+    ports:
+      - "127.0.0.1:2586:80" # bind localhost เท่านั้น
+    restart: unless-stopped
+    init: true
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          'wget -q -O - http://localhost:80/v1/health | grep -q ''"healthy":true''',
+        ]
+      interval: 60s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+```
+
+**จุดสำคัญ:** `127.0.0.1:2586:80` — bind แค่ localhost เข้าจากภายนอกไม่ได้ ต้องผ่าน nginx
+
+> 💬 **ไม่ต้องพิมพ์ YAML เอง — บอก AI ได้เลย** เช่น _"สร้าง docker-compose สำหรับ ntfy ให้ bind แค่ 127.0.0.1:2586 มี volume เก็บ auth/cache และ healthcheck"_ แล้ว AI (Claude Code / ChatGPT) ร่างให้ครบ เราแค่ตรวจว่า bind localhost จริงไหม
+
+## Step 2 — config (server.yml)
+
+```yaml
+base-url: "https://notify.บริษัท.com"
+listen-http: ":80"
+behind-proxy: true
+auth-file: "/var/lib/ntfy/user.db"
+auth-default-access: "deny-all" # ★ ปิด public — ต้อง auth ทุก publish
+cache-file: "/var/cache/ntfy/cache.db"
+cache-duration: "12h"
+message-size-limit: "8k"
+upstream-base-url: "https://ntfy.sh" # ★ ปลุก FCM/APNs ให้ push ขึ้นจอมือถือ
+```
+
+สองบรรทัดที่ทำหรือพังทั้งระบบ:
+
+- **`auth-default-access: deny-all`** — ค่า default คือใครก็ยิงได้ ต้องปิดเป็น deny-all ให้ทุก publish/subscribe ต้อง authenticate ไม่งั้น topic ของเราใครก็เขียน/อ่านได้
+- **`upstream-base-url: https://ntfy.sh`** — self-host **ไม่ push background เองบนมือถือ** (iOS/Android ต้องผ่าน FCM/APNs ที่ผูกกับแอป ntfy ตัวจริง) → ต้องให้ ntfy.sh เป็น relay ปลุก push ให้ (ตัวข้อความยังอยู่ server เรา ntfy.sh แค่เคาะประตู)
+
+## Step 3 — nginx (จุดที่พลาดกันเยอะ)
+
+ntfy ส่งข้อความแบบ real-time ผ่าน **SSE/WebSocket** — nginx config ปกติจะ buffer ทำให้แจ้งเตือนดีเลย์/ไม่มา ต้องตั้งพิเศษ:
+
+```nginx
+server {
+    listen 80;                        # certbot เพิ่ม 443 + redirect ให้เอง
+    server_name notify.บริษัท.com;
+    client_max_body_size 20M;
+    location / {
+        proxy_pass http://127.0.0.1:2586;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        # ★ WebSocket — ถ้าใช้ Connection "" จะได้ error "websocket not supported"
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+        # ★ ปิด buffering ไม่งั้น SSE ดีเลย์
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 3m;
+    }
+}
+```
+
+> 💬 **nginx config จำยาก — ให้ AI จัดการ** บอกว่า _"ทำ nginx reverse proxy ให้ ntfy ที่ 127.0.0.1:2586 รองรับ WebSocket และปิด buffering"_ แล้ว AI จะใส่ 2 gotcha (`Connection "upgrade"` + `proxy_buffering off`) ให้เอง — เราแค่รู้ว่า **ต้องมี 2 อันนี้** ไว้ตรวจ
+
+## Step 4 — TLS ด้วย Let's Encrypt
+
+```bash
+sudo certbot --nginx -d notify.บริษัท.com
+```
+
+certbot เติม block `443` + redirect `80→443` ให้อัตโนมัติ + ตั้ง auto-renew — จบใน command เดียว
+
+---
+
+## โมเดลความปลอดภัย (คิดก่อน ไม่ใช่แปะทีหลัง)
+
+| กฎ                        | ทำไม                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------ |
+| `deny-all` + Bearer token | anonymous = 403 · ทุก publish ต้องมี token                                     |
+| **Namespace ต่อ project** | user `chipwood` มีสิทธิ์เฉพาะ topic `chipwood_*` — ยิงข้ามไป `autocar_*` = 403 |
+| Token = credential        | ยิงด้วย Bearer token (`tk_...`) ไม่ต้องเปิด password บน server                 |
+| bind `127.0.0.1`          | container ไม่โผล่เน็ต — nginx เป็นด่าน TLS เดียว                               |
+
+**เพิ่ม project ใหม่ = 3 บรรทัด ไม่ต้อง restart:**
+
+```bash
+docker exec -e NTFY_PASSWORD='<pw>' ntfy ntfy user add autocar
+docker exec ntfy ntfy access autocar "autocar_*" rw
+docker exec ntfy ntfy token add --label="autocar-server" autocar
+#   → เอา tk_xxx ไปใส่ env ของ project นั้น
+```
+
+### ★ กฎเหล็ก: ห้ามใส่ข้อมูลลับในตัวแจ้งเตือน
+
+แจ้งเตือนเป็น **plaintext** บน server (cache ≤12h) และ Cloudflare เห็น traffic — **ไม่มี end-to-end encryption** → **ห้ามใส่ PII / ราคา / รหัส** ในตัว `message`
+
+ส่งแบบ generic + `click` ลิงก์กลับเข้าแอปที่ auth หลัง login:
+
+```json
+{
+  "topic": "chipwood_u_a1b2c3...",
+  "title": "🔧 มีงานซ่อมใหม่",
+  "message": "แตะเพื่อดูรายละเอียด",
+  "click": "https://chipwood.บริษัท.com/work-orders/123"
+}
+```
+
+แม้ notification รั่ว ก็ไม่มีข้อมูลจริงหลุด — ข้อมูล sensitive อยู่หลัง login เสมอ
+
+---
+
+## Push เจาะจงรายคน (targeted push)
+
+ntfy เป็น **topic-based** ไม่มี concept "ส่งหา user X" ตรง ๆ — เทคนิคคือ **1 คน = 1 topic ส่วนตัวที่เดาไม่ได้**:
+
+```
+chipwood_alerts              ← broadcast: ทุกคนที่ subscribe (แจ้งทั่วไป)
+chipwood_u_<24 hex>          ← ส่วนตัวรายคน (งานถูก assign เฉพาะคนนั้น)
+```
+
+topic ส่วนตัวสุ่ม 96-bit (เดาไม่ได้) แล้วอยู่ใต้ namespace `chipwood_*` เดิม → token เดิม publish ได้ทันที ไม่ต้องเพิ่มสิทธิ์:
+
+```ts
+// สร้าง topic ส่วนตัวตอนสร้าง user
+import crypto from "crypto";
+export function newUserTopic(prefix = "chipwood_u") {
+  return `${prefix}_${crypto.randomBytes(12).toString("hex")}`;
+}
+```
+
+เก็บ `ntfyTopic` ไว้ใน record ของ user → เวลางานถูก assign ก็ push เข้า topic ส่วนตัวคนนั้น เด้งเฉพาะเขาคนเดียว
+
+> 💬 **บอก AI ให้เขียนให้** — _"เพิ่มฟิลด์ ntfyTopic ต่อ user สุ่ม 96-bit ตอนสร้างบัญชี แล้วเขียน pushToUser(userId) ที่ push เข้า topic ส่วนตัวคนนั้น"_ — เราแค่ย้ำหลักการ (สุ่มจริง ห้ามเดาได้) ที่เหลือให้ AI ลงมือ
+
+> ความปลอดภัยของ targeted push อยู่ที่ **topic เดาไม่ได้จริง** — ห้ามใช้ค่าที่เดาได้ (เช่น employeeId) ต้องสุ่ม entropy สูง
+
+---
+
+## Helper ฝั่งแอป (ไม่ให้ล้ม flow หลัก)
+
+wrapper ควร **ไม่ throw** — แจ้งเตือนพังไม่ควรทำให้บันทึกงานหลักพัง:
+
+```ts
+export async function sendNtfy(msg): Promise<boolean> {
+  try {
+    const res = await fetch(process.env.NTFY_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.NTFY_TOKEN}`,
+      },
+      body: JSON.stringify(msg), // { topic, title, message, priority, click }
+    });
+    if (!res.ok) {
+      console.error(`[ntfy] ${res.status}`);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("[ntfy] error:", err); // log แล้วคืน false — flow หลักไปต่อ
+    return false;
+  }
+}
+```
+
+---
+
+## Operations & Troubleshooting
+
+| อาการ                               | สาเหตุ / แก้                                                                                                 |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| publish ได้ 403                     | ไม่มี token / ยิงผิด namespace (topic ไม่ตรง `<proj>_*`)                                                     |
+| ไทยเพี้ยนใน title                   | อย่าใช้ HTTP header `Title` (ต้อง ASCII) — ใช้ JSON body `"title"`                                           |
+| subscribe แล้วไม่มีข้อความ          | login/topic ผิด · เกิน `cache-duration: 12h` · เจอ deny-all                                                  |
+| เห็นข้อความในแอป แต่ไม่ push ขึ้นจอ | ขาด `upstream-base-url` → เพิ่มแล้ว **re-subscribe** (ลงทะเบียน FCM ใหม่) · Android ปิด battery optimization |
+
+**อย่าลืม backup:** `user.db` (auth — ถ้าหาย token/ACL หายหมด) + `cache.db` + ไฟล์ credential
+
+---
+
+## ✅ Checklist: สั่ง AI วางระบบ ntfy ต้องบอกอะไรบ้าง (7 ข้อ)
+
+ยุคนี้ไม่ต้องจำ syntax ทุกบรรทัด — ให้ AI (Claude Code / ChatGPT) ลงมือแทนได้ แต่ **เราต้องรู้ว่าต้องสั่งอะไร** ไม่งั้น AI ก็ตั้งค่าไม่ครบ นี่คือ 7 เรื่องที่ควรระบุให้ชัดในคำสั่ง:
+
+1. **โดเมน + bind localhost** — ระบุ subdomain (เช่น `notify.บริษัท.com`) และย้ำให้ container **bind แค่ `127.0.0.1`** ให้ nginx เป็นด่านเดียว (อย่า expose port ตรง)
+2. **ปิด public ด้วย `deny-all`** — สั่งให้ `auth-default-access: deny-all` + สร้าง token ต่อ project ไม่เปิด anonymous (กัน topic เราโดนใครก็เขียน/อ่าน)
+3. **แยก namespace ต่อ project** — บอก prefix ของแต่ละงาน (`chipwood_*`, `autocar_*`) ให้ตั้ง ACL แยกสิทธิ์ ยิงข้าม project ไม่ได้
+4. **push ขึ้นจอมือถือ (`upstream-base-url`)** — ย้ำว่าต้องเด้งเข้ามือถือจริง → AI จะใส่ `upstream-base-url: https://ntfy.sh` ให้ (ไม่งั้นเห็นในแอปแต่ไม่ push background)
+5. **nginx รองรับ SSE/WebSocket** — สั่งให้ตั้ง `Connection "upgrade"` + `proxy_buffering off` (2 gotcha ที่ทำคนติดบ่อยสุด)
+6. **กฎห้ามใส่ข้อมูลลับ** — บอก AI ว่าตัว `message` ต้อง generic + ใส่ `click` ลิงก์กลับแอป **ห้ามใส่ PII/ราคา/รหัส** (แจ้งเตือนเป็น plaintext บน server)
+7. **helper ไม่ throw + วาง backup** — ให้ wrapper คืน `false` เมื่อ error (ไม่ล้ม flow หลัก) และเตือนให้ใส่ `user.db` เข้า backup routine
+
+> เก็บ 7 ข้อนี้ไว้เป็น "แบบฟอร์มสั่งงาน AI" — วางลงในคำสั่งเดียว AI ก็ setup ให้ครบ ปลอดภัย และไม่ตกหล่นเรื่องความปลอดภัย
+
+---
+
+## สรุป
+
+self-host ntfy ไม่ใช่งานใหญ่ — Docker container ตัวเดียว + nginx block + certbot 1 คำสั่ง แต่รายละเอียดที่ทำหรือพังอยู่ที่ **3 จุด**: `deny-all` (ปิด public), `upstream-base-url` (ปลุก push มือถือ), และ nginx `Connection "upgrade"` + `proxy_buffering off` (SSE/WebSocket)
+
+พอวางเสร็จ เราได้ระบบแจ้งเตือน**กลาง**ที่ทุก project ยิงเข้าตัวเดียว แยกสิทธิ์ต่อ project ปลอดภัยด้วย token + namespace และคุมข้อมูลเอง 100% — ทั้งหมดบน VPS ที่มีอยู่แล้ว ต้นทุนส่วนเพิ่ม ≈ 0
+
+สนใจวางระบบแจ้งเตือนกลาง / เชื่อม notification เข้าระบบหลังบ้านของธุรกิจ — ทักมาคุยได้ครับ
