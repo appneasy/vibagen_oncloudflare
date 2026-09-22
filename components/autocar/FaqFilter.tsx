@@ -105,7 +105,7 @@ function renderBodyItem(item: FaqBodyItem, idx: number) {
                 Tier {t.tier}
               </span>
               <span className="font-[--font-heading] font-bold text-[#0d2749] text-sm">
-                ฿{t.price}
+                {t.price}
               </span>
               <span className="font-[--font-body] text-gray-400 text-xs">{t.time}</span>
             </div>

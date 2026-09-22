@@ -37,12 +37,6 @@ const jsonLd = {
   applicationCategory: 'BusinessApplication',
   operatingSystem: 'Web',
   description: 'ระบบจัดการอู่ซ่อมรถ + ล้างรถ ครบวงจร — Perpetual License',
-  offers: {
-    '@type': 'Offer',
-    price: '29000',
-    priceCurrency: 'THB',
-    description: 'One-time perpetual license',
-  },
   author: {
     '@type': 'Organization',
     name: 'VIBAGEN',

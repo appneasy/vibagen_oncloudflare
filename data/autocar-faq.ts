@@ -358,7 +358,7 @@ export const faqItems: FaqItem[] = [
     icon: '🛡️',
     catLabel: 'หลังขาย & Support',
     q: 'ซื้อระบบแล้ว ดูแลกันยังไงต่อ?',
-    short: 'Warranty 60 วันแรกฟรี · มี Support สองแบบให้เลือก (Standard ฟรี / Hotseat 1,000/เดือน)',
+    short: 'Warranty 60 วันแรกฟรี · มี Support สองแบบให้เลือก (Standard ฟรี / Hotseat — สอบถามราคา)',
     body: [
       '<b>60 วันแรก:</b> รับประกันฟรี · เจอ bug แก้ฟรี',
       '<b>หลัง 60 วัน:</b> เลือก Support ตามความเหมาะสม:',
@@ -373,7 +373,7 @@ export const faqItems: FaqItem[] = [
           ],
         },
         b: {
-          title: '🔥 Hotseat — 1,000/เดือน',
+          title: '🔥 Hotseat — สอบถามราคา',
           lines: [
             'ตอบเร่งด่วน <b>30-60 นาที</b>',
             'บริการ urgent ทันที',
@@ -450,7 +450,7 @@ export const faqItems: FaqItem[] = [
           {
             tier: 'S',
             color: 'green',
-            price: '1,500',
+            price: 'สอบถามราคา',
             time: '1-3 วัน',
             desc: 'ปรับ UI · สี · ข้อความ · โลโก้',
             ex: 'เปลี่ยนสีปุ่ม · เพิ่มเลขที่ใบเสร็จ format ใหม่',
@@ -458,7 +458,7 @@ export const faqItems: FaqItem[] = [
           {
             tier: 'M',
             color: 'yellow',
-            price: '4,500',
+            price: 'สอบถามราคา',
             time: '3-7 วัน',
             desc: 'เพิ่ม feature 1 หน้า / 1 flow',
             ex: 'เพิ่มหน้าสรุปรายงานเฉพาะ · เพิ่มประเภทบริการใหม่',
@@ -466,7 +466,7 @@ export const faqItems: FaqItem[] = [
           {
             tier: 'L',
             color: 'blue',
-            price: '9,000',
+            price: 'สอบถามราคา',
             time: '1-2 สัปดาห์',
             desc: 'โมดูลใหม่',
             ex: 'เพิ่มระบบ CRM · สร้าง dashboard ใหม่',
@@ -474,7 +474,7 @@ export const faqItems: FaqItem[] = [
           {
             tier: 'XL',
             color: 'red',
-            price: '18,000',
+            price: 'สอบถามราคา',
             time: '2-4 สัปดาห์',
             desc: 'Workflow ใหม่ทั้งระบบ',
             ex: 'Multi-branch · Inventory automation · Custom reporting suite',
