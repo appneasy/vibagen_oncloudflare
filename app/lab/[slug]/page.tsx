@@ -265,8 +265,8 @@ function parsePromptBlock(content: string): string {
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
 
-  return `<div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:12px;margin:24px 0;overflow:hidden">
-  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,0.06)">
+  return `<div style="background:#161620;border:1px solid rgba(255,255,255,0.10);border-radius:12px;margin:24px 0;overflow:hidden">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;background:#111118;border-bottom:1px solid rgba(255,255,255,0.08)">
     <span style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.50);text-transform:uppercase;letter-spacing:0.5px">Copy-ready Prompt</span>
     <button onclick="(function(btn){var t=btn.closest('[data-prompt]');var txt=t?t.getAttribute('data-prompt'):'';navigator.clipboard.writeText(txt).then(function(){btn.textContent='✓ Copied!';btn.style.color='#22c55e';btn.style.background='rgba(34,197,94,0.15)';setTimeout(function(){btn.textContent='Copy';btn.style.color='#ff6c01';btn.style.background='rgba(255,108,1,0.12)'},2000)})})(this)" style="font-size:12px;font-weight:600;padding:4px 12px;border-radius:8px;border:none;cursor:pointer;background:rgba(255,108,1,0.12);color:#ff6c01">Copy</button>
   </div>
