@@ -6,6 +6,35 @@ import Navbar from '@/components/sections/Navbar'
 import Footer from '@/components/sections/Footer'
 import StackWizard from '@/components/lab/StackWizard'
 
+// ─── Per-article theme ──────────────────────────────────────
+type LabTheme = {
+  pageBg: string; dotGrid: string;
+  accent: string; ink: string; body: string; muted: string; border: string;
+  tableHeadBg: string; tableCellText: string; tableBorder: string;
+  cardBg: string; cardBorder: string; cardTitle: string; cardBody: string;
+  ctaBg: string; ctaBorder: string;
+}
+const LAB_THEMES: Record<string, LabTheme> = {
+  dark: {
+    pageBg: '#0a0a0f', dotGrid: 'rgba(255,255,255,0.035)',
+    accent: '#ff6c01', ink: '#ffffff', body: 'rgba(255,255,255,0.70)',
+    muted: 'rgba(255,255,255,0.40)', border: 'rgba(255,255,255,0.08)',
+    tableHeadBg: '#1a1a24', tableCellText: 'rgba(255,255,255,0.70)', tableBorder: 'rgba(255,255,255,0.06)',
+    cardBg: 'rgba(255,255,255,0.03)', cardBorder: 'rgba(255,255,255,0.06)',
+    cardTitle: '#ffffff', cardBody: 'rgba(255,255,255,0.65)',
+    ctaBg: 'rgba(255,108,1,0.06)', ctaBorder: 'rgba(255,108,1,0.20)',
+  },
+  'lab-green': {
+    pageBg: 'linear-gradient(160deg,#ffffff 0%,#f2fbf5 55%,#e9faf0 100%)', dotGrid: 'rgba(4,80,46,0.05)',
+    accent: '#06C755', ink: '#04502e', body: 'rgba(4,80,46,0.78)',
+    muted: 'rgba(4,80,46,0.45)', border: 'rgba(4,80,46,0.12)',
+    tableHeadBg: '#e6f9ee', tableCellText: 'rgba(4,80,46,0.78)', tableBorder: 'rgba(4,80,46,0.10)',
+    cardBg: '#ffffff', cardBorder: 'rgba(4,80,46,0.12)',
+    cardTitle: '#04502e', cardBody: 'rgba(4,80,46,0.70)',
+    ctaBg: 'rgba(6,199,85,0.07)', ctaBorder: 'rgba(6,199,85,0.30)',
+  },
+}
+
 export function generateStaticParams() {
   return getAllLabSlugs().map((slug) => ({ slug }))
 }
@@ -78,19 +107,20 @@ export default async function LabNotePage({
   const note = getLabBySlug(slug)
   if (!note) notFound()
 
-  const patternColor = note.pattern === 'P1' ? '#f59e0b' : '#22d3ee'
+  const theme = LAB_THEMES[note.theme ?? 'dark'] ?? LAB_THEMES.dark
+  const patternColor = note.theme === 'lab-green' ? theme.accent : (note.pattern === 'P1' ? '#f59e0b' : '#22d3ee')
 
   return (
     <>
       <Navbar />
       <LabSchema note={note} />
 
-      <main className="min-h-screen relative" style={{ background: '#0a0a0f' }}>
+      <main className="min-h-screen relative" style={{ background: theme.pageBg }}>
         {/* Dot grid overlay */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{
-            backgroundImage: 'radial-gradient(rgba(255,255,255,0.035) 1px, transparent 1px)',
+            backgroundImage: `radial-gradient(${theme.dotGrid} 1px, transparent 1px)`,
             backgroundSize: '24px 24px',
           }}
           aria-hidden="true"
@@ -101,7 +131,8 @@ export default async function LabNotePage({
             {/* Back link */}
             <Link
               href="/lab"
-              className="inline-flex items-center gap-2 text-white/40 text-sm hover:text-white transition-colors mb-8"
+              className="inline-flex items-center gap-2 text-sm hover:text-white transition-colors mb-8"
+              style={{ color: theme.muted }}
             >
               ← AI Lab
             </Link>
@@ -120,36 +151,36 @@ export default async function LabNotePage({
                 >
                   {note.pattern} · {note.patternName}
                 </span>
-                <span className="text-white/30 text-sm">{note.readTime} นาทีอ่าน</span>
+                <span className="text-sm" style={{ color: theme.muted }}>{note.readTime} นาทีอ่าน</span>
                 {note.promptCount > 0 && (
-                  <span className="text-white/30 text-sm">{note.promptCount} prompts</span>
+                  <span className="text-sm" style={{ color: theme.muted }}>{note.promptCount} prompts</span>
                 )}
               </div>
 
               {/* Title */}
               <h1
-                className="font-[--font-heading] font-bold text-white leading-tight mb-6"
-                style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)' }}
+                className="font-[--font-heading] font-bold leading-tight mb-6"
+                style={{ fontSize: 'clamp(1.75rem, 4vw, 2.75rem)', color: theme.ink }}
               >
                 {note.title}
               </h1>
 
               {/* Excerpt */}
-              <p className="text-white/70 text-xl leading-relaxed mb-6">{note.excerpt}</p>
+              <p className="text-xl leading-relaxed mb-6" style={{ color: theme.body }}>{note.excerpt}</p>
 
               {/* Author + date */}
-              <div className="flex items-center gap-4 pb-8 border-b border-white/[0.08]">
+              <div className="flex items-center gap-4 pb-8 border-b" style={{ borderColor: theme.border }}>
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm"
-                  style={{ background: '#ff6c01', color: '#fff' }}
+                  style={{ background: theme.accent, color: '#fff' }}
                 >
                   {note.author?.charAt(0) ?? 'A'}
                 </div>
                 <div>
-                  <p className="text-white text-sm font-semibold">{note.author ?? 'Akkraphol'}</p>
-                  <p className="text-white/40 text-xs">{note.authorTitle ?? 'VIBAGEN'}</p>
+                  <p className="text-sm font-semibold" style={{ color: theme.ink }}>{note.author ?? 'Akkraphol'}</p>
+                  <p className="text-xs" style={{ color: theme.muted }}>{note.authorTitle ?? 'VIBAGEN'}</p>
                 </div>
-                <span className="ml-auto text-white/30 text-sm">
+                <span className="ml-auto text-sm" style={{ color: theme.muted }}>
                   {new Date(note.date).toLocaleDateString('th-TH', {
                     year: 'numeric', month: 'long', day: 'numeric',
                   })}
@@ -163,7 +194,7 @@ export default async function LabNotePage({
                     <span
                       key={tag}
                       className="text-xs px-2.5 py-1 rounded-md"
-                      style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)' }}
+                      style={{ background: theme.cardBg, color: theme.muted }}
                     >
                       {tag}
                     </span>
@@ -180,11 +211,11 @@ export default async function LabNotePage({
             <article
               className="max-w-3xl mx-auto pt-12"
               style={{
-                color: 'rgba(255,255,255,0.70)',
+                color: theme.body,
                 lineHeight: '1.8',
                 fontFamily: 'var(--font-sarabun, var(--font-body))',
               }}
-              dangerouslySetInnerHTML={{ __html: labMarkdownToHtml(note.content) }}
+              dangerouslySetInnerHTML={{ __html: labMarkdownToHtml(note.content, theme) }}
             />
 
             {/* Interactive tool */}
@@ -198,19 +229,20 @@ export default async function LabNotePage({
             <div
               className="max-w-3xl mx-auto mt-16 rounded-2xl p-8 text-center"
               style={{
-                background: 'linear-gradient(135deg, rgba(255,108,1,0.06) 0%, rgba(20,20,25,0.6) 100%)',
-                border: '1px solid rgba(255,108,1,0.20)',
+                background: theme.ctaBg,
+                border: `1px solid ${theme.ctaBorder}`,
               }}
             >
-              <p className="text-white text-xl font-[--font-heading] font-semibold mb-2">
+              <p className="text-xl font-[--font-heading] font-semibold mb-2" style={{ color: theme.ink }}>
                 อยากลองใช้ AI ในองค์กรของคุณ?
               </p>
-              <p className="text-white/60 mb-6">
+              <p className="mb-6" style={{ color: theme.body }}>
                 ปรึกษาเราได้ฟรี — ไม่ขาย แค่ช่วยให้เห็นภาพก่อน
               </p>
               <Link
                 href="/hire-us"
-                className="inline-flex items-center gap-2 px-6 py-3 bg-[#ff6c01] text-white font-semibold rounded-xl hover:bg-[#d54e01] transition-colors"
+                className="inline-flex items-center gap-2 px-6 py-3 text-white font-semibold rounded-xl transition-colors"
+                style={{ background: theme.accent }}
               >
                 ปรึกษาฟรี →
               </Link>
@@ -242,36 +274,41 @@ function parsePromptBlock(content: string): string {
 </div>`
 }
 
-function parseInsightBlock(attrs: string, content: string): string {
+function parseInsightBlock(attrs: string, content: string, theme: LabTheme): string {
   const numMatch = attrs.match(/number=(\d+)/)
   const titleMatch = attrs.match(/title="([^"]+)"/)
   const number = numMatch ? numMatch[1] : '1'
   const title = titleMatch ? titleMatch[1] : ''
   const description = content.trim()
+  const isLight = theme.accent === '#06C755'
+  const numberBg = isLight ? 'rgba(6,199,85,0.15)' : 'rgba(255,108,1,0.15)'
 
-  return `<div style="display:flex;gap:16px;border-radius:12px;padding:20px;margin:16px 0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-left:3px solid #ff6c01">
-  <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:rgba(255,108,1,0.15);color:#ff6c01">${number}</div>
+  return `<div style="display:flex;gap:16px;border-radius:12px;padding:20px;margin:16px 0;background:${theme.cardBg};border:1px solid ${theme.cardBorder};border-left:3px solid ${theme.accent}">
+  <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;background:${numberBg};color:${theme.accent}">${number}</div>
   <div style="flex:1;min-width:0">
-    <p style="font-weight:600;color:#fff;margin:0 0 4px 0">${title}</p>
-    <p style="font-size:14px;line-height:1.7;color:rgba(255,255,255,0.65);margin:0">${description}</p>
+    <p style="font-weight:600;color:${theme.cardTitle};margin:0 0 4px 0">${title}</p>
+    <p style="font-size:14px;line-height:1.7;color:${theme.cardBody};margin:0">${description}</p>
   </div>
 </div>`
 }
 
-function parseLessonBlock(attrs: string, content: string): string {
+function parseLessonBlock(attrs: string, content: string, theme: LabTheme): string {
   const titleMatch = attrs.match(/title="([^"]+)"/)
   const title = titleMatch ? titleMatch[1] : 'บทเรียน'
+  const isLight = theme.accent === '#06C755'
+  const bg = isLight ? 'rgba(6,199,85,0.08)' : 'rgba(34,197,94,0.08)'
+  const border = isLight ? 'rgba(6,199,85,0.25)' : 'rgba(34,197,94,0.20)'
 
-  return `<div style="border-radius:12px;padding:24px;margin:24px 0;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.20)">
+  return `<div style="border-radius:12px;padding:24px;margin:24px 0;background:${bg};border:1px solid ${border}">
   <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
     <span style="font-size:18px">💡</span>
-    <strong style="color:#fff;font-size:14px">${title}</strong>
+    <strong style="color:${theme.cardTitle};font-size:14px">${title}</strong>
   </div>
-  <div style="font-size:14px;line-height:1.75;color:rgba(255,255,255,0.70)">${content.trim()}</div>
+  <div style="font-size:14px;line-height:1.75;color:${theme.cardBody}">${content.trim()}</div>
 </div>`
 }
 
-function parseDownloadBlock(attrs: string, content: string): string {
+function parseDownloadBlock(attrs: string, content: string, theme: LabTheme): string {
   const titleMatch = attrs.match(/title="([^"]+)"/)
   const subtitleMatch = attrs.match(/subtitle="([^"]+)"/)
   const featuresMatch = attrs.match(/features="([^"]+)"/)
@@ -280,56 +317,57 @@ function parseDownloadBlock(attrs: string, content: string): string {
   const subtitle = subtitleMatch ? subtitleMatch[1] : ''
   const features = featuresMatch ? featuresMatch[1] : ''
   const link = linkMatch ? linkMatch[1] : ''
-  const description = content.trim().replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff;font-weight:600">$1</strong>')
+  const description = content.trim().replace(/\*\*(.+?)\*\*/g, `<strong style="color:${theme.cardTitle};font-weight:600">$1</strong>`)
 
   const btnHtml = link
-    ? `<a href="${link}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#f59e0b;color:#000;font-weight:700;font-family:'Fira Code',Consolas,monospace;font-size:12px;letter-spacing:.08em;padding:10px 28px;border-radius:8px;text-decoration:none;margin-bottom:14px;transition:background 0.15s" onmouseover="this.style.background='#fbbf24'" onmouseout="this.style.background='#f59e0b'">⚙️ เปิด Dashboard</a>`
+    ? `<a href="${link}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:${theme.accent};color:#000;font-weight:700;font-family:'Fira Code',Consolas,monospace;font-size:12px;letter-spacing:.08em;padding:10px 28px;border-radius:8px;text-decoration:none;margin-bottom:14px;transition:background 0.15s" onmouseover="this.style.background='#fbbf24'" onmouseout="this.style.background='#f59e0b'">⚙️ เปิด Dashboard</a>`
     : ''
 
-  return `<div style="border-radius:12px;padding:24px;margin:24px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-top:2px solid #f59e0b;text-align:center">
+  return `<div style="border-radius:12px;padding:24px;margin:24px 0;background:${theme.cardBg};border:1px solid ${theme.cardBorder};border-top:2px solid ${theme.accent};text-align:center">
   <div style="font-size:24px;margin-bottom:8px">📥</div>
-  <div style="font-weight:700;font-size:1rem;color:#fff;margin-bottom:6px">${title}</div>
-  <div style="font-size:14px;color:rgba(255,255,255,0.55);line-height:1.75;margin-bottom:14px">${description}</div>
+  <div style="font-weight:700;font-size:1rem;color:${theme.cardTitle};margin-bottom:6px">${title}</div>
+  <div style="font-size:14px;color:${theme.cardBody};line-height:1.75;margin-bottom:14px">${description}</div>
   ${btnHtml}
-  <div style="font-size:13px;color:#f59e0b;margin-bottom:12px">${subtitle}</div>
+  <div style="font-size:13px;color:${theme.accent};margin-bottom:12px">${subtitle}</div>
   <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center">
     ${features.split(',').map(f => `<span style="font-size:11px;font-family:'Fira Code',Consolas,monospace;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);padding:3px 10px;border-radius:4px;color:rgba(255,255,255,0.50)">${f.trim()}</span>`).join('')}
   </div>
 </div>`
 }
 
-function parseCtaBlock(attrs: string, content: string): string {
+function parseCtaBlock(attrs: string, content: string, theme: LabTheme): string {
   const titleMatch = attrs.match(/title="([^"]+)"/)
   const accentMatch = attrs.match(/accent="([^"]+)"/)
   const title = titleMatch ? titleMatch[1] : ''
   const accent = accentMatch ? accentMatch[1] : 'green'
-  const description = content.trim().replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff;font-weight:600">$1</strong>')
+  const description = content.trim().replace(/\*\*(.+?)\*\*/g, `<strong style="color:${theme.cardTitle};font-weight:600">$1</strong>`)
 
+  const isLight = theme.accent === '#06C755'
   const isAmber = accent === 'amber'
-  const bg = isAmber ? 'rgba(245,158,11,0.06)' : 'rgba(74,222,128,0.06)'
-  const border = isAmber ? 'rgba(245,158,11,0.25)' : 'rgba(74,222,128,0.25)'
+  const bg = isLight ? theme.ctaBg : (isAmber ? 'rgba(245,158,11,0.06)' : 'rgba(74,222,128,0.06)')
+  const border = isLight ? theme.ctaBorder : (isAmber ? 'rgba(245,158,11,0.25)' : 'rgba(74,222,128,0.25)')
 
   return `<div style="border-radius:12px;padding:24px;margin:24px 0;background:${bg};border:1.5px solid ${border};text-align:center">
-  <div style="font-weight:700;font-size:1rem;color:#fff;margin-bottom:8px">${title}</div>
-  <div style="font-size:14px;color:rgba(255,255,255,0.55);line-height:1.75;margin-bottom:14px">${description}</div>
+  <div style="font-weight:700;font-size:1rem;color:${theme.cardTitle};margin-bottom:8px">${title}</div>
+  <div style="font-size:14px;color:${theme.cardBody};line-height:1.75;margin-bottom:14px">${description}</div>
 </div>`
 }
 
-function parseTeaserBlock(attrs: string, content: string): string {
+function parseTeaserBlock(attrs: string, content: string, theme: LabTheme): string {
   const titleMatch = attrs.match(/title="([^"]+)"/)
   const labelMatch = attrs.match(/label="([^"]+)"/)
   const title = titleMatch ? titleMatch[1] : ''
   const label = labelMatch ? labelMatch[1] : ''
-  const description = content.trim().replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff;font-weight:600">$1</strong>')
+  const description = content.trim().replace(/\*\*(.+?)\*\*/g, `<strong style="color:${theme.cardTitle};font-weight:600">$1</strong>`)
 
-  return `<div style="border-radius:0 12px 12px 0;padding:20px 24px;margin:24px 0;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.06);border-left:3px solid #f59e0b">
-  <div style="font-family:'Fira Code',Consolas,monospace;font-size:10px;color:#f59e0b;letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px">${label}</div>
-  <div style="font-weight:700;font-size:1rem;color:#fff;margin-bottom:8px">${title}</div>
-  <div style="font-size:14px;color:rgba(255,255,255,0.60);line-height:1.75">${description}</div>
+  return `<div style="border-radius:0 12px 12px 0;padding:20px 24px;margin:24px 0;background:${theme.cardBg};border:1px solid ${theme.cardBorder};border-left:3px solid ${theme.accent}">
+  <div style="font-family:'Fira Code',Consolas,monospace;font-size:10px;color:${theme.accent};letter-spacing:.2em;text-transform:uppercase;margin-bottom:10px">${label}</div>
+  <div style="font-weight:700;font-size:1rem;color:${theme.cardTitle};margin-bottom:8px">${title}</div>
+  <div style="font-size:14px;color:${theme.cardBody};line-height:1.75">${description}</div>
 </div>`
 }
 
-function extractCustomBlocks(md: string): { md: string; blocks: string[] } {
+function extractCustomBlocks(md: string, theme: LabTheme): { md: string; blocks: string[] } {
   const blocks: string[] = []
 
   // :::prompt ... :::
@@ -340,39 +378,39 @@ function extractCustomBlocks(md: string): { md: string; blocks: string[] } {
 
   // :::insight{...} ... :::
   md = md.replace(/:::insight(\{[^}]*\})\n([\s\S]*?):::/g, (_match, attrs: string, content: string) => {
-    blocks.push(parseInsightBlock(attrs.slice(1, -1), content))
+    blocks.push(parseInsightBlock(attrs.slice(1, -1), content, theme))
     return `<!--customblock:${blocks.length - 1}-->`
   })
 
   // :::lesson{...} ... :::
   md = md.replace(/:::lesson(\{[^}]*\})\n([\s\S]*?):::/g, (_match, attrs: string, content: string) => {
-    blocks.push(parseLessonBlock(attrs.slice(1, -1), content))
+    blocks.push(parseLessonBlock(attrs.slice(1, -1), content, theme))
     return `<!--customblock:${blocks.length - 1}-->`
   })
 
   // :::download{...} ... :::
   md = md.replace(/:::download(\{[^}]*\})\n([\s\S]*?):::/g, (_match, attrs: string, content: string) => {
-    blocks.push(parseDownloadBlock(attrs.slice(1, -1), content))
+    blocks.push(parseDownloadBlock(attrs.slice(1, -1), content, theme))
     return `<!--customblock:${blocks.length - 1}-->`
   })
 
   // :::cta{...} ... :::
   md = md.replace(/:::cta(\{[^}]*\})\n([\s\S]*?):::/g, (_match, attrs: string, content: string) => {
-    blocks.push(parseCtaBlock(attrs.slice(1, -1), content))
+    blocks.push(parseCtaBlock(attrs.slice(1, -1), content, theme))
     return `<!--customblock:${blocks.length - 1}-->`
   })
 
   // :::teaser{...} ... :::
   md = md.replace(/:::teaser(\{[^}]*\})\n([\s\S]*?):::/g, (_match, attrs: string, content: string) => {
-    blocks.push(parseTeaserBlock(attrs.slice(1, -1), content))
+    blocks.push(parseTeaserBlock(attrs.slice(1, -1), content, theme))
     return `<!--customblock:${blocks.length - 1}-->`
   })
 
   return { md, blocks }
 }
 
-// ─── Dark-theme table parser ───────────────────────────────
-function parseLabTables(md: string): string {
+// ─── Table parser ───────────────────────────────────────────
+function parseLabTables(md: string, theme: LabTheme): string {
   const tableRegex = /^(\|.+\|)\n(\|[\s:|-]+\|)\n((?:\|.+\|\n?)+)/gm
   return md.replace(tableRegex, (_match, headerLine: string, _sep: string, bodyBlock: string) => {
     const parseRow = (row: string) =>
@@ -384,7 +422,7 @@ function parseLabTables(md: string): string {
     const ths = headers
       .map(
         (h) =>
-          `<th style="padding:10px 14px;text-align:left;font-size:13px;font-weight:600;color:#fff;white-space:nowrap">${h}</th>`,
+          `<th style="padding:10px 14px;text-align:left;font-size:13px;font-weight:600;color:${theme.ink};white-space:nowrap">${h}</th>`,
       )
       .join('')
     const trs = rows
@@ -394,23 +432,23 @@ function parseLabTables(md: string): string {
           cells
             .map(
               (c) =>
-                `<td style="padding:10px 14px;font-size:13px;color:rgba(255,255,255,0.70);border-bottom:1px solid rgba(255,255,255,0.06)">${c}</td>`,
+                `<td style="padding:10px 14px;font-size:13px;color:${theme.tableCellText};border-bottom:1px solid ${theme.tableBorder}">${c}</td>`,
             )
             .join('') +
           '</tr>',
       )
       .join('')
 
-    return `<div style="overflow-x:auto;margin:16px 0"><table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden"><thead><tr style="background:#1a1a24">${ths}</tr></thead><tbody>${trs}</tbody></table></div>`
+    return `<div style="overflow-x:auto;margin:16px 0"><table style="width:100%;border-collapse:collapse;border-radius:8px;overflow:hidden"><thead><tr style="background:${theme.tableHeadBg}">${ths}</tr></thead><tbody>${trs}</tbody></table></div>`
   })
 }
 
-// ─── Main dark-theme markdown → HTML ──────────────────────
-function labMarkdownToHtml(md: string): string {
+// ─── Main markdown → HTML ──────────────────────────────────
+function labMarkdownToHtml(md: string, theme: LabTheme): string {
   md = md.replace(/\r\n/g, '\n')
 
   // Extract custom blocks first
-  const { md: mdAfterCustom, blocks } = extractCustomBlocks(md)
+  const { md: mdAfterCustom, blocks } = extractCustomBlocks(md, theme)
   md = mdAfterCustom
 
   // Extract code blocks
@@ -423,35 +461,35 @@ function labMarkdownToHtml(md: string): string {
   })
 
   // Parse tables
-  let html = parseLabTables(md)
+  let html = parseLabTables(md, theme)
 
   html = html
-    .replace(/^---$/gm, '<hr style="border:none;border-top:1px solid rgba(255,255,255,0.08);margin:32px 0" />')
+    .replace(/^---$/gm, `<hr style="border:none;border-top:1px solid ${theme.border};margin:32px 0" />`)
     .replace(
       /^## (.+)$/gm,
-      '<h2 style="font-family:var(--font-heading);font-weight:700;color:#fff;font-size:1.5rem;margin-top:40px;margin-bottom:16px">$1</h2>',
+      `<h2 style="font-family:var(--font-heading);font-weight:700;color:${theme.ink};font-size:1.5rem;margin-top:40px;margin-bottom:16px">$1</h2>`,
     )
     .replace(
       /^### (.+)$/gm,
-      '<h3 style="font-family:var(--font-heading);font-weight:600;color:#ff6c01;font-size:1.25rem;margin-top:32px;margin-bottom:12px">$1</h3>',
+      `<h3 style="font-family:var(--font-heading);font-weight:600;color:${theme.accent};font-size:1.25rem;margin-top:32px;margin-bottom:12px">$1</h3>`,
     )
     .replace(
       /^\> (.+)$/gm,
-      '<blockquote style="border-left:4px solid #ff6c01;padding-left:20px;margin:24px 0;color:rgba(255,255,255,0.60);font-style:italic">$1</blockquote>',
+      `<blockquote style="border-left:4px solid ${theme.accent};padding-left:20px;margin:24px 0;color:${theme.body};font-style:italic">$1</blockquote>`,
     )
     .replace(
       /^\*\*(\d+)\. (.+)\*\*$/gm,
-      '<p style="font-weight:600;color:#fff;margin-top:16px">$1. $2</p>',
+      `<p style="font-weight:600;color:${theme.ink};margin-top:16px">$1. $2</p>`,
     )
     .replace(
       /^- (.+)$/gm,
-      '<li style="margin-left:16px;color:rgba(255,255,255,0.70)">$1</li>',
+      `<li style="margin-left:16px;color:${theme.body}">$1</li>`,
     )
     .replace(
       /(<li.*<\/li>\n?)+/g,
       '<ul style="list-style:disc;padding-left:8px;space-y:4px;margin:16px 0">$&</ul>',
     )
-    .replace(/\*\*(.+?)\*\*/g, '<strong style="color:#fff;font-weight:600">$1</strong>')
+    .replace(/\*\*(.+?)\*\*/g, `<strong style="color:${theme.ink};font-weight:600">$1</strong>`)
     .replace(/\*(.+?)\*/g, '<em style="font-style:italic">$1</em>')
     .replace(/^(?!<[h|b|u|l|p|i|d|hr]|<!--).+$/gm, (line) =>
       line.trim() ? `<p style="margin-bottom:16px">${line}</p>` : '',

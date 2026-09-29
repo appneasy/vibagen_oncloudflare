@@ -18,6 +18,7 @@ export interface LabNoteMeta {
   authorTitle?: string
   keywords?: string[]
   ogImage?: string
+  theme?: string
 }
 
 export interface LabNote extends LabNoteMeta {
