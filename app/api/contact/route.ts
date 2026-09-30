@@ -111,7 +111,8 @@ export async function POST(req: Request) {
     debug.telegramException = String(err)
   }
 
-  return Response.json({ success: true, _debug: debug })
+  console.log('[Contact] debug:', debug)
+  return Response.json({ success: true })
 }
 
 /** Escape HTML special chars for Telegram HTML parse mode */
